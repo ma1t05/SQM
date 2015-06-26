@@ -1,4 +1,7 @@
 
+#include <cmath>
+using namespace std;
+
 #deinfe epsilon 0.001
 
 struct response_unit {
