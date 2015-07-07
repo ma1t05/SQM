@@ -66,16 +66,6 @@ void SQM_model
     }
 
     cout << "++ Restricciones ++" << endl;
-    cout << "Solo una instalacion ocupa la posion k del cliente i" << endl;
-    for (i = 0;i < n;i++) {
-      for (l = 0;l < k;l++) {
-	IloExpr Cover(env);
-	for (j = 0;j < n;j++) Cover += y[i][j][l];
-	modelo.add(Cover <= 1);
-	Cover.end();
-      }
-    }
-
     cout << "Instalaciones a abrir" << endl;
     modelo.add(IloSum(x) == p);
 
@@ -87,10 +77,20 @@ void SQM_model
       }
     }
 
-    cout << "La instalacion j solo puede ocupar una posicion del cliente i" << endl;
+    cout << "Solo una instalacion ocupa la posion k del cliente i" << endl;
+    for (i = 0;i < n;i++) {
+      for (l = 0;l < k;l++) {
+	IloExpr Cover(env);
+	for (j = 0;j < n;j++) Cover += y[i][j][l];
+	modelo.add(Cover == 1);
+	Cover.end();
+      }
+    }
+
+    cout << "Los ajustadores en j solo puede ocupar x_j posiciones del cliente i" << endl;
     for (i = 0;i < n;i++) {
       for (j = 0;j < n;j++) {
-	modelo.add(IloSum(y[i][j]) <= 1);
+	modelo.add(IloSum(y[i][j]) <= x[j]);
       }
     }
 
@@ -107,15 +107,73 @@ void SQM_model
     }
       
     for (i = 0;i < n;i++) {
-      for (k = 1;k < p;k++) {
-	for (j = 0;j < n;j++) {
+      for (l = 1;l < k;l++) {
+	for (j = 0;j < m;j++) {
 	  IloExpr balance(env);
-	  for (r = 0;r < n;r++) {
+	  for (r = 0;r < m;r++) {
 	    if (O[i][r] <= O[i][j])
-	      balance += y[i][r][k-1];
+	      balance += y[i][r][l-1];
 	  }
-	  modelo.add(y[i][j][k] <= balance);
+	  modelo.add(y[i][j][l] <= balance);
 	  balance.end();
+	}
+      }
+    }
+
+    cout << "Restricciones disjuntas" << endl;
+    /* Restriccion para realacionar 
+       u_{ij} = 
+                1: Si la suma de instalaciones mas cercanas a i hasta incluir j es menor o igual a k
+		0: Si no
+    */
+    for (i = 0;i < n;i++) {
+      for (j = 0;j < m;j++) {
+	IloExpr Instalaciones(env);
+	for (r = 0;r < m;r++) {
+	  if (O[i][r] <= O[i][j])
+	    Instalaciones += x[r];
+	}
+	modelo.add(Instalaciones <= p - (p - k) * u[i][j]);
+	modelo.add(Instalaciones + M * u[i][j] >= k + 1);
+	Instalaciones.end();
+      }
+    }
+
+    /* Si u_{ij} = 1, todas las instalaciones de j deben de ser asignadas a i */
+    for (i = 0;i < n;i++) {
+      for (j = 0;j < m;j++) {
+	modelo.add(IloSum(y[i][j]) + M * (1 - u[i][j]) >= x[j]);
+      }
+    }
+
+    /* Restriccion para relacionar
+       v_{ij} =
+                1: Si la suma de instalaciones mas cercanas a i hasta antes de j es menor a k
+		0: Si no
+     */
+    for (i = 0;i < n;i++) {
+      for (j = 0;j < m;j++) {
+	IloExpr Instalaciones(env);
+	for (r = 0;r < m;r++) {
+	  if (O[i][r] < O[i][j])
+	    Instalaciones += x[r];
+	}
+	modelo.add(Instalaciones <= p - (p - (k - 1)) * v[i][j]);
+	modelo.add(Instalaciones + M * v[i][j] >= k + 1);
+
+	/* Si v_{ij} = 1 y u_{ij} = 0 alguntas de las instalaciones de j seran asignadas a i para completar las k */
+	modelo.add(IloSum(y[i][j]) + M * (1 - v[i][j] + u[i][j]) >= k - Instalaciones);
+	modelo.add(IloSum(y[i][j]) + M * (1 - v[i][j] + u[i][j]) <= k - Instalaciones);
+
+	Instalaciones.end();
+      }
+    }
+
+    /* En caso de ser u_{ij} = 0 y v_{ij] = 0, no se asinga ninguna instalacion de j a i*/
+    for (i = 0;i < n;i++) {
+      for (j = 0;j < m;j++) {
+	for (l = 1;l < k;l++) {
+	  modelo.add(y[i][j][l] <= u[i][j] + v[i][j]);
 	}
       }
     }
