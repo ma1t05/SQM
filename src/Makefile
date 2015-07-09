@@ -44,7 +44,7 @@ CCFLAGS = $(CCOPT) -I$(CPLEXINCDIR) -I$(CONCERTINCDIR) -I$(INCLUDE)
 
 #------------------------------------------------------------
 
-OUT=./../../bin
+OUT=./../../../bin
 OBJS:=$(patsubst %.cpp,$(OUT)/%.o,$(wildcard *.cpp))
 CPP_EX = $(OUT)/SQM
 
