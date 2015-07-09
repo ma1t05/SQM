@@ -3,20 +3,25 @@
  * 
  */
 
+#include "SQM_model.h"
 
 void SQM_model
 (instance* I, // Set of points
  int p, // facilities
  float mu, // rate parameter
- float f) // 
+ float f, // portion of demand
+ float speed) // speed
 {
   IloEnv env;
   try {
-    IloInt i,j,k,r;
-    IloInt n = I->n;
+    IloInt i,j,l,k,r;
+    IloInt m,n = I->n;
     IloNum f_i;
     IloNum rho;
     IloNum M = 10000.0;
+    IloNum beta = 1.5;
+    k = 3;
+    m = n;
     point *puntos = I->points;
     cout << "Comienza definicion del Modelo" << endl;
     IloModel modelo(env);
@@ -38,8 +43,8 @@ void SQM_model
       BoolVarMatrix y_i(env,n);
       for (j = 0;j < n;j++) {
 	IloBoolVarArray y_i_j(env);
-	for (k = 0;k < p;k++) {
-	  sprintf(VarName,"y_%d_%d_%d",i+1,j+1,k+1);
+	for (l = 0;l < p;l++) {
+	  sprintf(VarName,"y_%d_%d_%d",i+1,j+1,l+1);
 	  y_i_j.add(IloBoolVar(env,VarName));
 	}
 	y_i[j] = y_i_j;
@@ -178,6 +183,7 @@ void SQM_model
       }
     }
 
+    /* Comienza definicion de funcion objetivo */
     // Cargas de trabajo
     IloNum coef;
     // rho from Daskin
@@ -189,24 +195,26 @@ void SQM_model
     // rho from ReVelle & Hogan
     // pendiente
     
-    for (j = 0;j < n;j++) {
-      IloExpr workload(env);
-      for (k = 0;k < p;k++) {
-	coef = (1 - rho) * pow(rho,k);
-	for (i = 0;i < n;i++) {
-	  f_i = f * puntos[i].demand;
-	  workload += f_i * coef * O[i][j]* y[i][j][k];
+    IloExpr workload(env);
+    IloNum time_per_km = beta / speed;
+    IloNum wt = 0.0;
+    for (k = 0;k < p;k++) {
+      coef = (1 - rho) * pow(rho,k);
+      for (i = 0;i < n;i++) {
+	f_i = f * puntos[i].demand;
+	for (j = 0;j < m;j++) {
+	  workload += f_i * coef * (O[i][j]*time_per_km + wt)* y[i][j][k];
 	}
       }
-      modelo.add(S + M*x[j] <= workload + M);
     }
     
     cout << "Funcion Objetivo" << endl;
-    modelo.add(IloMaximize(env,S));
+    modelo.add(IloMaximize(env,workload));
+    workload.end();
 
     cout << "Resuelver modelo" << endl;
     IloCplex cplex(modelo);
-    cplex.exportModel("Problema-P.lp");
+    cplex.exportModel("SQM-model.lp");
     if(cplex.solve()){
       cout << "Solution status: " << cplex.getStatus() << endl;
       cout << "Maximum profit = " << cplex.getObjValue() << endl;
@@ -225,7 +233,6 @@ void SQM_model
 	}
 	cout << endl;
       }/**/
-      gnuplot_goldberg(I,p,&cplex,&x,&y);
     }
     else {
       cout << "No solution found" << endl;
