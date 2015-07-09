@@ -1,20 +1,19 @@
 
-#include <cmath>
-using namespace std;
+#include "SQM.h"
+#include "SQM_model.h"
 
-#deinfe epsilon 0.001
+int main() {
+  instance *I;
+  I = read_points("./../../PMCLAP/Instancias/Q_MCLP_30.txt");
+  SQM_model(I,4,mu,1.0,40.0);
 
-struct response_unit {
-  int location;
-  double v;
-  double beta;
-};
-
-typedef struct response_unit response_unit;
+  delete[] I->points;
+  delete I;
+}
 
 void heuristic1
 (int p, // number of response units
- network G, // the transportation network
+ network *G, // the transportation network
  double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
  double Mu_NT, // mean of non-travel time component of the service time
  response_unit *X) {
@@ -22,15 +21,27 @@ void heuristic1
   double *MST,*mst; // mean service time
   double T_r,t_r; // expected response time
   double **f;
+  double **dist; // Matrix of distances
   double mu;
   double P_B0;
   bool exit;
+  int n = G->n;
+
+  dist = new double*[G->n];
+  for (int i = 0;i < G->n;i++) {
+    dist[i] = new double[G->n];
+  }
+  for (int i = 0;i < G->n;i++) {
+    for (int j = 0;j < G->n;j++) {
+
+    }
+  }
   
-  MST = new dobule[p];
-  mst = new dobule[p];
+  MST = new double[p];
+  mst = new double[p];
   f = new double*[p];
   for (int i = 0;i < p;i++)
-    f[i] = new dobule[G->n];
+    f[i] = new double[G->n];
 
   do {
     // Step 0
@@ -60,13 +71,13 @@ void heuristic1
 	  h += f[i][j];
 	mst[i] = 0.0;
 	for (int k = 0;k < G->n;k++)
-	  mst[i] = (f[i][k]/h) * (Mu_NT + (X[i]->beta / X[i]->v) * dist[X[i].location][k]);
+	  mst[i] = (f[i][k]/h) * (Mu_NT + (X[i].beta / X[i].v) * dist[X[i].location][k]);
       }
   
       // Step 3
       exit = true;
       for (int i = 0;i < p;i++) {
-	if (abs(mst[i] - MST[i]) > epsilon) {
+	if (abs(mst[i] - MST[i]) > EPSILON) {
 	  exit = false;
 	  for (i = 0;i < p;i++)
 	    MST[i] = mst[i];
@@ -76,7 +87,7 @@ void heuristic1
     } while (!exit);
 
     exit = true;
-    if (abs(t_r - T_r) > epsilon) {
+    if (abs(t_r - T_r) > EPSILON) {
       exit = false;
       for (int i = 0;i < p;i++) {
 
@@ -107,12 +118,16 @@ void heuristic1
       }
       T_r = t_r;
     }
-  } while (!eixt);
+  } while (!exit);
 
   for (int i = 0;i < p;i++)
     delete[] f[i];
   delete[] f;
   delete[] mst;
   delete[] MST;
+  for (int i = 0;i < p;i++)
+    delete[] dist[i];
+  delete[] dist;
+  
 }
 
