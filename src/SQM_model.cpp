@@ -77,8 +77,8 @@ void SQM_model
     cout << "Relacionar variables de localizacion y asignacion" << endl;
     for(i = 0;i < n;i++){
       for (j = 0;j < n;j++) {
-	for (k = 0;k < p;k++) 
-	  modelo.add(y[i][j][k] <= x[j]);
+	for (l = 0;l < p;l++) 
+	  modelo.add(y[i][j][l] <= x[j]);
       }
     }
 
