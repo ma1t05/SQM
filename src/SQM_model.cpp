@@ -14,7 +14,7 @@ void SQM_model
 {
   IloEnv env;
   try {
-    IloInt i,j,l,k,r;
+    int i,j,l,k,r;
     IloInt m,n = I->n;
     IloNum f_i;
     IloNum rho;
@@ -252,8 +252,8 @@ void SQM_model
 }
 
 void gnuplot_goldberg(instance *I,int p,IloCplex *cplex, IloBoolVarArray *x, BoolVarArrayMatrix *y) {
-  IloInt i,j,k;
-  IloInt n = I->n;
+  int i,j,k;
+  int n = I->n;
   point *puntos = I->points;
 
   char outfilename[32],centersfilename[32];
