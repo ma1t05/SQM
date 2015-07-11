@@ -43,7 +43,7 @@ void SQM_model
       BoolVarMatrix y_i(env,n);
       for (j = 0;j < n;j++) {
 	IloBoolVarArray y_i_j(env);
-	for (l = 0;l < p;l++) {
+	for (l = 0;l < k;l++) {
 	  sprintf(VarName,"y_%d_%d_%d",i+1,j+1,l+1);
 	  y_i_j.add(IloBoolVar(env,VarName));
 	}
@@ -77,7 +77,7 @@ void SQM_model
     cout << "Relacionar variables de localizacion y asignacion" << endl;
     for(i = 0;i < n;i++){
       for (j = 0;j < n;j++) {
-	for (l = 0;l < p;l++) 
+	for (l = 0;l < k;l++) 
 	  modelo.add(y[i][j][l] <= x[j]);
       }
     }
@@ -158,19 +158,21 @@ void SQM_model
      */
     for (i = 0;i < n;i++) {
       for (j = 0;j < m;j++) {
-	IloExpr Instalaciones(env);
-	for (r = 0;r < m;r++) {
-	  if (O[i][r] < O[i][j])
-	    Instalaciones += x[r];
+	if ( i != j) {
+	  IloExpr Instalaciones(env);
+	  for (r = 0;r < m;r++) {
+	    if (O[i][r] < O[i][j])
+	      Instalaciones += x[r];
+	  }
+	  modelo.add(Instalaciones <= p - (p - (k - 1)) * v[i][j]);
+	  modelo.add(Instalaciones + M * v[i][j] >= k + 1);
+
+	  /* Si v_{ij} = 1 y u_{ij} = 0 alguntas de las instalaciones de j seran asignadas a i para completar las k */
+	  modelo.add(IloSum(y[i][j]) + M * (1 - v[i][j] + u[i][j]) >= k - Instalaciones);
+	  modelo.add(IloSum(y[i][j]) - M * (1 - v[i][j] + u[i][j]) <= k - Instalaciones);
+
+	  Instalaciones.end();
 	}
-	modelo.add(Instalaciones <= p - (p - (k - 1)) * v[i][j]);
-	modelo.add(Instalaciones + M * v[i][j] >= k + 1);
-
-	/* Si v_{ij} = 1 y u_{ij} = 0 alguntas de las instalaciones de j seran asignadas a i para completar las k */
-	modelo.add(IloSum(y[i][j]) + M * (1 - v[i][j] + u[i][j]) >= k - Instalaciones);
-	modelo.add(IloSum(y[i][j]) + M * (1 - v[i][j] + u[i][j]) <= k - Instalaciones);
-
-	Instalaciones.end();
       }
     }
 
@@ -198,12 +200,12 @@ void SQM_model
     IloExpr workload(env);
     IloNum time_per_km = beta / speed;
     IloNum wt = 0.0;
-    for (k = 0;k < p;k++) {
-      coef = (1 - rho) * pow(rho,k);
+    for (l = 0;l < k;l++) {
+      coef = (1 - rho) * pow(rho,l);
       for (i = 0;i < n;i++) {
 	f_i = f * puntos[i].demand;
 	for (j = 0;j < m;j++) {
-	  workload += f_i * coef * (O[i][j]*time_per_km + wt)* y[i][j][k];
+	  workload += f_i * coef * (O[i][j]*time_per_km + wt)* y[i][j][l];
 	}
       }
     }
