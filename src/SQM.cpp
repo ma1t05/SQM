@@ -4,7 +4,7 @@
 
 int main() {
   instance *I;
-  I = read_points("./../git/PMCLAP/Instancias/Q_MCLP_30.txt");
+  I = read_points("./../PMCLAP/Instancias/Q_MCLP_30.txt");
   double mu = 60.0*24.0/20.0;
   SQM_model(I,4,mu,1.0,40.0);
 
