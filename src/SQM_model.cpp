@@ -36,7 +36,7 @@ void SQM_model
     char VarName[16];
     for(i = 0;i < n;i++){
       sprintf(VarName,"x%d",i+1);
-      x.add(IloBoolVar(env,VarName));
+      x.add(IloIntVar(env,VarName));
     }
 
     for (i = 0;i < n;i++) {
@@ -111,6 +111,7 @@ void SQM_model
       }
     }
       
+    /*  */
     for (i = 0;i < n;i++) {
       for (l = 1;l < k;l++) {
 	for (j = 0;j < m;j++) {
@@ -123,7 +124,7 @@ void SQM_model
 	  balance.end();
 	}
       }
-    }
+    } /* */
 
     cout << "Restricciones disjuntas" << endl;
     /* Restriccion para realacionar 
@@ -165,7 +166,7 @@ void SQM_model
 	      Instalaciones += x[r];
 	  }
 	  modelo.add(Instalaciones <= p - (p - (k - 1)) * v[i][j]);
-	  modelo.add(Instalaciones + M * v[i][j] >= k + 1);
+	  modelo.add(Instalaciones + M * v[i][j] >= k);
 
 	  /* Si v_{ij} = 1 y u_{ij} = 0 alguntas de las instalaciones de j seran asignadas a i para completar las k */
 	  modelo.add(IloSum(y[i][j]) + M * (1 - v[i][j] + u[i][j]) >= k - Instalaciones);
@@ -221,7 +222,10 @@ void SQM_model
       cout << "Solution status: " << cplex.getStatus() << endl;
       cout << "Maximum profit = " << cplex.getObjValue() << endl;
       for(j = 0;j < n;j++){
-	if(cplex.getValue(x[j]) > 0) cout << j+1 << " ";
+	if(cplex.getValue(x[j]) > 0) {
+	  cout << j+1 << ": "
+	       << cplex.getValue(x[j]) << endl;
+	    } 
 	//cout << cplex.getValue(y[j]);
       }
       cout << endl;
