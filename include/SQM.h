@@ -2,7 +2,7 @@
 #ifndef _SQM_H
 #define _SQM_H
 
-#include <cmath>
+#include <math.h>
 using namespace std;
 
 #define EPSILON 0.001
