@@ -2,11 +2,29 @@
 #include "SQM.h"
 #include "SQM_model.h"
 
-int main() {
+int main(int argc,char *argv[]) {
+  string filename;
   instance *I;
-  I = read_points("./../PMCLAP/Instancias/Q_MCLP_30.txt");
-  double mu = 60.0*24.0/20.0;
-  SQM_model(I,5,mu,1.0,40.0);
+  int p;
+  double mu;
+  double f;
+  double v;
+  if (argc < 6) {
+    filename = "./../PMCLAP/Instancias/Q_MCLP_30.txt";
+    p = 5;
+    mu = 60.0*24.0/20.0;
+    f = 0.016;
+    v = 40.0;
+  }
+  else {
+    filename = argv[1];
+    p = atoi(argv[2]);
+    mu = atof(argv[3]);
+    f = atof(argv[4]);
+    v = atof(argv[5]);
+  }
+  I = read_points(filename.c_str());
+  SQM_model(I,p,mu,f,v);
 
   delete[] I->points;
   delete I;

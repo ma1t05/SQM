@@ -17,29 +17,39 @@
  * (5) Return to step 1
  **************************************************************************/
 
-correction_factor_Q(int N,double rho,int k);
+#include "jarvis.h"
+
+double correction_factor_Q(int N,double rho,int k);
+int factorial(int k);
 
 double jarvis_hypercube_approximation
 (int C, /* Number of types of customers*/
  int N, /* Number of servers */
- double lambda*, /* */
- double Tao**, /* */
- int a** /* */) {
+ double *lambda, /* */
+ double **Tao, /* */
+ int **a /* */) {
 
   double rho;
-  double Q_N_rho*;
+  double *Q_N_rho;
   Q_N_rho = new double[N];
   for (int k = 0;k < N;k++)
     Q_N_rho[k] = correction_factor_Q(N,rho,k);
   
 }
 
-correction_factor_Q(int N,double rho,int k){
+double correction_factor_Q(int N,double rho,int k){
   double Q;
+  double P_0,P_N;
   for (int j = k;j < N;j++) {
     Q += (N - j) * pow(N,j) * pow(rho,j - k) / factorial(j - k);
   }
-  return Q * P_0 * factorial(N - k - 1) / (pow(1 - P_N,k) * factorial(N) * (1 - rho * (1 - P_N))
+  return Q * P_0 * factorial(N - k - 1) / (pow(1 - P_N,k) * factorial(N) * (1 - rho * (1 - P_N)));
+}
+					  
+int factorial(int n) {
+  if (n < 2)
+    return 1;
+  return n * factorial(n - 1);
 }
 
 /* eof */
