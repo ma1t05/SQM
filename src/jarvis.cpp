@@ -25,21 +25,54 @@ int factorial(int k);
 double jarvis_hypercube_approximation
 (int C, /* Number of types of customers*/
  int N, /* Number of servers */
- double *lambda, /* */
- double **Tao, /* */
- int **a /* */) {
+ double *lambda, /* arrive rate according to a Poisson process per type */
+ double **Tao, /* expected service time for service i and customer of node m */
+ int **a /* for customers of type m, the list of preferred servers */) {
 
-  double rho;
+  double Rho;
+  double tao;
   double *Q_N_rho;
+  double *rho;
+  
+  /* mean service time \tao */
+  tao = 0.0;
+  for (int i = 0;i < N;i++) for (int m = 0;m < C;m++) tao += Tao[i][m];
+  tao /= (N * C);
+  /* traffic intensity */
+  Rho = lambda * tao / N;
+
+  /* Compute Q(N,\rho,k) */
   Q_N_rho = new double[N];
   for (int k = 0;k < N;k++)
-    Q_N_rho[k] = correction_factor_Q(N,rho,k);
+    Q_N_rho[k] = correction_factor_Q(N,Rho,k);
   
+  /* Aproximation of \rho_i */
+  for (int i = 0;i < N;i++) {
+    double Vi = 0.0;
+    for (int k = 0;k < N;k++) {
+      for (int m = 0;m < C;m++) {
+	if (a[m][k] == i) {
+	  double rho_a_ml = 1.0;
+	  for (int l = 0;l < C;l++) 
+	    if (a[m][l] < a[m][k]) rho_a_ml *= rho[a[m][l]];
+	  Vi += lambda[m] * Tao[i][m] * Q_N_rho[k-1] * rho_a_ml; /* define better name */
+	}
+      }
+    }
+  }
+
 }
 
+/* 
+   Using equation (3)
+   Q(N,rho,k) = \sum_{j = k}^{N-1}{\frac{(N-j)(N^j)(\rho^{j-k})P_0(N-k-1)!}{(j-k)!(1-P_N)^kN!(1-\rho(1-P_N))}}
+   P_0 probability all servers are idle
+   P_N probability all servers are busy
+   \rho(1-P_N) average server workload or utilization (Sevast'yonov 1957)
+*/
 double correction_factor_Q(int N,double rho,int k){
   double Q;
-  double P_0,P_N;
+  double P_0,P_N; /* Pendiente: encontrar valores de P_0 y P_N */
   for (int j = k;j < N;j++) {
     Q += (N - j) * pow(N,j) * pow(rho,j - k) / factorial(j - k);
   }
