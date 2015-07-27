@@ -21,6 +21,7 @@
 
 double correction_factor_Q(int N,double rho,int k);
 int factorial(int k);
+double P_0,P_N; /* Pendiente: encontrar valores de P_0 y P_N */
 
 double jarvis_hypercube_approximation
 (int C, /* Number of types of customers*/
@@ -29,38 +30,92 @@ double jarvis_hypercube_approximation
  double **Tao, /* expected service time for service i and customer of node m */
  int **a /* for customers of type m, the list of preferred servers */) {
 
+  double Lambda;
   double Rho;
   double tao;
-  double *Q_N_rho;
   double *rho;
+  double *Q_N_rho;
   
+  /* INITIALIZE: */
+  Lambda = 0.0;
+  for (int m = 0;m < C;m++) Lambda += lambda[i];
+
+  rho = new double[N]:
+  for (int i = 0; i < N;i++) {
+    rho[i] = 0.0;
+    for (int m = 0; m < C;m++) {
+      if (a[m][1] == i) rho[i] += lambda[m] * Tao[i][m];
+    }
+  }
   /* mean service time \tao */
   tao = 0.0;
   for (int i = 0;i < N;i++) for (int m = 0;m < C;m++) tao += Tao[i][m];
   tao /= (N * C);
   /* traffic intensity */
-  Rho = lambda * tao / N;
+  Rho = Lambda * tao / N;
 
-  /* Compute Q(N,\rho,k) */
+  /* ITERATION: */
   Q_N_rho = new double[N];
-  for (int k = 0;k < N;k++)
-    Q_N_rho[k] = correction_factor_Q(N,Rho,k);
+  double *new_rho = new double[N];
+  do {
+    /* Compute Q(N,\rho,k) */
+    for (int k = 0;k < N;k++)
+      Q_N_rho[k] = correction_factor_Q(N,Rho,k);
   
-  /* Aproximation of \rho_i */
-  for (int i = 0;i < N;i++) {
-    double Vi = 0.0;
-    for (int k = 0;k < N;k++) {
-      for (int m = 0;m < C;m++) {
-	if (a[m][k] == i) {
-	  double rho_a_ml = 1.0;
-	  for (int l = 0;l < C;l++) 
-	    if (a[m][l] < a[m][k]) rho_a_ml *= rho[a[m][l]];
-	  Vi += lambda[m] * Tao[i][m] * Q_N_rho[k-1] * rho_a_ml; /* define better name */
+    /* Aproximation of \rho_i */
+    for (int i = 0;i < N;i++) {
+      double Vi = 0.0;
+      for (int k = 0;k < N;k++) {
+	for (int m = 0;m < C;m++) {
+	  if (a[m][k] == i) {
+	    double rho_a_ml = 1.0;
+	    for (int l = 0;l < C;l++) 
+	      if (a[m][l] < a[m][k]) rho_a_ml *= rho[a[m][l]];
+	    Vi += lambda[m] * Tao[i][m] * Q_N_rho[k-1] * rho_a_ml; /* define better name */
+	  }
 	}
       }
+      new_rho[i] = Vi / (1 + Vi);
     }
-  }
 
+    /* Convergence criterion */
+    double max_change = 0.0;
+    for (int i = 0;i < N;i++)
+      if (abs(rho[i] - new_rho[i]) > max_change)
+	max_change = abs(rho[i] - new_rho[i]);
+    if (max_change < epsilon) break; /* STOP */
+
+    for (int i = 0;i < N;i++)
+      rho[i] = new_rho[i];
+
+    /* Compute P_N */
+    double s_rho = 0.0;
+    for (int i = 0;i < N;i++) s_rho += rho[i];
+    P_N = 1.0 - s_rho / (N * Rho);
+
+    /* Compute \tao */
+    tao = 0.0;
+    for (int m = 0;m < C;m++) {
+      double tmp = 0.0;
+      for (int i = 0;i < N;i++)
+	tmp += Tao[i][m] * f[i][m] / (1 - P_N);
+      tao += lambda[m] * tmp / Lambda;
+    }
+
+    /* Compute f_{im} */
+    for (int i = 0;i < N;i++) {
+      for (int m = 0;m < C;m++) {
+	int k = a[m][i];
+	double rho_a_ml = 1.0;
+	for (int l = 0;l < N;l++)
+	  if (a[m][l] < k) rho_a_ml *= rho[a[m][l]];
+	f[i][m] = Q_N_rho[k - 1] * (1 - rho[i]) * rho_a_ml;
+      }
+    }
+
+  } while (1);
+  delete [] new_rho;
+  delete [] Q_N_rho;
 }
 
 /* 
@@ -72,7 +127,6 @@ double jarvis_hypercube_approximation
 */
 double correction_factor_Q(int N,double rho,int k){
   double Q;
-  double P_0,P_N; /* Pendiente: encontrar valores de P_0 y P_N */
   for (int j = k;j < N;j++) {
     Q += (N - j) * pow(N,j) * pow(rho,j - k) / factorial(j - k);
   }
