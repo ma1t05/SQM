@@ -1,4 +1,12 @@
 /***************************************************************************
+ * Sourece code developed by Luis Maltos
+ * mailto: maltosla@gmail.com
+ * Implementation of the:
+ * Approximating the equilibrium behaivor of multi-server loss systems
+ * J. P. Jarvis, Managment Science, February 1985
+ **************************************************************************/
+
+/***************************************************************************
  * Given:
  *  \lambda_m, arrival rate of costumer of type m
  *  \Tao_{im}, expected service time for server i and customer of type m
@@ -58,6 +66,15 @@ double** jarvis_hypercube_approximation
   /* traffic intensity */
   Rho = Lambda * tao / N;
 
+  /* Define intial values for P_0 and P_N */
+  P_0 = 1.0;
+  for (int i = 0;i < N;i++)
+    P_0 *= (1 - rho[i]);
+
+  P_N = 1.0;
+  for (int i = 0;i < N;i++)
+    P_N *= rho[i];
+
   /* ITERATION: */
   Q_N_rho = new double[N];
   double *new_rho = new double[N];
@@ -75,7 +92,7 @@ double** jarvis_hypercube_approximation
 	    double rho_a_ml = 1.0;
 	    for (int l = 0;l < C;l++) 
 	      if (a[m][l] < a[m][k]) rho_a_ml *= rho[a[m][l]];
-	    Vi += lambda[m] * Tao[i][m] * Q_N_rho[k-1] * rho_a_ml; /* define better name */
+	    Vi += lambda[m] * Tao[i][m] * Q_N_rho[k-1] * rho_a_ml;
 	  }
 	}
       }
