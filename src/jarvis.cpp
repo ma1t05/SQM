@@ -23,7 +23,7 @@ double correction_factor_Q(int N,double rho,int k);
 int factorial(int k);
 double P_0,P_N; /* Pendiente: encontrar valores de P_0 y P_N */
 
-double jarvis_hypercube_approximation
+double** jarvis_hypercube_approximation
 (int C, /* Number of types of customers*/
  int N, /* Number of servers */
  double *lambda, /* arrive rate according to a Poisson process per type */
@@ -35,12 +35,16 @@ double jarvis_hypercube_approximation
   double tao;
   double *rho;
   double *Q_N_rho;
+  double **f;
+
+  f = new double*[N];
+  for (int i = 0; i < N;i++) f[i] = new double[C];
   
   /* INITIALIZE: */
   Lambda = 0.0;
-  for (int m = 0;m < C;m++) Lambda += lambda[i];
+  for (int m = 0;m < C;m++) Lambda += lambda[m];
 
-  rho = new double[N]:
+  rho = new double[N];
   for (int i = 0; i < N;i++) {
     rho[i] = 0.0;
     for (int m = 0; m < C;m++) {
@@ -116,6 +120,8 @@ double jarvis_hypercube_approximation
   } while (1);
   delete [] new_rho;
   delete [] Q_N_rho;
+
+  return f;
 }
 
 /* 
