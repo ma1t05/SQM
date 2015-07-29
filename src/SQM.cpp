@@ -30,7 +30,7 @@ int main(int argc,char *argv[]) {
   delete I;
 }
 
-void heuristic1
+4void heuristic1
 (int p, // number of response units
  network *G, // the transportation network
  double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
