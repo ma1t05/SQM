@@ -1,10 +1,11 @@
 
 #include "SQM.h"
 #include "SQM_model.h"
+#include "instance-creator.h"
 
 int main(int argc,char *argv[]) {
   string filename;
-  instance *I;
+  SQM_instance *I;
   int p;
   double mu;
   double f;
@@ -23,14 +24,18 @@ int main(int argc,char *argv[]) {
     f = atof(argv[4]);
     v = atof(argv[5]);
   }
-  I = read_points(filename.c_str());
-  SQM_model(I,p,mu,f,v);
+  /*I = read_points(demad_file.c_str());*/
+  /* I = IC_read_instance(demand_file,facility_file); */
+  I = IC_create_instance(50,20);
+  IC_write_instance(I,filename+"_demand.ins",filename+"_facility.ins");
+  SQM_model(I,p,3,mu,f,v);
 
-  delete[] I->points;
+  delete[] I->V;
+  delete[] I->W;
   delete I;
 }
 
-4void heuristic1
+void heuristic1
 (int p, // number of response units
  network *G, // the transportation network
  double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
