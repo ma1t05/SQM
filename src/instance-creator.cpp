@@ -3,7 +3,7 @@
 
 float unif(float,float);
 
-SQM_instance* IC_create_instance(int n,int m) {
+SQM_instance* IC_create_instance(int m,int n) {
   SQM_instance *I;
   I = new SQM_instance;
   I->M = m;

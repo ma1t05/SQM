@@ -279,9 +279,9 @@ void SQM_model
     
     cout << "++ Variables ++" << endl;
     IloIntVarArray x(env);
-    BoolVarArrayMatrix y(env,n);
-    BoolVarMatrix u(env,n);
-    BoolVarMatrix v(env,n);
+    BoolVarArrayMatrix y(env,m);
+    BoolVarMatrix u(env,m);
+    BoolVarMatrix v(env,m);
     
     cout << "Nombre las variables para facil identificacion" << endl;
     char VarName[16];
