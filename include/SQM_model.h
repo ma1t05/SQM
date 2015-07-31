@@ -26,6 +26,8 @@ void SQM_model
  float f, // portion of demand
  float speed); // speed
 
+fstream LogFile;
+
 #endif
 
 /* eof */

@@ -12,8 +12,13 @@ int main(int argc,char *argv[],char *envp[]) {
   double v;
 
   Config config("SQM.conf",envp);
-  int M_clients = config.pInt("M");
+  char *penv;
+  int M_clients = config.pInt("M"); 
+  penv = getenv("clients");
+  if (penv != NULL) M_clients = atoi(penv);
   int N_sites = config.pInt("N");
+  penv = getenv("facilities");
+  if (penv != NULL) N_sites = atoi(penv);
 
   if (argc < 6) {
     filename = "./../PMCLAP/Instancias/Q_MCLP_30.txt";
@@ -30,6 +35,9 @@ int main(int argc,char *argv[],char *envp[]) {
     v = atof(argv[5]);
   }
   
+  LogFile = "SQM_"+itoa(M_clients)+"_"+itoa(N_sites);
+  LogFile += iota(p)+".log";
+
   /*I = read_points(demad_file.c_str());*/
   /* I = IC_read_instance(demand_file,facility_file); */
   I = IC_create_instance(M_clients,N_sites);

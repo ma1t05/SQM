@@ -46,8 +46,8 @@ void IC_write_instance(SQM_instance* I,string demand_output,string facility_outp
   facilityfile.open(facility_output.c_str(),fstream::out);
   facilityfile << I->N << endl;
   for (int i = 0;i < I->M;i++) {
-    facilityfile << (I->V)[i].x << " " 
-		 << (I->V)[i].y
+    facilityfile << (I->W)[i].x << " " 
+		 << (I->W)[i].y
 		 << endl;
   }
   facilityfile.close();
