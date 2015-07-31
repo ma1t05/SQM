@@ -1,15 +1,20 @@
 
 #include "SQM.h"
 #include "SQM_model.h"
-#include "instance-creator.h"
+#include "config.h"
 
-int main(int argc,char *argv[]) {
+int main(int argc,char *argv[],char *envp[]) {
   string filename;
   SQM_instance *I;
   int p;
   double mu;
   double f;
   double v;
+
+  Config config("SQM.conf",envp);
+  int M_clients = config.pInt("M");
+  int N_sites = config.pInt("N");
+
   if (argc < 6) {
     filename = "./../PMCLAP/Instancias/Q_MCLP_30.txt";
     p = 5;
@@ -24,15 +29,23 @@ int main(int argc,char *argv[]) {
     f = atof(argv[4]);
     v = atof(argv[5]);
   }
+  
   /*I = read_points(demad_file.c_str());*/
   /* I = IC_read_instance(demand_file,facility_file); */
-  I = IC_create_instance(50,20);
+  I = IC_create_instance(M_clients,N_sites);
   IC_write_instance(I,filename+"_demand.ins",filename+"_facility.ins");
   SQM_model(I,p,3,mu,f,v);
 
   delete[] I->V;
   delete[] I->W;
   delete I;
+}
+
+void read_config_file() {
+  fstream config;
+  
+  config.open("SQM.conf",fstream::in);
+  
 }
 
 void heuristic1
