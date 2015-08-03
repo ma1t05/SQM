@@ -3,7 +3,7 @@
 #include "SQM_model.h"
 #include "config.h"
 
-int main(int argc,char *argv[],char *envp[]) {
+int main(int argc,char *argv[]) {
   string filename;
   SQM_instance *I;
   int p;
@@ -11,7 +11,7 @@ int main(int argc,char *argv[],char *envp[]) {
   double f;
   double v;
 
-  Config config("SQM.conf",envp);
+  Config config("SQM.conf",NULL);
   char *penv;
   int M_clients = config.pInt("M"); 
   penv = getenv("clients");
@@ -36,7 +36,7 @@ int main(int argc,char *argv[],char *envp[]) {
   }
   
   LogFile = "SQM_"+itoa(M_clients)+"_"+itoa(N_sites);
-  LogFile += iota(p)+".log";
+  LogFile += itoa(p)+".log";
 
   /*I = read_points(demad_file.c_str());*/
   /* I = IC_read_instance(demand_file,facility_file); */
