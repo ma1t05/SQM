@@ -1,10 +1,11 @@
 
 #ifndef _SQM_MODEL
-#define _SQM_MODEL
+#define _SQM_MODEL 1
 
 #include "point.h"
 #include "instance-creator.h"
 #include <ilcplex/ilocplex.h>
+#include <sstream>
 
 ILOSTLBEGIN
 
@@ -26,7 +27,7 @@ void SQM_model
  float f, // portion of demand
  float speed); // speed
 
-fstream LogFile;
+extern std::ofstream LogFile;
 
 #endif
 

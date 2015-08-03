@@ -3,16 +3,22 @@
 #include "SQM_model.h"
 #include "config.h"
 
+std::ofstream LogFile;
+
 int main(int argc,char *argv[]) {
   string filename;
+  stringstream LogName;
   SQM_instance *I;
   int p;
   double mu;
   double f;
   double v;
-
-  Config config("SQM.conf",NULL);
+  char *env;
+  env = NULL;
+  
+  Config config("SQM.conf",&env);
   char *penv;
+  cout << "Termina de leer archivo de configuraciones" << endl;
   int M_clients = config.pInt("M"); 
   penv = getenv("clients");
   if (penv != NULL) M_clients = atoi(penv);
@@ -35,14 +41,15 @@ int main(int argc,char *argv[]) {
     v = atof(argv[5]);
   }
   
-  LogFile = "SQM_"+itoa(M_clients)+"_"+itoa(N_sites);
-  LogFile += itoa(p)+".log";
+  LogName << "SQM_" << M_clients << "_" << N_sites << "_" << p << ".log";
+  LogFile.open(LogName.str().c_str());
 
   /*I = read_points(demad_file.c_str());*/
   /* I = IC_read_instance(demand_file,facility_file); */
   I = IC_create_instance(M_clients,N_sites);
   IC_write_instance(I,filename+"_demand.ins",filename+"_facility.ins");
   SQM_model(I,p,3,mu,f,v);
+  LogFile.close();
 
   delete[] I->V;
   delete[] I->W;

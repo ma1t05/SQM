@@ -194,7 +194,7 @@ void SQM_model
     for (i = 0;i < n;i++)
       rho += f * puntos[i].demand;
     rho /= (mu * p);
-    cout << "rho = " << rho << endl;
+    LogFile << "rho = " << rho << endl;
     // rho from ReVelle & Hogan
     // pendiente
     
@@ -215,33 +215,35 @@ void SQM_model
     modelo.add(IloMaximize(env,workload));
     workload.end();
 
-    cout << "Resuelver modelo" << endl;
+    cout << "Solve model" << endl;
     IloCplex cplex(modelo);
-    cplex.exportModel("SQM-model.lp");
+    stringstream ModelName;
+    ModelName << "SQM-model_" << n << "_" << m << "_" << p << ".lp";
+    cplex.exportModel(ModelName.str().c_str());
     if(cplex.solve()){
-      cout << "Solution status: " << cplex.getStatus() << endl;
-      cout << "Maximum profit = " << cplex.getObjValue() << endl;
+      LogFile << "Solution status: " << cplex.getStatus() << endl;
+      LogFile << "Maximum profit = " << cplex.getObjValue() << endl;
       for(j = 0;j < n;j++){
 	if(cplex.getValue(x[j]) > 0) {
-	  cout << j+1 << ": "
+	  LogFile << j+1 << ": "
 	       << cplex.getValue(x[j]) << endl;
 	    } 
-	//cout << cplex.getValue(y[j]);
+	//LogFile << cplex.getValue(y[j]);
       }
-      cout << endl;
+      LogFile << endl;
       /*for(i = 0;i < n;i++){
-	cout << "-";
+	LogFile << "-";
       }
-      cout << endl;
+      LogFile << endl;
       for(i = 0;i < n;i++){
 	for(j = 0;j < n;j++){
-	  cout << cplex.getValue(x[i][j]);
+	  LogFile << cplex.getValue(x[i][j]);
 	}
-	cout << endl;
+	LogFile << endl;
       }/**/
     }
     else {
-      cout << "No solution found" << endl;
+      LogFile << "No solution found" << endl;
     }
     
   }
@@ -443,7 +445,7 @@ void SQM_model
     for (i = 0;i < m;i++)
       rho += f * puntos[i].demand;
     rho /= (mu * p);
-    cout << "rho = " << rho << endl;
+    LogFile << "rho = " << rho << endl;
     // rho from ReVelle & Hogan
     // pendiente
     
@@ -464,33 +466,39 @@ void SQM_model
     modelo.add(IloMaximize(env,workload));
     workload.end();
 
-    cout << "Resuelver modelo" << endl;
     IloCplex cplex(modelo);
-    cplex.exportModel("SQM-model.lp");
+    stringstream ModelName;
+    ModelName << "SQM-model_" << n << "_" << m << "_" << p << ".lp";
+    cplex.exportModel(ModelName.str().c_str());
+    cout << "Solve model" << endl;
+    LogFile << endl << "** Cplex Start **" << endl;
+    cplex.setOut(LogFile);
     if(cplex.solve()){
-      cout << "Solution status: " << cplex.getStatus() << endl;
-      cout << "Maximum profit = " << cplex.getObjValue() << endl;
+      LogFile << "** Cplex Ends **" << endl << endl;
+      LogFile << "Solution status: " << cplex.getStatus() << endl;
+      LogFile << "Maximum profit = " << cplex.getObjValue() << endl;
       for(j = 0;j < n;j++){
 	if(cplex.getValue(x[j]) > 0) {
-	  cout << j+1 << ": "
+	  LogFile << j+1 << ": "
 	       << cplex.getValue(x[j]) << endl;
 	    } 
-	//cout << cplex.getValue(y[j]);
+	//LogFile << cplex.getValue(y[j]);
       }
-      cout << endl;
+      LogFile << endl;
       /*for(i = 0;i < n;i++){
-	cout << "-";
+	LogFile << "-";
       }
-      cout << endl;
+      LogFile << endl;
       for(i = 0;i < n;i++){
 	for(j = 0;j < n;j++){
-	  cout << cplex.getValue(x[i][j]);
+	  LogFile << cplex.getValue(x[i][j]);
 	}
-	cout << endl;
+	LogFile << endl;
       }/**/
     }
     else {
-      cout << "No solution found" << endl;
+      LogFile << "No solution found" << endl;
+      LogFile << "** Cplex Ends **" << endl << endl;
     }
     
   }
