@@ -1,0 +1,24 @@
+#!/bin/bash
+# Script for run the SQM model
+
+# Comienza a correr instancias de 30 nodos
+SQM=./SQM
+mu=50
+f=0.0016
+v=65.5
+
+for M in {50..100..10}
+do for N in {10..50..10}
+    do
+	clients=M
+	facilities=N
+	NOW=$(date +"%y%m%d_%H%M")
+	file=Pba_${NOW}_${M}_${N}_${RANDOM}
+	for p in {5..10}
+	do
+	    $SQM $file $p $mu $f $v
+	done
+    done
+done
+
+# eof
