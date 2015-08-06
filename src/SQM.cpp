@@ -13,21 +13,13 @@ int main(int argc,char *argv[]) {
   double mu;
   double f;
   double v;
-  char *env;
-  env = NULL;
-  
-  Config config("SQM.conf",&env);
-  char *penv;
-  cout << "Termina de leer archivo de configuraciones" << endl;
-  int M_clients = config.pInt("M"); 
-  penv = getenv("clients");
-  if (penv != NULL) M_clients = atoi(penv);
-  int N_sites = config.pInt("N");
-  penv = getenv("facilities");
-  if (penv != NULL) N_sites = atoi(penv);
+  int M_clients;
+  int N_sites;
 
-  if (argc < 6) {
-    filename = "./../PMCLAP/Instancias/Q_MCLP_30.txt";
+  if (argc < 8) {
+    filename = "Pba";
+    M_clients = 50;
+    N_sites = 10;
     p = 5;
     mu = 60.0*24.0/20.0;
     f = 0.016;
@@ -35,12 +27,15 @@ int main(int argc,char *argv[]) {
   }
   else {
     filename = argv[1];
-    p = atoi(argv[2]);
-    mu = atof(argv[3]);
-    f = atof(argv[4]);
-    v = atof(argv[5]);
+    M_clients = atoi(argv[2]);
+    N_sites = atoi(argv[3]);
+    p = atoi(argv[4]);
+    mu = atof(argv[5]);
+    f = atof(argv[6]);
+    v = atof(argv[7]);
   }
   
+  srand(time(NULL));
   LogName << "SQM_" << M_clients << "_" << N_sites << "_" << p << ".log";
   LogFile.open(LogName.str().c_str());
 
@@ -48,8 +43,10 @@ int main(int argc,char *argv[]) {
   /* I = IC_read_instance(demand_file,facility_file); */
   I = IC_create_instance(M_clients,N_sites);
   IC_write_instance(I,filename+"_demand.ins",filename+"_facility.ins");
+  IC_plot_instance(filename,filename+"_demand.ins",filename+"_facility.ins");
   SQM_model(I,p,3,mu,f,v);
   LogFile.close();
+  cout << LogName.str() << endl;
 
   delete[] I->V;
   delete[] I->W;
