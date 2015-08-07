@@ -45,7 +45,7 @@ void IC_write_instance(SQM_instance* I,string demand_output,string facility_outp
 
   facilityfile.open(facility_output.c_str(),fstream::out);
   facilityfile << I->N << endl;
-  for (int i = 0;i < I->M;i++) {
+  for (int i = 0;i < I->N;i++) {
     facilityfile << (I->W)[i].x << " " 
 		 << (I->W)[i].y
 		 << endl;
@@ -57,8 +57,8 @@ void IC_plot_instance(string output,string demand_output,string facility_output)
   FILE *gnuPipe = popen("gnuplot","w");
   fprintf(gnuPipe,"set term svg\n");
   fprintf(gnuPipe,"set output '%s.svg'\n",output.c_str());
-  //fprintf(gnuPipe,".svg'\n");
-  fprintf(gnuPipe,"unset key\n");
+  fprintf(gnuPipe,".svg'\n");
+  fprintf(gnuPipe,"set key outside\n");
   fprintf(gnuPipe,"unset border\n");
   fprintf(gnuPipe,"unset yzeroaxis\n");
   fprintf(gnuPipe,"unset xtics\n");
@@ -66,8 +66,8 @@ void IC_plot_instance(string output,string demand_output,string facility_output)
   fprintf(gnuPipe,"unset ztics\n");
 
   fprintf(gnuPipe,"plot ");
-  fprintf(gnuPipe,"'%s' every ::1 using 1:2 with points",demand_output.c_str());
-  fprintf(gnuPipe,"'%s' every ::1 using 1:2 with points",facility_output.c_str());
+  fprintf(gnuPipe,"'%s' using 1:2 every ::1 with points title 'Demand'",demand_output.c_str());
+  fprintf(gnuPipe,", '%s' using 1:2 every ::1 with points title 'Facility'",facility_output.c_str());
   fprintf(gnuPipe,"\n");
   pclose(gnuPipe);
 }
