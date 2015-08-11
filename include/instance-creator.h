@@ -3,6 +3,7 @@
 #define _INSTANCE_CREATOR_H 1
 
 #include <cstdlib>
+#include <ctime>
 #include "point.h"
 #include "SQM_heuristic.h"
 
@@ -14,6 +15,7 @@
 SQM_instance* IC_create_instance (int n,int m);
 SQM_instance* IC_read_instance (string,string);
 void IC_write_instance (SQM_instance*,string,string);
+void IC_plot_instance (string,string,string);
 
 #endif
 
