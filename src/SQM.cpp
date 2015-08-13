@@ -19,10 +19,10 @@ int main(int argc,char *argv[]) {
   if (argc < 8) {
     filename = "Pba";
     M_clients = 50;
-    N_sites = 10;
+    N_sites = 30;
     p = 5;
     mu = 60.0*24.0/20.0;
-    f = 0.016;
+    f = 0.006;
     v = 40.0;
   }
   else {
@@ -43,8 +43,9 @@ int main(int argc,char *argv[]) {
   /* I = IC_read_instance(demand_file,facility_file); */
   I = IC_create_instance(M_clients,N_sites);
   IC_write_instance(I,filename+"_demand.ins",filename+"_facility.ins");
-  IC_plot_instance(filename,filename+"_demand.ins",filename+"_facility.ins");
-  SQM_model(I,p,3,mu,f,v);
+  /*IC_plot_instance(filename,filename+"_demand.ins",filename+"_facility.ins");*/
+  /*SQM_model(I,p,3,mu,f,v);*/
+  Goldberg(I,p,mu,f);
   LogFile.close();
   cout << LogName.str() << endl;
 
