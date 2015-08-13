@@ -3,6 +3,15 @@
 #define _SQM_H
 
 #include <math.h>
+#include "point.h"
+#include <ilcplex/ilocplex.h>
+ILOSTLBEGIN
+
+typedef IloArray<IloBoolVarArray> BoolVarMatrix;
+typedef IloArray<BoolVarMatrix> BoolVarArrayMatrix;
+typedef IloArray<IloNumArray> NumMatrix;
+typedef IloArray<IloIntArray> IntMatrix;
+
 using namespace std;
 
 #define EPSILON 0.001
@@ -23,4 +32,6 @@ typedef struct SQM_instance SQM_instance;
 
 #endif
 
+
 /* eof */
+

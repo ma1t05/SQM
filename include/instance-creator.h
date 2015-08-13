@@ -4,8 +4,7 @@
 
 #include <cstdlib>
 #include <ctime>
-#include "point.h"
-#include "SQM_heuristic.h"
+#include "SQM.h"
 
 #define MIN_X 0.0
 #define MAX_X 1024.0

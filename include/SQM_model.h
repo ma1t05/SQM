@@ -4,15 +4,8 @@
 
 #include "point.h"
 #include "instance-creator.h"
-#include <ilcplex/ilocplex.h>
 #include <sstream>
 
-ILOSTLBEGIN
-
-typedef IloArray<IloBoolVarArray> BoolVarMatrix;
-typedef IloArray<BoolVarMatrix> BoolVarArrayMatrix;
-typedef IloArray<IloNumArray> NumMatrix;
-typedef IloArray<IloIntArray> IntMatrix;
 void SQM_model
 (instance* I, // Set of points
  int p, // facilities
