@@ -18,7 +18,8 @@ void Goldberg
     IloNum f_i;
     IloNum rho;
     IloNum M = 10000.0;
-    point *client = I->V;
+    point *client,*potencial_site;
+          
     cout << "Comienza definicion del Modelo" << endl;
     IloModel modelo(env);
     
@@ -77,6 +78,8 @@ void Goldberg
     }
 
     cout << "Restricion de orden de asignaicion" << endl;
+    client = I->V;
+    potencial_site = I->W;
     NumMatrix O(env,m);
     for (i = 0;i < m;i++)
       O[i] = IloNumArray(env,n);
@@ -116,27 +119,31 @@ void Goldberg
       for (k = 0;k < p;k++) {
 	coef = (1 - rho) * pow(rho,k);
 	for (i = 0;i < m;i++) {
-	  f_i = f * cliente[i].demand;
+	  f_i = f * client[i].demand;
 	  workload += f_i * coef * O[i][j]* y[i][j][k];
 	}
       }
       modelo.add(S + M*x[j] <= workload + M);
     }
     
-    cout << "Funcion Objetivo" << endl;
+    cout << "++ Funcion Objetivo ++" << endl;
     modelo.add(IloMaximize(env,S));
 
     cout << "Resuelve modelo" << endl;
     IloCplex cplex(modelo);
-    cplex.exportModel("Problema-P.lp");
-    if(cplex.solve()){
+    cplex.setOut(LogFile);
+    stringstream ModelName;
+    ModelName << "Goldberg-model_" << m << "_" << n << "_" << p << ".lp";
+    cplex.exportModel(ModelName.str().c_str());
+    if (cplex.solve()) {
       cout << "Solution status: " << cplex.getStatus() << endl;
       cout << "Maximum profit = " << cplex.getObjValue() << endl;
-      for(j = 0;j < n;j++){
-	if(cplex.getValue(x[j]) > 0) cout << j+1 << " ";
+      for (j = 0;j < n;j++) {
+	if (cplex.getValue(x[j]) > 0.5) cout << j+1 << " ";
 	//cout << cplex.getValue(y[j]);
       }
       cout << endl;
+
       /*for(i = 0;i < n;i++){
 	cout << "-";
       }
@@ -147,6 +154,7 @@ void Goldberg
 	}
 	cout << endl;
       }/**/
+
       gnuplot_goldberg(I,p,&cplex,&x,&y);
     }
     else {
@@ -164,33 +172,42 @@ void Goldberg
   
 }
 
-void gnuplot_goldberg(instance *I,int p,IloCplex *cplex, IloBoolVarArray *x, BoolVarArrayMatrix *y) {
+void gnuplot_goldberg(SQM_instance *I,int p,IloCplex *cplex, IloBoolVarArray *x, BoolVarArrayMatrix *y) {
   IloInt i,j,k;
-  IloInt n = I->n;
-  point *puntos = I->points;
+  IloInt n = I->N,m = I->M;
+  point *client = I->V;
+  point *potencial_site = I->W;
+  char outfilename[32],centersfilename[32],clientsfilename[32];
 
-  char outfilename[32],centersfilename[32];
-
-  sprintf(centersfilename,"../Instancias/Centros_%d.dat",n);
+  sprintf(centersfilename,"Tmp_centers_%d.dat",n);
   ofstream centros(centersfilename);
 
-  for(i = 0;i < n;i++){
-    if (cplex->getValue((*x)[i]))
-      centros << puntos[i].x << " " << puntos[i].y << endl;
+  for(j = 0;j < n;j++){
+    if (cplex->getValue((*x)[j]))
+      centros << potencial_site[j].x << " " << potencial_site[j].y << endl;
   }
   centros.close();
 
+  sprintf(clientsfilename,"Tmp_clients_%d.dat",n);
+  ofstream clients(clientsfilename);
+
+  for(i = 0;i < m;i++){
+    if (cplex->getValue((*x)[i]))
+      clients << client[i].x << " " << client[i].y << endl;
+  }
+  clients.close();
+
   for (k = 0;k < p;k++) {
-    sprintf(outfilename,"../Instancias/Ejes_%d_%d.dat",n,k+1);
+    sprintf(outfilename,"Tmp_edges_%d_%d.dat",n,k+1);
     ofstream outfile(outfilename);
 
-    for(i = 0;i < n;i++){
+    for(i = 0;i < m;i++){
       for(j = 0;j < n;j++){
-	if (i != j && cplex->getValue((*y)[i][j][k]))
-	  outfile << puntos[i].x << " " 
-		  << puntos[i].y << " " 
-		  << puntos[j].x - puntos[i].x << " " 
-		  << puntos[j].y - puntos[i].y << endl;
+	if (cplex->getValue((*y)[i][j][k]) > 0.5)
+	  outfile << client[i].x << " " 
+		  << client[i].y << " " 
+		  << potencial_site[j].x - client[i].x << " " 
+		  << potencial_site[j].y - client[i].y << endl;
       }
     }
 
@@ -199,7 +216,7 @@ void gnuplot_goldberg(instance *I,int p,IloCplex *cplex, IloBoolVarArray *x, Boo
 
   FILE *gnuPipe = popen("gnuplot","w");
   fprintf(gnuPipe,"set term svg\n");
-  fprintf(gnuPipe,"set output '../gnuplot/Goldberg_%d_%d.svg'\n",n,p);
+  fprintf(gnuPipe,"set output 'Goldberg_%d_%d_%d.svg'\n",m,n,p);
   fprintf(gnuPipe,"unset key\n");
   fprintf(gnuPipe,"unset border\n");
   fprintf(gnuPipe,"unset yzeroaxis\n");
@@ -210,10 +227,11 @@ void gnuplot_goldberg(instance *I,int p,IloCplex *cplex, IloBoolVarArray *x, Boo
   //fprintf(gnuPipe,"set style arrow 1 nohead lw 2\n");
   //fprintf(gnuPipe,"set arrow arrowstyle 1\n");
   fprintf(gnuPipe,"plot ");
-  fprintf(gnuPipe,"'../Instancias/Q_MCLP_%d.txt' every ::1 using 1:2 with points lc rgb \"black\"",n);
-  fprintf(gnuPipe,", '../Instancias/Centros_%d.dat' using 1:2 with points lc rgb \"red\"",n);
+  fprintf(gnuPipe,"'%s' using 1:2 with points lc rgb \"black\"",clientsfilename);
+  fprintf(gnuPipe,", '%s' using 1:2 with points lc rgb \"red\"",centersfilename);
   for (k = 0;k < p;k++) {
-    fprintf(gnuPipe,", '../Instancias/Ejes_%d_%d.dat' using 1:2:3:4 with vectors nohead" /* linecolor rgb \"dark-blue\"" */ ,n,k+1);
+    sprintf(outfilename,"Tmp_edges_%d_%d.dat",n,k+1);
+    fprintf(gnuPipe,", '%s' using 1:2:3:4 with vectors nohead" /* linecolor rgb \"dark-blue\"" */ ,outfilename);
   }
 
   fprintf(gnuPipe,"\n");
