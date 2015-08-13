@@ -30,6 +30,8 @@ struct SQM_instance {
 typedef struct network network;
 typedef struct SQM_instance SQM_instance;
 
+extern std::ofstream LogFile;
+
 #endif
 
 

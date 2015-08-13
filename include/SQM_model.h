@@ -20,8 +20,6 @@ void SQM_model
  float f, // portion of demand
  float speed); // speed
 
-extern std::ofstream LogFile;
-
 #endif
 
 /* eof */
