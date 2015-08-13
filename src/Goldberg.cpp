@@ -13,7 +13,7 @@ void Goldberg
 {
   IloEnv env;
   try {
-    IloInt i,j,k,r;
+    int i,j,k,r;
     IloInt n = I->N,m= I->M;
     IloNum f_i;
     IloNum rho;
@@ -26,7 +26,7 @@ void Goldberg
     cout << "++ Variables ++" << endl;
     IloNumVar S(env,0,IloInfinity,IloNumVar::Float,"S");
     IloBoolVarArray x(env);
-    BoolVarArrayMatrix y(env,n);
+    BoolVarArrayMatrix y(env,m);
     
     char VarName[16];
     for(i = 0;i < n;i++){
@@ -173,8 +173,8 @@ void Goldberg
 }
 
 void gnuplot_goldberg(SQM_instance *I,int p,IloCplex *cplex, IloBoolVarArray *x, BoolVarArrayMatrix *y) {
-  IloInt i,j,k;
-  IloInt n = I->N,m = I->M;
+  int i,j,k;
+  int n = I->N,m = I->M;
   point *client = I->V;
   point *potencial_site = I->W;
   char outfilename[32],centersfilename[32],clientsfilename[32];
@@ -192,17 +192,17 @@ void gnuplot_goldberg(SQM_instance *I,int p,IloCplex *cplex, IloBoolVarArray *x,
   ofstream clients(clientsfilename);
 
   for(i = 0;i < m;i++){
-    if (cplex->getValue((*x)[i]))
-      clients << client[i].x << " " << client[i].y << endl;
+    clients << client[i].x << " " << client[i].y << endl;
   }
   clients.close();
 
   for (k = 0;k < p;k++) {
-    sprintf(outfilename,"Tmp_edges_%d_%d.dat",n,k+1);
+    sprintf(outfilename,"Tmp_edges_%d_%d_%d.dat",m,n,k+1);
     ofstream outfile(outfilename);
 
     for(i = 0;i < m;i++){
       for(j = 0;j < n;j++){
+	cout << "i:" << i << "\tj:" << j << "\tk:" << k << endl;
 	if (cplex->getValue((*y)[i][j][k]) > 0.5)
 	  outfile << client[i].x << " " 
 		  << client[i].y << " " 
@@ -216,7 +216,6 @@ void gnuplot_goldberg(SQM_instance *I,int p,IloCplex *cplex, IloBoolVarArray *x,
 
   FILE *gnuPipe = popen("gnuplot","w");
   fprintf(gnuPipe,"set term svg\n");
-  fprintf(gnuPipe,"set output 'Goldberg_%d_%d_%d.svg'\n",m,n,p);
   fprintf(gnuPipe,"unset key\n");
   fprintf(gnuPipe,"unset border\n");
   fprintf(gnuPipe,"unset yzeroaxis\n");
@@ -226,15 +225,26 @@ void gnuplot_goldberg(SQM_instance *I,int p,IloCplex *cplex, IloBoolVarArray *x,
   //fprintf(gnuPipe,"set title \"Servicio de %.0f\n",cplex->getObjValue());
   //fprintf(gnuPipe,"set style arrow 1 nohead lw 2\n");
   //fprintf(gnuPipe,"set arrow arrowstyle 1\n");
+  fprintf(gnuPipe,"set output 'Goldberg_%d_%d_%d.svg'\n",m,n,p);
   fprintf(gnuPipe,"plot ");
   fprintf(gnuPipe,"'%s' using 1:2 with points lc rgb \"black\"",clientsfilename);
   fprintf(gnuPipe,", '%s' using 1:2 with points lc rgb \"red\"",centersfilename);
   for (k = 0;k < p;k++) {
-    sprintf(outfilename,"Tmp_edges_%d_%d.dat",n,k+1);
+    sprintf(outfilename,"Tmp_edges_%d_%d_%d.dat",m,n,k+1);
     fprintf(gnuPipe,", '%s' using 1:2:3:4 with vectors nohead" /* linecolor rgb \"dark-blue\"" */ ,outfilename);
   }
-
   fprintf(gnuPipe,"\n");
+
+  for (k = 0;k < p;k++) {
+    sprintf(outfilename,"Tmp_edges_%d_%d_%d.dat",m,n,k+1);
+    fprintf(gnuPipe,"set output 'Goldberg_%d_%d_%d_%d.svg'\n",m,n,p,k+1);
+    fprintf(gnuPipe,"plot ");
+    fprintf(gnuPipe,"'%s' using 1:2 with points lc rgb \"black\"",clientsfilename);
+    fprintf(gnuPipe,", '%s' using 1:2 with points lc rgb \"red\"",centersfilename);
+    fprintf(gnuPipe,", '%s' using 1:2:3:4 with vectors nohead" /* linecolor rgb \"dark-blue\"" */ ,outfilename);
+    fprintf(gnuPipe,"\n");
+  }
+
   pclose(gnuPipe);
 
 }

@@ -1,6 +1,7 @@
 
 #include "SQM.h"
 #include "SQM_model.h"
+#include "Goldberg.h"
 #include "config.h"
 
 std::ofstream LogFile;
