@@ -463,7 +463,7 @@ void SQM_model
     }
     
     cout << "Funcion Objetivo" << endl;
-    modelo.add(IloMaximize(env,workload));
+    modelo.add(IloMinimize(env,workload));
     workload.end();
 
     IloCplex cplex(modelo);

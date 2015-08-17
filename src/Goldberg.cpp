@@ -123,11 +123,11 @@ void Goldberg
 	  workload += f_i * coef * O[i][j]* y[i][j][k];
 	}
       }
-      modelo.add(S + M*x[j] <= workload + M);
+      modelo.add(S >= workload);
     }
     
     cout << "++ Funcion Objetivo ++" << endl;
-    modelo.add(IloMaximize(env,S));
+    modelo.add(IloMinimize(env,S));
 
     cout << "Resuelve modelo" << endl;
     IloCplex cplex(modelo);

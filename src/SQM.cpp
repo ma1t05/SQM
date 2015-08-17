@@ -45,8 +45,8 @@ int main(int argc,char *argv[]) {
   I = IC_create_instance(M_clients,N_sites);
   IC_write_instance(I,filename+"_demand.ins",filename+"_facility.ins");
   /*IC_plot_instance(filename,filename+"_demand.ins",filename+"_facility.ins");*/
-  /*SQM_model(I,p,3,mu,f,v);*/
-  Goldberg(I,p,mu,f);
+  SQM_model(I,p,p,mu,f,v);
+  /*Goldberg(I,p,mu,f);*/
   LogFile.close();
   cout << LogName.str() << endl;
 
