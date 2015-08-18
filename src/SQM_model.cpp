@@ -257,7 +257,7 @@ void SQM_model
   
 }
 
-void SQM_model
+int* SQM_model
 (SQM_instance* I, // Set of points
  int p, // facilities
  int k, // Number of facilities that care
@@ -265,6 +265,7 @@ void SQM_model
  float f, // portion of demand
  float speed) // speed
 {
+  int *Sol;
   IloEnv env;
   try {
     int i,j,l,r;
@@ -474,13 +475,16 @@ void SQM_model
     LogFile << endl << "** Cplex Start **" << endl;
     cplex.setOut(LogFile);
     if(cplex.solve()){
+      Sol = new int[n];
       LogFile << "** Cplex Ends **" << endl << endl;
       LogFile << "Solution status: " << cplex.getStatus() << endl;
       LogFile << "Maximum profit = " << cplex.getObjValue() << endl;
       for(j = 0;j < n;j++){
-	if(cplex.getValue(x[j]) > 0) {
+	Sol[j] = 0;
+	if(cplex.getValue(x[j]) > 0.5) {
+	  Sol[j] = cplex.getValue(x[j]);
 	  LogFile << j+1 << ": "
-	       << cplex.getValue(x[j]) << endl;
+	       << Sol[j] << endl;
 	    } 
 	//LogFile << cplex.getValue(y[j]);
       }
@@ -499,17 +503,20 @@ void SQM_model
     else {
       LogFile << "No solution found" << endl;
       LogFile << "** Cplex Ends **" << endl << endl;
+      Sol = NULL;
     }
     
   }
   catch (IloException& e) {
     cerr << "Concert exception caught: " << e << endl;
+    Sol = NULL;
   }
   catch (...) {
     cerr << "Unknown exception caught" << endl;
+    Sol = NULL;
   }
   env.end();
-  
+  return Sol;
 }
 
 void gnuplot_goldberg(instance *I,int p,IloCplex *cplex, IloBoolVarArray *x, BoolVarArrayMatrix *y) {

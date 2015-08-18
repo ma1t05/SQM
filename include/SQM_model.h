@@ -12,7 +12,7 @@ void SQM_model
  float mu, // rate parameter
  float f, // portion of demand
  float speed); // speed
-void SQM_model
+int* SQM_model
 (SQM_instance* I, // Set of points
  int p, // facilities
  int k, // Number of facilities that care
