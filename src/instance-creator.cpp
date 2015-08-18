@@ -33,7 +33,7 @@ SQM_instance* IC_read_instance (string Demand_nodes,string facility_nodes) {
   I->M = m;
   I->V = new point[m];
   for (int i = 0;i < m;i++) {
-    demandfile >> (I->V)[i].x >> (I->V)[i].y >> (I->V)[i].y;
+    demandfile >> (I->V)[i].x >> (I->V)[i].y >> (I->V)[i].demand;
   }
   demandfile.close();
   

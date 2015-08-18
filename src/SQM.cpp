@@ -49,7 +49,9 @@ int main(int argc,char *argv[]) {
     IC_write_instance(I,filename+"_demand.ins",filename+"_facility.ins");
   }
   Sol = SQM_model(I,p,l,mu,f,v);
-  IC_plot_instance(I,Sol,filename);		   
+  char sub[16];
+  sprintf(sub,"_%02d_%02d",p,l);
+  IC_plot_instance(I,Sol,filename+sub);
   /*Goldberg(I,p,mu,f);*/
   LogFile.close();
   cout << LogName.str() << endl;
