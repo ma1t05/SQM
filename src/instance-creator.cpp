@@ -24,9 +24,27 @@ SQM_instance* IC_create_instance(int m,int n) {
 }
 
 SQM_instance* IC_read_instance (string Demand_nodes,string facility_nodes) {
+  int n,m;
+  fstream demandfile,facilityfile;
   SQM_instance *I;
   I = new SQM_instance;
-  /* Pendiente */
+  demandfile.open(Demand_nodes.c_str(),fstream::in);
+  demandfile >> m;
+  I->M = m;
+  I->V = new point[m];
+  for (int i = 0;i < m;i++) {
+    demandfile >> (I->V)[i].x >> (I->V)[i].y >> (I->V)[i].y;
+  }
+  demandfile.close();
+  
+  facilityfile.open(facility_nodes.c_str(),fstream::in);
+  facilityfile >> n;
+  I->N = n;
+  I->W = new point[n];
+  for (int j = 0;j < n;j++) {
+    facilityfile >> (I->W)[j].x >> (I->W)[j].y;
+  }
+  facilityfile.close();
   return I;
 }
 

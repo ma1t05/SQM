@@ -6,6 +6,8 @@
 
 std::ofstream LogFile;
 
+bool file_exists (const string&);
+
 int main(int argc,char *argv[]) {
   string filename;
   int M_clients,N_sites;
@@ -38,8 +40,14 @@ int main(int argc,char *argv[]) {
 
   /*I = read_points(demad_file.c_str());*/
   /* I = IC_read_instance(demand_file,facility_file); */
-  I = IC_create_instance(M_clients,N_sites);
-  IC_write_instance(I,filename+"_demand.ins",filename+"_facility.ins");
+  if (file_exists(filename+"_demand.ins") &&
+      file_exists(filename+"_facility.ins")) {
+    I = IC_read_instance (filename+"_demand.ins",filename+"_facility.ins");
+  }
+  else {
+    I = IC_create_instance(M_clients,N_sites);
+    IC_write_instance(I,filename+"_demand.ins",filename+"_facility.ins");
+  }
   Sol = SQM_model(I,p,l,mu,f,v);
   IC_plot_instance(I,Sol,filename);		   
   /*Goldberg(I,p,mu,f);*/
@@ -56,4 +64,12 @@ void read_config_file() {
   
   config.open("SQM.conf",fstream::in);
   
+}
+
+bool file_exists (const string& name) {
+  if (FILE *file = fopen(name.c_str(), "r")) {
+    fclose(file);
+    return true;
+  }
+  return false;
 }
