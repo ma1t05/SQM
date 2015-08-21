@@ -36,7 +36,7 @@ int main(int argc,char *argv[]) {
   
   srand(time(NULL));
   LogName << "SQM_" << M_clients << "_" << N_sites << "_" << p << ".log";
-  LogFile.open(LogName.str().c_str());
+  LogFile.open(LogName.str().c_str(),std::ofstream::app);
 
   /*I = read_points(demad_file.c_str());*/
   /* I = IC_read_instance(demand_file,facility_file); */
@@ -52,7 +52,9 @@ int main(int argc,char *argv[]) {
   char sub[16];
   sprintf(sub,"_%02d_%02d",p,l);
   IC_plot_instance(I,Sol,filename+sub);
-  /*Goldberg(I,p,mu,f);*/
+  delete[] Sol;
+  if (l == p)
+    Goldberg(I,p,mu,f);
   LogFile.close();
   cout << LogName.str() << endl;
 

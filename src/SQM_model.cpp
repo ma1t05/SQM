@@ -220,14 +220,15 @@ void SQM_model
     stringstream ModelName;
     ModelName << "SQM-model_" << n << "_" << m << "_" << p << ".lp";
     cplex.exportModel(ModelName.str().c_str());
+    cplex.setParam(IloCplex::TiLim,3600.0);
     if(cplex.solve()){
       LogFile << "Solution status: " << cplex.getStatus() << endl;
       LogFile << "Maximum profit = " << cplex.getObjValue() << endl;
       for(j = 0;j < n;j++){
 	if(cplex.getValue(x[j]) > 0) {
 	  LogFile << j+1 << ": "
-	       << cplex.getValue(x[j]) << endl;
-	    } 
+		  << cplex.getValue(x[j]) << endl;
+	} 
 	//LogFile << cplex.getValue(y[j]);
       }
       LogFile << endl;

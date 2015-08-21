@@ -105,7 +105,8 @@ void IC_plot_instance(SQM_instance *I,int *Sol,string output) {
   FILE *gnuPipe = popen("gnuplot","w");
   fprintf(gnuPipe,"set term svg\n");
   fprintf(gnuPipe,"set output '%s.svg'\n",output.c_str());
-  fprintf(gnuPipe,"set key outside\n");
+  /*fprintf(gnuPipe,"set key outside\n");*/
+  fprintf(gnuPipe,"unset key\n");
   fprintf(gnuPipe,"unset border\n");
   fprintf(gnuPipe,"unset yzeroaxis\n");
   fprintf(gnuPipe,"unset xtics\n");

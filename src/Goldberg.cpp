@@ -135,11 +135,12 @@ void Goldberg
     stringstream ModelName;
     ModelName << "Goldberg-model_" << m << "_" << n << "_" << p << ".lp";
     cplex.exportModel(ModelName.str().c_str());
+    cplex.setParam(IloCplex::TiLim,3600.0);
     if (cplex.solve()) {
-      cout << "Solution status: " << cplex.getStatus() << endl;
-      cout << "Maximum profit = " << cplex.getObjValue() << endl;
+      LogFile << "Solution status: " << cplex.getStatus() << endl;
+      LogFile << "Maximum profit = " << cplex.getObjValue() << endl;
       for (j = 0;j < n;j++) {
-	if (cplex.getValue(x[j]) > 0.5) cout << j+1 << " ";
+	if (cplex.getValue(x[j]) > 0.5) LogFile << j+1 << " ";
 	//cout << cplex.getValue(y[j]);
       }
       cout << endl;
@@ -183,8 +184,10 @@ void gnuplot_goldberg(SQM_instance *I,int p,IloCplex *cplex, IloBoolVarArray *x,
   ofstream centros(centersfilename);
 
   for(j = 0;j < n;j++){
-    if (cplex->getValue((*x)[j]))
-      centros << potencial_site[j].x << " " << potencial_site[j].y << endl;
+    /*if (cplex->getValue((*x)[j]))*/
+    centros << potencial_site[j].x << " " 
+	    << potencial_site[j].y << " "
+	    << cplex->getValue((*x)[j]) << endl;
   }
   centros.close();
 
@@ -202,12 +205,12 @@ void gnuplot_goldberg(SQM_instance *I,int p,IloCplex *cplex, IloBoolVarArray *x,
 
     for(i = 0;i < m;i++){
       for(j = 0;j < n;j++){
-	cout << "i:" << i << "\tj:" << j << "\tk:" << k << endl;
 	if (cplex->getValue((*y)[i][j][k]) > 0.5)
 	  outfile << client[i].x << " " 
 		  << client[i].y << " " 
 		  << potencial_site[j].x - client[i].x << " " 
-		  << potencial_site[j].y - client[i].y << endl;
+		  << potencial_site[j].y - client[i].y << " "
+		  << j+1 << endl;
       }
     }
 
@@ -216,35 +219,55 @@ void gnuplot_goldberg(SQM_instance *I,int p,IloCplex *cplex, IloBoolVarArray *x,
 
   FILE *gnuPipe = popen("gnuplot","w");
   fprintf(gnuPipe,"set term svg\n");
+  /*fprintf(gnuPipe,"set key outside\n");*/
   fprintf(gnuPipe,"unset key\n");
   fprintf(gnuPipe,"unset border\n");
   fprintf(gnuPipe,"unset yzeroaxis\n");
   fprintf(gnuPipe,"unset xtics\n");
   fprintf(gnuPipe,"unset ytics\n");
   fprintf(gnuPipe,"unset ztics\n");
-  //fprintf(gnuPipe,"set title \"Servicio de %.0f\n",cplex->getObjValue());
-  //fprintf(gnuPipe,"set style arrow 1 nohead lw 2\n");
-  //fprintf(gnuPipe,"set arrow arrowstyle 1\n");
+
+  /* plot full */
   fprintf(gnuPipe,"set output 'Goldberg_%d_%d_%d.svg'\n",m,n,p);
   fprintf(gnuPipe,"plot ");
-  fprintf(gnuPipe,"'%s' using 1:2 with points lc rgb \"black\"",clientsfilename);
-  fprintf(gnuPipe,", '%s' using 1:2 with points lc rgb \"red\"",centersfilename);
+  fprintf(gnuPipe,"'%s' using 1:2 with points lc rgb \"black\" title 'Demand'",clientsfilename);
+  fprintf(gnuPipe,", '%s' using 1:2 with points lc rgb \"red\" title 'Facility'",centersfilename);
+  fprintf(gnuPipe,", '%s' using 1:($3 > 0.5 ? $2 : 1/0):(10) with circles lc rgb 'blue' title 'Opened'",centersfilename);
   for (k = 0;k < p;k++) {
     sprintf(outfilename,"Tmp_edges_%d_%d_%d.dat",m,n,k+1);
-    fprintf(gnuPipe,", '%s' using 1:2:3:4 with vectors nohead" /* linecolor rgb \"dark-blue\"" */ ,outfilename);
+    fprintf(gnuPipe,", '%s' using 1:2:3:4 with vectors nohead",outfilename);
   }
   fprintf(gnuPipe,"\n");
 
   for (k = 0;k < p;k++) {
     sprintf(outfilename,"Tmp_edges_%d_%d_%d.dat",m,n,k+1);
-    fprintf(gnuPipe,"set output 'Goldberg_%d_%d_%d_%d.svg'\n",m,n,p,k+1);
+    fprintf(gnuPipe,"set output 'Goldberg_%d_%d_%d_order_%02d.svg'\n",m,n,p,k+1);
     fprintf(gnuPipe,"plot ");
     fprintf(gnuPipe,"'%s' using 1:2 with points lc rgb \"black\"",clientsfilename);
     fprintf(gnuPipe,", '%s' using 1:2 with points lc rgb \"red\"",centersfilename);
-    fprintf(gnuPipe,", '%s' using 1:2:3:4 with vectors nohead" /* linecolor rgb \"dark-blue\"" */ ,outfilename);
+    fprintf(gnuPipe,", '%s' using 1:2:3:4 with vectors nohead",outfilename);
     fprintf(gnuPipe,"\n");
   }
 
-  pclose(gnuPipe);
+  for (j = 0;j < n;j++) {
+    if (cplex->getValue((*x)[j]) > 0.5) {
+      for (k = 0;k < p;k++) {
+	sprintf(outfilename,"Tmp_edges_%d_%d_%d.dat",m,n,k+1);
+	fprintf(gnuPipe,"set output 'Goldberg_%d_%d_%d_center_%02d_order_%02d.svg'\n",m,n,p,j+1,k+1);
+	fprintf(gnuPipe,"plot ");
+	fprintf(gnuPipe,"'%s' using 1:2 with points lc rgb \"black\" title 'Demand'",clientsfilename);
+	fprintf(gnuPipe,", '%s' using 1:2 with points lc rgb \"red\" title 'Facility'",centersfilename);
+	fprintf(gnuPipe,", '%s' using 1:($5 == %d ? $2 : 1/0):3:4 with vectors nohead title 'Order %d'",outfilename,j+1,k+1);
+	fprintf(gnuPipe,"\n");
+      }
+    }
+  }
 
+  pclose(gnuPipe);
+  remove(clientsfilename);
+  remove(centersfilename);
+  for (k = 0;k < p;k++) {
+    sprintf(outfilename,"Tmp_edges_%d_%d_%d.dat",m,n,k+1);
+    remove(outfilename);
+  }
 }
