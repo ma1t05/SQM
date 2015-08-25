@@ -31,9 +31,9 @@ typedef struct network network;
 typedef struct SQM_instance SQM_instance;
 
 extern std::ofstream LogFile;
+extern std::ofstream results;
 
 #endif
 
 
 /* eof */
-

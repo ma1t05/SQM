@@ -269,6 +269,7 @@ int* SQM_model
   int *Sol;
   IloEnv env;
   try {
+    clock_t clocks,start = clock();
     int i,j,l,r;
     IloInt m,n;
     IloNum f_i;
@@ -467,15 +468,30 @@ int* SQM_model
     cout << "Funcion Objetivo" << endl;
     modelo.add(IloMinimize(env,workload));
     workload.end();
+    clocks = clock() - start;
+    results << "," << clocks / CLOCKS_PER_SEC;
 
     IloCplex cplex(modelo);
     stringstream ModelName;
     ModelName << "SQM-model_" << n << "_" << m << "_" << p << ".lp";
     cplex.exportModel(ModelName.str().c_str());
-    cout << "Solve model" << endl;
+    results << "," << ModelName.str();
+
+    LogFile << "Solve SQM model" << endl;
     LogFile << endl << "** Cplex Start **" << endl;
     cplex.setOut(LogFile);
+    cplex.setParam(IloCplex::TiLim,3600.0);
+
+    double CplexTime = cplex.getCplexTime();
     if(cplex.solve()){
+
+      double gap = (cplex.getObjValue() - cplex.getBestObjValue()) / cplex.getBestObjValue();
+      results << "," << cplex.getCplexTime() - CplexTime
+	      << "," << cplex.getStatus()
+	      << "," << cplex.getObjValue()
+	      << "," << gap
+	      << endl;
+
       Sol = new int[n];
       LogFile << "** Cplex Ends **" << endl << endl;
       LogFile << "Solution status: " << cplex.getStatus() << endl;

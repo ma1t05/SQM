@@ -13,6 +13,7 @@ void Goldberg
 {
   IloEnv env;
   try {
+    clock_t clocks = clock();
     int i,j,k,r;
     IloInt n = I->N,m= I->M;
     IloNum f_i;
@@ -128,15 +129,31 @@ void Goldberg
     
     cout << "++ Funcion Objetivo ++" << endl;
     modelo.add(IloMinimize(env,S));
+    clocks = clock() - clocks;
+    results << "," << clocks / CLOCKS_PER_SEC;
 
     cout << "Resuelve modelo" << endl;
     IloCplex cplex(modelo);
-    cplex.setOut(LogFile);
     stringstream ModelName;
     ModelName << "Goldberg-model_" << m << "_" << n << "_" << p << ".lp";
     cplex.exportModel(ModelName.str().c_str());
+    results << "," << ModelName.str();
+
+    LogFile << "Solve Goldberg model" << endl;
+    LogFile << endl << "** Cplex Start **" << endl;
+    cplex.setOut(LogFile);
     cplex.setParam(IloCplex::TiLim,3600.0);
+
+    double CplexTime = cplex.getCplexTime();
     if (cplex.solve()) {
+
+      double gap = (cplex.getObjValue() - cplex.getBestObjValue()) / cplex.getBestObjValue();
+      results << "," << cplex.getCplexTime() - CplexTime
+	      << "," << cplex.getStatus()
+	      << "," << cplex.getObjValue()
+	      << "," << gap
+	      << endl;
+      
       LogFile << "Solution status: " << cplex.getStatus() << endl;
       LogFile << "Maximum profit = " << cplex.getObjValue() << endl;
       for (j = 0;j < n;j++) {

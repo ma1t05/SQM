@@ -5,6 +5,7 @@
 #include "config.h"
 
 std::ofstream LogFile;
+std::ofstream results;
 
 bool file_exists (const string&);
 
@@ -38,6 +39,15 @@ int main(int argc,char *argv[]) {
   LogName << "SQM_" << M_clients << "_" << N_sites << "_" << p << ".log";
   LogFile.open(LogName.str().c_str(),std::ofstream::app);
 
+  results.open("results.csv",std::ofstream::app);
+  results << M_clients
+	  << "," << N_sites
+	  << "," << p 
+	  << "," << l
+	  << "," << mu
+	  << "," << f 
+	  << "," << v;
+
   /*I = read_points(demad_file.c_str());*/
   /* I = IC_read_instance(demand_file,facility_file); */
   if (file_exists(filename+"_demand.ins") &&
@@ -48,13 +58,24 @@ int main(int argc,char *argv[]) {
     I = IC_create_instance(M_clients,N_sites);
     IC_write_instance(I,filename+"_demand.ins",filename+"_facility.ins");
   }
+  results << "," << filename << "_demand.ins," << filename << "_facility.ins";
+
   Sol = SQM_model(I,p,l,mu,f,v);
   char sub[16];
   sprintf(sub,"_%02d_%02d",p,l);
   IC_plot_instance(I,Sol,filename+sub);
   delete[] Sol;
-  if (l == p)
+  if (l == p) {
+    results << M_clients
+	    << "," << N_sites
+	    << "," << p 
+	    << "," << l
+	    << "," << mu
+	    << "," << f 
+	    << "," << v;
+    results << "," << filename << "_demand.ins," << filename << "_facility.ins";
     Goldberg(I,p,mu,f);
+  }
   LogFile.close();
   cout << LogName.str() << endl;
 
