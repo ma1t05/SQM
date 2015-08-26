@@ -65,6 +65,7 @@ int main(int argc,char *argv[]) {
   sprintf(sub,"_%02d_%02d",p,l);
   IC_plot_instance(I,Sol,filename+sub);
   delete[] Sol;
+
   if (l == p) {
     results << M_clients
 	    << "," << N_sites
@@ -77,6 +78,7 @@ int main(int argc,char *argv[]) {
     Goldberg(I,p,mu,f);
   }
   LogFile.close();
+  results.close();
   cout << LogName.str() << endl;
 
   delete[] I->V;
