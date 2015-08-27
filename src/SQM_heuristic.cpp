@@ -36,7 +36,19 @@ response_unit* SQM_heuristic
   double delta_mu;
   int **a;
   int n = I->N,m = I->M;
+  point *V = I->V,*W = I->W;
   
+  /* Populate matrix of distances */
+  dist = new dobule[m];
+  for (int j = 0;j < m;j++)
+    dist[j] = new double [n];
+
+  for (int j = 0;j < m;j++) {
+    for (int i = 0;i < n;i++) {
+      dist[j][i] = dist(&(V[i]),&(W[j]));
+    }
+  }
+
   /* Guess a location */
   X = new response_unit[p];
   for (int i = 0;i < p;i++)
@@ -53,6 +65,7 @@ response_unit* SQM_heuristic
   Tao = new double*[p];
   for (int i = 0;i < p;i++)
     Tao[i] = new double[n];
+
   a = new int*[n];
   for (int k = 0;k < n;k++)
     a[k] = new int[p];
@@ -120,6 +133,10 @@ response_unit* SQM_heuristic
       
     } while (delta_mu > epsilon);
   } while (abs(T_r - t_r) > epsilon);
+  
+  for (int j=0;j < m;j++)
+    delete [] dist[j];
+  delete [] dist;
 
   return X;
 }
