@@ -474,7 +474,7 @@ int* SQM_model
 
     IloCplex cplex(modelo);
     stringstream ModelName;
-    ModelName << "SQM-model_" << m << "_" << n << "_" << p << "_" << k".lp";
+    ModelName << "SQM-model_" << m << "_" << n << "_" << p << "_" << k << ".lp";
     cplex.exportModel(ModelName.str().c_str());
     results << "," << ModelName.str();
 
