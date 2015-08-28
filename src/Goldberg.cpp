@@ -142,7 +142,7 @@ void Goldberg
     LogFile << "Solve Goldberg model" << endl;
     LogFile << endl << "** Cplex Start **" << endl;
     cplex.setOut(LogFile);
-    cplex.setParam(IloCplex::TiLim,3600.0);
+    cplex.setParam(IloCplex::TiLim,TIME_MAX);
 
     double CplexTime = cplex.getCplexTime();
     if (cplex.solve()) {

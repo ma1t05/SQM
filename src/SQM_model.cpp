@@ -220,7 +220,7 @@ void SQM_model
     stringstream ModelName;
     ModelName << "SQM-model_" << n << "_" << m << "_" << p << ".lp";
     cplex.exportModel(ModelName.str().c_str());
-    cplex.setParam(IloCplex::TiLim,3600.0);
+    cplex.setParam(IloCplex::TiLim,TIME_MAX);
     if(cplex.solve()){
       LogFile << "Solution status: " << cplex.getStatus() << endl;
       LogFile << "Maximum profit = " << cplex.getObjValue() << endl;
@@ -278,11 +278,12 @@ int* SQM_model
     IloNum beta = 1.5;
     m = I->M;
     n = I->N;
-    point *puntos = I->V;
+    point *clients = I->V;
     cout << "Comienza definicion del Modelo" << endl;
     IloModel modelo(env);
     
     cout << "++ Variables ++" << endl;
+    IloNumVar S(env,0,IloInfinity,IloNumVar::Float,"S");
     IloIntVarArray x(env);
     BoolVarArrayMatrix y(env,m);
     BoolVarMatrix u(env,m);
@@ -361,7 +362,7 @@ int* SQM_model
       O[i] = IloNumArray(env,n);
     for (i = 0;i < m;i++) {
       for (j = 0;j < n;j++) {
-	O[i][j] = dist(&(puntos[i]),&((I->W)[j]));
+	O[i][j] = dist(&(clients[i]),&((I->W)[j]));
       }
     }
       
@@ -446,41 +447,41 @@ int* SQM_model
     // rho from Daskin
     rho = 0.0;
     for (i = 0;i < m;i++)
-      rho += f * puntos[i].demand;
+      rho += f * clients[i].demand;
     rho /= (mu * p);
     LogFile << "rho = " << rho << endl;
     // rho from ReVelle & Hogan
     // pendiente
     
-    IloExpr workload(env);
     IloNum time_per_km = beta / speed;
     IloNum wt = 0.0;
-    for (l = 0;l < k;l++) {
-      coef = (1 - rho) * pow(rho,l);
-      for (i = 0;i < m;i++) {
-	f_i = f * puntos[i].demand;
-	for (j = 0;j < n;j++) {
+    for (j = 0;j < n;j++) {
+      IloExpr workload(env);
+      for (l = 0;l < k;l++) {
+	coef = (1 - rho) * pow(rho,l);
+	for (i = 0;i < m;i++) {
+	  f_i = f * clients[i].demand;
 	  workload += f_i * coef * (O[i][j]*time_per_km + wt)* y[i][j][l];
 	}
       }
+      modelo.add(S >= workload);
     }
     
-    cout << "Funcion Objetivo" << endl;
-    modelo.add(IloMinimize(env,workload));
-    workload.end();
+    cout << "++ Funcion Objetivo ++" << endl;
+    modelo.add(IloMinimize(env,S));
     clocks = clock() - start;
     results << "," << clocks / CLOCKS_PER_SEC;
 
     IloCplex cplex(modelo);
     stringstream ModelName;
-    ModelName << "SQM-model_" << n << "_" << m << "_" << p << ".lp";
+    ModelName << "SQM-model_" << m << "_" << n << "_" << p << "_" << k".lp";
     cplex.exportModel(ModelName.str().c_str());
     results << "," << ModelName.str();
 
     LogFile << "Solve SQM model" << endl;
     LogFile << endl << "** Cplex Start **" << endl;
     cplex.setOut(LogFile);
-    cplex.setParam(IloCplex::TiLim,3600.0);
+    cplex.setParam(IloCplex::TiLim,TIME_MAX);
 
     double CplexTime = cplex.getCplexTime();
     if(cplex.solve()){

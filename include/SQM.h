@@ -15,6 +15,7 @@ typedef IloArray<IloIntArray> IntMatrix;
 using namespace std;
 
 #define EPSILON 0.001
+#define TIME_MAX 1200.0
 
 struct network {
   int n;
