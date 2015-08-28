@@ -27,7 +27,7 @@ response_unit* SQM_heuristic
   response_unit *X;
   double *MST,*mst; // mean service time
   double T_r,t_r; // expected response time
-  double **dist; // Matrix of distances
+  double **Dist; // Matrix of distances
   double **f,**Tao;
   double *d;
   double mu;
@@ -39,13 +39,13 @@ response_unit* SQM_heuristic
   point *V = I->V,*W = I->W;
   
   /* Populate matrix of distances */
-  dist = new dobule[m];
+  Dist = new double*[m];
   for (int j = 0;j < m;j++)
-    dist[j] = new double [n];
+    Dist[j] = new double [n];
 
   for (int j = 0;j < m;j++) {
     for (int i = 0;i < n;i++) {
-      dist[j][i] = dist(&(V[i]),&(W[j]));
+      Dist[j][i] = dist(&(V[i]),&(W[j]));
     }
   }
 
@@ -84,13 +84,13 @@ response_unit* SQM_heuristic
 
       for (int i = 0;i < p;i++) {
 	for (int k = 0;k < n;k++) {
-	  Tao[i][k] = (Mu_NT + (X[i].beta / X[i].v) * dist[X[i].location][k]);
+	  Tao[i][k] = (Mu_NT + (X[i].beta / X[i].v) * Dist[X[i].location][k]);
 	}
       }
       
       for (int k = 0;k < n;k++) {
 	for (int i = 0;i < p;i++)
-	  d[i] = dist[X[i].location][k];
+	  d[i] = Dist[X[i].location][k];
 	sort_dist(n,d,a[k]);
       }
 
@@ -101,7 +101,7 @@ response_unit* SQM_heuristic
       // the expected travel time component
       for (int i = 0;i < p;i++) {
 	for (int k = 0;k < m;k++)
-	  t_r += f[i][k] * dist[X[i].location][k];
+	  t_r += f[i][k] * Dist[X[i].location][k];
       }
       // the mean queue delay component
       mu = 0.0;
@@ -116,7 +116,7 @@ response_unit* SQM_heuristic
 	  h += f[i][j];
 	mst[i] = 0.0;
 	for (int k = 0;k < n;k++)
-	  mst[i] = (f[i][k]/h) * (Mu_NT + (X[i].beta / X[i].v) * dist[X[i].location][k]);
+	  mst[i] = (f[i][k]/h) * (Mu_NT + (X[i].beta / X[i].v) * Dist[X[i].location][k]);
       }
       
       // Step 3
@@ -135,8 +135,8 @@ response_unit* SQM_heuristic
   } while (abs(T_r - t_r) > epsilon);
   
   for (int j=0;j < m;j++)
-    delete [] dist[j];
-  delete [] dist;
+    delete [] Dist[j];
+  delete [] Dist;
 
   return X;
 }
@@ -151,15 +151,15 @@ void heuristic1
   double *MST,*mst; // mean service time
   double T_r,t_r; // expected response time
   double **f;
-  double **dist; // Matrix of distances
+  double **Dist; // Matrix of distances
   double mu;
   double P_B0;
   bool exit;
   int n = G->n;
 
-  dist = new double*[G->n];
+  Dist = new double*[G->n];
   for (int i = 0;i < G->n;i++) {
-    dist[i] = new double[G->n];
+    Dist[i] = new double[G->n];
   }
   for (int i = 0;i < G->n;i++) {
     for (int j = 0;j < G->n;j++) {
@@ -186,7 +186,7 @@ void heuristic1
       // the expected travel time component
       for (int i = 0;i < p;i++) {
 	for (int k = 0;k < G->n;k++)
-	  t_r += f[i][k] * dist[X[i].location][k];
+	  t_r += f[i][k] * Dist[X[i].location][k];
       }
       // the mean queue delay component
       mu = 0.0;
@@ -201,7 +201,7 @@ void heuristic1
 	  h += f[i][j];
 	mst[i] = 0.0;
 	for (int k = 0;k < G->n;k++)
-	  mst[i] = (f[i][k]/h) * (Mu_NT + (X[i].beta / X[i].v) * dist[X[i].location][k]);
+	  mst[i] = (f[i][k]/h) * (Mu_NT + (X[i].beta / X[i].v) * Dist[X[i].location][k]);
       }
   
       // Step 3
@@ -233,11 +233,11 @@ void heuristic1
 
 	// Solve the 1-median location model with h_j^i
 	for (int j = 0;j < n;j++)
-	  T += hi[j] * dist[X[i].location][j];
+	  T += hi[j] * Dist[X[i].location][j];
 	for (int k = 0;k < n;k++) {
 	  t = 0;
 	  for (int j = 0;j < n;j++)
-	    t += hi[j] * dist[X[i].location][j];
+	    t += hi[j] * Dist[X[i].location][j];
 	  if (t < T) {
 	    T = t;
 	    X[i].location = t;
@@ -256,8 +256,8 @@ void heuristic1
   delete[] mst;
   delete[] MST;
   for (int i = 0;i < p;i++)
-    delete[] dist[i];
-  delete[] dist;
+    delete[] Dist[i];
+  delete[] Dist;
   
 }
 
