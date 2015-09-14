@@ -12,6 +12,8 @@
  *  \Tao_{im}, expected service time for server i and customer of type m
  *  a_{mk} the kth preferred server for customers of type m
  *     from k = 1,...,C; i = 1,...,N; k = 1,...,N
+ * Returns:
+ *  f_{ji}, matrix of probabilities of j attends i
  * Initialize:
  *  \rho_i = \sum_{m:a_{m1=i}{\lambda_m * \Tao_{im}}
  *  \Tao = \sum_{m=1}^{C}{(lambda_m/lambda)*\Tao_{a_{m1},m}

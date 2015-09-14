@@ -32,12 +32,24 @@ response_unit* SQM_heuristic
   double *d;
   double mu;
   double P_B0; // Pendiente
+  /* Variables por ajustar */
+  double v = 40.0;
+  double beta = 2.0;
+  /* */
   double *Lambda;
   double delta_mu;
   int **a;
   int n = I->N,m = I->M;
   point *V = I->V,*W = I->W;
-  
+ 
+  /* Guess a location */
+  X = new response_unit[p];
+  for (int i = 0;i < p;i++) {
+    X[i].location = i;
+    X[i].v = v;
+    X[i].beta = beta;
+  }
+
   /* Populate matrix of distances */
   Dist = new double*[m];
   for (int j = 0;j < m;j++)
@@ -48,11 +60,6 @@ response_unit* SQM_heuristic
       Dist[j][i] = dist(&(V[i]),&(W[j]));
     }
   }
-
-  /* Guess a location */
-  X = new response_unit[p];
-  for (int i = 0;i < p;i++)
-    X[i].location = i;
 
   T_r = 99999.9;
   MST = new double[p];
@@ -134,8 +141,17 @@ response_unit* SQM_heuristic
     } while (delta_mu > epsilon);
   } while (abs(T_r - t_r) > epsilon);
   
-  for (int j=0;j < m;j++)
-    delete [] Dist[j];
+  for (int k = 0;k < n;k++) delete a[k];
+  delete [] a;
+  for (int i = 0;i < p;i++) delete [] Tao[i];
+  delete [] Tao;
+  for (int i = 0;i < p;i++) delete [] f[i];
+  delete [] f;
+  delete [] Lambda;
+  delete [] d;
+  delete [] mst;
+  delete [] MST;
+  for (int j=0;j < m;j++) delete [] Dist[j];
   delete [] Dist;
 
   return X;
