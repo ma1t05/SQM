@@ -1,20 +1,8 @@
 
 #include "SQM_heuristic.h"
 
-int comp(const void *a,const void *b);
-
-void sort_dist (int n,double *d,int *c) {
-  std::pair<double,int> *x;
-  x = new std::pair<double,int>[n];
-  for (int i = 0;i < n;i++) {
-    x[i].first = d[i];
-    x[i].second = i;
-  }
-  qsort(x,n,sizeof(std::pair<double,int>), comp);
-  for (int i = 0;i < n;i++)
-    c[i] = x[i].second;
-  delete[] x;
-}
+int comp(const void*,const void*);
+void sort_dist (int,double*,int*);
 
 response_unit* SQM_heuristic
 (SQM_instance *I,
@@ -65,19 +53,19 @@ response_unit* SQM_heuristic
   MST = new double[p];
   mst = new double[p];
   d = new double[p];
-  Lambda = new double[n];
+  Lambda = new double[m];
   f = new double*[p];
   for (int i = 0;i < p;i++)
-    f[i] = new double[n];
+    f[i] = new double[m];
   Tao = new double*[p];
   for (int i = 0;i < p;i++)
-    Tao[i] = new double[n];
+    Tao[i] = new double[m];
 
-  a = new int*[n];
-  for (int k = 0;k < n;k++)
+  a = new int*[m];
+  for (int k = 0;k < m;k++)
     a[k] = new int[p];
 
-  for (int k = 0;k < n;k++)
+  for (int k = 0;k < m;k++)
     Lambda[k] = I->V[k].demand * lambda;
 
   /* SERVICE MEAN TIME CALIBRATION */
@@ -88,20 +76,19 @@ response_unit* SQM_heuristic
     do {
 
       // Step 1: Run the Hypercube Model
-
       for (int i = 0;i < p;i++) {
-	for (int k = 0;k < n;k++) {
+	for (int k = 0;k < m;k++) {
 	  Tao[i][k] = (Mu_NT + (X[i].beta / X[i].v) * Dist[X[i].location][k]);
 	}
       }
       
-      for (int k = 0;k < n;k++) {
+      for (int k = 0;k < m;k++) {
 	for (int i = 0;i < p;i++)
 	  d[i] = Dist[X[i].location][k];
-	sort_dist(n,d,a[k]);
+	sort_dist(p,d,a[k]);
       }
 
-      f = jarvis_hypercube_approximation(n,p,Lambda,Tao,a);
+      f = jarvis_hypercube_approximation(m,p,Lambda,Tao,a);
 
       // T_R(X)
       t_r = 0.0;
@@ -119,11 +106,11 @@ response_unit* SQM_heuristic
       // Step 2
       for (int i = 0;i < p;i++) {
 	double h = 0.0;
-	for (int j = 0;j < n;j++)
-	  h += f[i][j];
+	for (int k = 0;k < m;k++)
+	  h += f[i][k];
 	mst[i] = 0.0;
-	for (int k = 0;k < n;k++)
-	  mst[i] = (f[i][k]/h) * (Mu_NT + (X[i].beta / X[i].v) * Dist[X[i].location][k]);
+	for (int k = 0;k < m;k++)
+	  mst[i] += (f[i][k]/h) * (Mu_NT + (X[i].beta / X[i].v) * Dist[X[i].location][k]);
       }
       
       // Step 3
@@ -139,6 +126,33 @@ response_unit* SQM_heuristic
       }
       
     } while (delta_mu > epsilon);
+    
+    h_j = new dobule[n];
+    for (int i = 0;i < p;i++) {
+      // Block A
+      double h = 0.0;
+      for (int k = 0;k < m;k++) 
+	h += f[i][k];
+      for (int k = 0;k < m;k++) 
+	h_j[k] = f[i][k]/h;
+
+      // Block B
+      /* Solve te 1-median location model with h_j^i */
+      int best_location = -1;
+      double best_sol,sol;
+      for (int j = 0;j < n;j++) {
+	sol = 0.0;
+	for (int k = 0;k < m;k++) 
+	  sol += h_j[k] * Dist[k][j];
+	if (best_location == -1 || sol < best_sol) {
+	  best_sol = sol;
+	  best_location = j;
+	}
+      }
+      X[i].location = best_location;
+    }
+    delete [] h_j;
+
   } while (abs(T_r - t_r) > epsilon);
   
   for (int k = 0;k < n;k++) delete a[k];
@@ -202,7 +216,7 @@ void heuristic1
       // the expected travel time component
       for (int i = 0;i < p;i++) {
 	for (int k = 0;k < G->n;k++)
-	  t_r += f[i][k] * Dist[X[i].location][k];
+	  T_r += f[i][k] * Dist[X[i].location][k];
       }
       // the mean queue delay component
       mu = 0.0;
@@ -284,4 +298,17 @@ int comp(const void *a,const void *b) {
   if (x->first > y->first) return 1;
   else if (x->first < y->first) return -1;
   else return 0;
+}
+
+void sort_dist (int n,double *d,int *c) {
+  std::pair<double,int> *x;
+  x = new std::pair<double,int>[n];
+  for (int i = 0;i < n;i++) {
+    x[i].first = d[i];
+    x[i].second = i;
+  }
+  qsort(x,n,sizeof(std::pair<double,int>), comp);
+  for (int i = 0;i < n;i++)
+    c[i] = x[i].second;
+  delete[] x;
 }
