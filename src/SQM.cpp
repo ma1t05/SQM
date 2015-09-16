@@ -2,6 +2,7 @@
 #include "SQM.h"
 #include "SQM_model.h"
 #include "Goldberg.h"
+#include "SQM_heuristic.h"
 #include "config.h"
 
 std::ofstream LogFile;
@@ -14,6 +15,7 @@ int main(int argc,char *argv[]) {
   int M_clients,N_sites;
   int p,l;
   double mu,f,v;
+  double demand;
   stringstream LogName;
   SQM_instance *I;
   int *Sol;
@@ -39,6 +41,7 @@ int main(int argc,char *argv[]) {
   LogName << "SQM_" << M_clients << "_" << N_sites << "_" << p << ".log";
   LogFile.open(LogName.str().c_str(),std::ofstream::app);
 
+  /*
   results.open("results.csv",std::ofstream::app);
   results << M_clients
 	  << "," << N_sites
@@ -47,9 +50,9 @@ int main(int argc,char *argv[]) {
 	  << "," << mu
 	  << "," << f 
 	  << "," << v;
+  */
 
   /*I = read_points(demad_file.c_str());*/
-  /* I = IC_read_instance(demand_file,facility_file); */
   if (file_exists(filename+"_demand.ins") &&
       file_exists(filename+"_facility.ins")) {
     I = IC_read_instance (filename+"_demand.ins",filename+"_facility.ins");
@@ -58,6 +61,7 @@ int main(int argc,char *argv[]) {
     I = IC_create_instance(M_clients,N_sites);
     IC_write_instance(I,filename+"_demand.ins",filename+"_facility.ins");
   }
+  /*
   results << "," << filename << "_demand.ins," << filename << "_facility.ins";
 
   Sol = SQM_model(I,p,l,mu,f,v);
@@ -77,8 +81,18 @@ int main(int argc,char *argv[]) {
     results << "," << filename << "_demand.ins," << filename << "_facility.ins";
     Goldberg(I,p,mu,f);
   }
-  LogFile.close();
   results.close();
+  */
+  demand = 0.0;
+  for (int i = 0;i < I->M;i++) demand += (I->V)[i].demand;
+  
+  response_unit *X;
+  cout << "Calling SQM_Heuristic" << endl;
+  X = SQM_heuristic(I,p,f / demand,mu);
+  for (int i = 0;i < p;i++) LogFile << X[i].location << " ";
+  LogFile << endl;
+  delete [] X;
+  LogFile.close();
   cout << LogName.str() << endl;
 
   delete[] I->V;

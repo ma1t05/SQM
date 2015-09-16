@@ -2,6 +2,7 @@
 #ifndef _JARVIS_H
 #define _JARVIS_H 1
 
+#include <iostream>
 #include <cmath>
 #define epsilon 0.0001
 using namespace std;

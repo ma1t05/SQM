@@ -15,6 +15,7 @@ struct response_unit {
 };
 
 typedef struct response_unit response_unit;
+response_unit* SQM_heuristic(SQM_instance*,int,double,double);
 
 #endif
 
