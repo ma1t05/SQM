@@ -51,7 +51,7 @@ double** jarvis_hypercube_approximation
   for (int i = 0; i < N;i++) f[i] = new double[C];
   
   /* INITIALIZE: */
-  cout << "/* INITIALIZE: */" << endl;
+  //cout << "/* INITIALIZE: */" << endl;
   Lambda = 0.0;
   for (int m = 0;m < C;m++) Lambda += lambda[m];
 
@@ -63,16 +63,16 @@ double** jarvis_hypercube_approximation
     }
   }
   /* mean service time \tao */
-  cout << "/* mean service time \tao */" << endl;
+  //cout << "/* mean service time \tao */" << endl;
   tao = 0.0;
   for (int i = 0;i < N;i++) for (int m = 0;m < C;m++) tao += Tao[i][m];
   tao /= (N * C);
   /* traffic intensity */
-  cout << "/* traffic intensity */" << endl;
+  //cout << "/* traffic intensity */" << endl;
   Rho = Lambda * tao / N;
 
   /* Define intial values for P_0 and P_N */
-  cout << "/* Define intial values for P_0 and P_N */" << endl;
+  //cout << "/* Define intial values for P_0 and P_N */" << endl;
   P_0 = 1.0;
   for (int i = 0;i < N;i++)
     P_0 *= (1 - rho[i]);
@@ -82,17 +82,17 @@ double** jarvis_hypercube_approximation
     P_N *= rho[i];
 
   /* ITERATION: */
-  cout << "/* ITERATION: */" << endl;
+  //cout << "/* ITERATION: */" << endl;
   Q_N_rho = new double[N];
   double *new_rho = new double[N];
   do {
     /* Compute Q(N,\rho,k) */
-    cout << "/* Compute Q(N,\rho,k) */" << endl;
+    //cout << "/* Compute Q(N,\rho,k) */" << endl;
     for (int k = 0;k < N;k++)
       Q_N_rho[k] = correction_factor_Q(N,Rho,k);
   
     /* Aproximation of \rho_i */
-    cout << "/* Aproximation of \rho_i */" << endl;
+    //cout << "/* Aproximation of \rho_i */" << endl;
     for (int i = 0;i < N;i++) {
       double Vi = 0.0;
       for (int k = 0;k < N;k++) {
@@ -109,7 +109,7 @@ double** jarvis_hypercube_approximation
     }
 
     /* Convergence criterion */
-    cout << "/* Convergence criterion */" << endl;
+    //cout << "/* Convergence criterion */" << endl;
     double max_change = 0.0;
     for (int i = 0;i < N;i++)
       if (abs(rho[i] - new_rho[i]) > max_change)
@@ -120,13 +120,13 @@ double** jarvis_hypercube_approximation
       rho[i] = new_rho[i];
 
     /* Compute P_N */
-    cout << "/* Compute P_N */" << endl;
+    //cout << "/* Compute P_N */" << endl;
     double s_rho = 0.0;
     for (int i = 0;i < N;i++) s_rho += rho[i];
     P_N = 1.0 - s_rho / (N * Rho);
 
     /* Compute \tao */
-    cout << "/* Compute \tao */" << endl;
+    //cout << "/* Compute \tao */" << endl;
     tao = 0.0;
     for (int m = 0;m < C;m++) {
       double tmp = 0.0;
@@ -136,7 +136,7 @@ double** jarvis_hypercube_approximation
     }
  
     /* Compute f_{im} */
-    cout << "/* Compute f_{im} */" << endl;
+    //cout << "/* Compute f_{im} */" << endl;
     for (int i = 0;i < N;i++) {
       for (int m = 0;m < C;m++) {
 	int k = a[m][i];
@@ -151,6 +151,15 @@ double** jarvis_hypercube_approximation
   delete [] new_rho;
   delete [] Q_N_rho;
 
+  /*
+  cout << "finsh jarvis" << endl;
+  for (int i = 0;i < N;i++) {
+    for (int m = 0;m < C;m++) {
+      cout << f[i][m] << " ";
+    }
+    cout << endl;
+  }
+  */
   return f;
 }
 

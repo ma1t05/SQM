@@ -87,7 +87,7 @@ int main(int argc,char *argv[]) {
   for (int i = 0;i < I->M;i++) demand += (I->V)[i].demand;
   
   response_unit *X;
-  cout << "Calling SQM_Heuristic" << endl;
+  //cout << "Calling SQM_Heuristic" << endl;
   X = SQM_heuristic(I,p,f / demand,mu);
   for (int i = 0;i < p;i++) LogFile << X[i].location << " ";
   LogFile << endl;

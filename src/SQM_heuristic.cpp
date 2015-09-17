@@ -35,7 +35,7 @@ response_unit* SQM_heuristic
   point *V = I->V,*W = I->W;
  
   /* Guess a location */
-  cout << "/* Guess a location */" << endl;
+  //cout << "/* Guess a location */" << endl;
   X = guess_a_location_03(p,n,W);
   for (int i = 0;i < p;i++) {
     X[i].v = v;
@@ -43,7 +43,7 @@ response_unit* SQM_heuristic
   }
 
   /* Populate matrix of distances */
-  cout << "/* Populate matrix of distances */" << endl;
+  //cout << "/* Populate matrix of distances */" << endl;
   Dist = new double*[m];
   for (int j = 0;j < m;j++)
     Dist[j] = new double [n];
@@ -74,19 +74,25 @@ response_unit* SQM_heuristic
     Lambda[k] = I->V[k].demand * lambda;
 
   /* SERVICE MEAN TIME CALIBRATION */
-  cout << "/* SERVICE MEAN TIME CALIBRATION */" << endl;
+  //cout << "/* SERVICE MEAN TIME CALIBRATION */" << endl;
   do {
 
+    /* Current solution */
+    cout << "Current solution" << endl;
+    for (int i = 0;i < p;i++)
+      cout << X[i].location << " ";
+    cout << endl;
+
     T_r = t_r;
-    cout << "\t// Step 0" << endl;
+    //cout << "\t// Step 0" << endl;
     for (int i = 0;i < p;i++)
       MST[i] = 1 / Mu_NT;
     do {
 
-      cout << "\t// Step 1: Run the Hypercube Model" << endl;
+      //cout << "\t// Step 1: Run the Hypercube Model" << endl;
       for (int i = 0;i < p;i++) {
 	for (int k = 0;k < m;k++) {
-	  Tao[i][k] = (Mu_NT + (X[i].beta / X[i].v) * Dist[X[i].location][k]);
+	  Tao[i][k] = (Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]);
 	}
       }
       
@@ -98,7 +104,7 @@ response_unit* SQM_heuristic
 
       f = jarvis_hypercube_approximation(m,p,Lambda,Tao,a);
 
-      cout << "\t// T_R(X)" << endl;
+      //cout << "\t// T_R(X)" << endl;
       t_r = 0.0;
       // the expected travel time component
       for (int i = 0;i < p;i++) {
@@ -111,7 +117,7 @@ response_unit* SQM_heuristic
 	mu += 1 / MST[i];
       t_r += P_B0 * mu / pow(mu - lambda,2.0);
       
-      cout << "\t// Step 2" << endl;
+      //cout << "\t// Step 2" << endl;
       for (int i = 0;i < p;i++) {
 	double h = 0.0;
 	for (int k = 0;k < m;k++)
@@ -121,7 +127,7 @@ response_unit* SQM_heuristic
 	  mst[i] += (f[i][k]/h) * (Mu_NT + (X[i].beta / X[i].v) * Dist[X[i].location][k]);
       }
       
-      cout << "\t// Step 3" << endl;
+      //cout << "\t// Step 3" << endl;
       delta_mu = 0.0;
       for (int i = 0;i < p;i++) {
 	if (abs(mst[i] - MST[i]) > delta_mu)
@@ -129,7 +135,7 @@ response_unit* SQM_heuristic
       }
 
       if (delta_mu > epsilon) {
-	cout << "\tOther itetarion" << endl;
+	//cout << "\tOther itetarion" << endl;
 	for (int i = 0;i < p;i++)
 	  MST[i] = mst[i];
       }
@@ -139,7 +145,7 @@ response_unit* SQM_heuristic
     double *h_i = new double[m];
     for (int i = 0;i < p;i++) {
       // Block A
-      cout << "\t\tBlock A " << i << endl;
+      //cout << "\t\tBlock A " << i << endl;
       double h = 0.0;
       for (int k = 0;k < m;k++) 
 	h += f[i][k];
@@ -147,7 +153,7 @@ response_unit* SQM_heuristic
 	h_i[k] = f[i][k]/h;
 
       // Block B
-      cout << "\t\tBlock B " << i << endl;
+      //cout << "\t\tBlock B " << i << endl;
       /* Solve te 1-median location model with h_i^j */
       int best_location = -1;
       double best_sol,sol;
@@ -156,6 +162,9 @@ response_unit* SQM_heuristic
 	for (int k = 0;k < m;k++) 
 	  sol += h_i[k] * Dist[k][j];
 	if (best_location == -1 || sol < best_sol) {
+	  cout << "improbe location of " << i 
+	       << " at place " << j 
+	       << " with new response time: " << sol << endl;
 	  best_location = j;
 	  best_sol = sol;
 	}
@@ -234,7 +243,7 @@ response_unit* guess_a_location_03(int p,int n, point *W){
   for (int i = 0;i < n;i++) option[i] = false;
   do {
     location = unif(n);
-    cout << "location = " << location << endl;
+    //cout << "location = " << location << endl;
     if (option[location] == false) {
       locations++;
       option[location] = true;
@@ -243,10 +252,10 @@ response_unit* guess_a_location_03(int p,int n, point *W){
   for (int i = 0;i < n;i++) {
     if (option[i]) {
       X[--p].location = i;
-      cout << i << " ";
+      //cout << i << " ";
     }
   }
-  cout << endl;
+  //cout << endl;
   delete [] option;
   return X;
 }
