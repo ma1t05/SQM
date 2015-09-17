@@ -62,17 +62,16 @@ double** jarvis_hypercube_approximation
       if (a[m][1] == i) rho[i] += lambda[m] * Tao[i][m];
     }
   }
+
   /* mean service time \tao */
-  //cout << "/* mean service time \tao */" << endl;
   tao = 0.0;
-  for (int i = 0;i < N;i++) for (int m = 0;m < C;m++) tao += Tao[i][m];
-  tao /= (N * C);
+  for (int m = 0;m < C;m++) tao += lambda[m] * Tao[a[m][0]][m];
+  tao /= Lambda;
+
   /* traffic intensity */
-  //cout << "/* traffic intensity */" << endl;
   Rho = Lambda * tao / N;
 
   /* Define intial values for P_0 and P_N */
-  //cout << "/* Define intial values for P_0 and P_N */" << endl;
   P_0 = 1.0;
   for (int i = 0;i < N;i++)
     P_0 *= (1 - rho[i]);
@@ -82,17 +81,19 @@ double** jarvis_hypercube_approximation
     P_N *= rho[i];
 
   /* ITERATION: */
-  //cout << "/* ITERATION: */" << endl;
   Q_N_rho = new double[N];
   double *new_rho = new double[N];
   do {
+
+    for (int i = 0;i < N;i++) cout << rho[i] << " ";
+    cout << endl;
+
     /* Compute Q(N,\rho,k) */
-    //cout << "/* Compute Q(N,\rho,k) */" << endl;
     for (int k = 0;k < N;k++)
       Q_N_rho[k] = correction_factor_Q(N,Rho,k);
   
     /* Aproximation of \rho_i */
-    //cout << "/* Aproximation of \rho_i */" << endl;
+    cout << "/* Aproximation of rho_i */" << endl;
     for (int i = 0;i < N;i++) {
       double Vi = 0.0;
       for (int k = 0;k < N;k++) {
@@ -105,6 +106,7 @@ double** jarvis_hypercube_approximation
 	  }
 	}
       }
+      if (Vi < epsilon) cout << "Vi insignificant for i = " << i+1 << endl;
       new_rho[i] = Vi / (1 + Vi);
     }
 
@@ -114,6 +116,7 @@ double** jarvis_hypercube_approximation
     for (int i = 0;i < N;i++)
       if (abs(rho[i] - new_rho[i]) > max_change)
 	max_change = abs(rho[i] - new_rho[i]);
+    cout << "max change = " << max_change << endl;
     if (max_change < epsilon) break; /* STOP */
 
     for (int i = 0;i < N;i++)

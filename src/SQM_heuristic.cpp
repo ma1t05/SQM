@@ -100,9 +100,22 @@ response_unit* SQM_heuristic
 	for (int i = 0;i < p;i++)
 	  d[i] = Dist[X[i].location][k];
 	sort_dist(p,d,a[k]);
+
+	cout << k << ":";
+	for (int i = 0;i < p;i++) cout << " " << a[k][i];
+	cout << endl;
+
       }
 
       f = jarvis_hypercube_approximation(m,p,Lambda,Tao,a);
+
+      P_B0 = 1.0;
+      for (int i = 0;i < p;i++) {
+	double rho_i = 1.0;
+	for (int k = 0;k < m;k++)
+	  rho_i =
+	P_B0 *= (1 - rho_i);
+      }
 
       //cout << "\t// T_R(X)" << endl;
       t_r = 0.0;
