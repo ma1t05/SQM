@@ -45,6 +45,7 @@ double** jarvis_hypercube_approximation
   double tao;
   double *rho;
   double *Q_N_rho;
+  double *new_rho;
   double **f;
 
   f = new double*[N];
@@ -63,7 +64,7 @@ double** jarvis_hypercube_approximation
     }
   }
 
-  /* mean service time \tao */
+  /* mean service time 'tao' */
   tao = 0.0;
   for (int m = 0;m < C;m++) tao += lambda[m] * Tao[a[m][0]][m];
   tao /= Lambda;
@@ -82,17 +83,18 @@ double** jarvis_hypercube_approximation
 
   /* ITERATION: */
   Q_N_rho = new double[N];
-  double *new_rho = new double[N];
+  new_rho = new double[N];
   do {
 
+    cout << "Current values for 'rho_i':" << endl;
     for (int i = 0;i < N;i++) cout << rho[i] << " ";
     cout << endl;
 
-    /* Compute Q(N,\rho,k) */
+    /* Compute Q(N,'rho',k) */
     for (int k = 0;k < N;k++)
       Q_N_rho[k] = correction_factor_Q(N,Rho,k);
   
-    /* Aproximation of \rho_i */
+    /* Aproximation of 'rho'_i */
     cout << "/* Aproximation of rho_i */" << endl;
     for (int i = 0;i < N;i++) {
       double Vi = 0.0;
@@ -106,7 +108,6 @@ double** jarvis_hypercube_approximation
 	  }
 	}
       }
-      if (Vi < epsilon) cout << "Vi insignificant for i = " << i+1 << endl;
       new_rho[i] = Vi / (1 + Vi);
     }
 
@@ -179,10 +180,19 @@ double** jarvis_hypercube_approximation
 */
 double correction_factor_Q(int N,double rho,int k){
   double Q;
+  double N_k_1 = factorial(N - k - 1);
+  double PNK_N_1_rho_1_PN = pow(1 - P_N,k) * factorial(N) * (1 - rho * (1 - P_N));
+  if (PNK_N_1_rho_1_PN == 0) 
+    cout << "Algun factor es 0 N = " << N 
+	 << " rho = " << rho 
+	 << " k = " << k 
+	 << " P_0 = " << P_0
+	 << " P_N = " << P_N << endl;
+  Q = 0.0;
   for (int j = k;j < N;j++) {
-    Q += (N - j) * pow(N,j) * pow(rho,j - k) / factorial(j - k);
+    Q += (N - j) * pow(N,j) * pow(rho,j - k) * P_0 * N_k_1 / (factorial(j - k) * PNK_N_1_rho_1_PN);
   }
-  return Q * P_0 * factorial(N - k - 1) / (pow(1 - P_N,k) * factorial(N) * (1 - rho * (1 - P_N)));
+  return Q;
 }
 					  
 int factorial(int n) {

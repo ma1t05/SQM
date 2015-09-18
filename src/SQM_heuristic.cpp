@@ -25,8 +25,8 @@ response_unit* SQM_heuristic
   double mu;
   double P_B0; // Pendiente
   /* Variables por ajustar */
-  double v = 40.0;
-  double beta = 2.0;
+  double v = 64.0;
+  double beta = 1.5;
   /* */
   double *Lambda;
   double delta_mu;
@@ -93,7 +93,7 @@ response_unit* SQM_heuristic
       //cout << "\t// Step 1: Run the Hypercube Model" << endl;
       for (int i = 0;i < p;i++) {
 	for (int k = 0;k < m;k++) {
-	  Tao[i][k] = (Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]);
+	  Tao[i][k] = (1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]);
 	}
       }
       
@@ -102,9 +102,11 @@ response_unit* SQM_heuristic
 	  d[i] = Dist[X[i].location][k];
 	sort_dist(p,d,a[k]);
 
+	/*
 	cout << k << ":";
 	for (int i = 0;i < p;i++) cout << " " << a[k][i];
 	cout << endl;
+	*/
 
       }
 
