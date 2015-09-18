@@ -50,7 +50,7 @@ response_unit* SQM_heuristic
 
   for (int j = 0;j < m;j++) {
     for (int i = 0;i < n;i++) {
-      Dist[j][i] = dist(&(V[i]),&(W[j]));
+      Dist[j][i] = dist(&(V[j]),&(W[i]));
     }
   }
 
@@ -72,6 +72,7 @@ response_unit* SQM_heuristic
 
   for (int k = 0;k < m;k++)
     Lambda[k] = I->V[k].demand * lambda;
+
 
   /* SERVICE MEAN TIME CALIBRATION */
   //cout << "/* SERVICE MEAN TIME CALIBRATION */" << endl;

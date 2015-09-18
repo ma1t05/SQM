@@ -122,6 +122,10 @@ double** jarvis_hypercube_approximation
     for (int i = 0;i < N;i++)
       rho[i] = new_rho[i];
 
+    /* Compute P_0 */
+    P_0 = 1.0;
+    for (int i = 0;i < N;i++) P_0 *= (1 - rho[i]);
+
     /* Compute P_N */
     //cout << "/* Compute P_N */" << endl;
     double s_rho = 0.0;
