@@ -52,7 +52,6 @@ double** jarvis_hypercube_approximation
   for (int i = 0; i < N;i++) f[i] = new double[C];
   
   /* INITIALIZE: */
-  //cout << "/* INITIALIZE: */" << endl;
   Lambda = 0.0;
   for (int m = 0;m < C;m++) Lambda += lambda[m];
 
@@ -60,7 +59,7 @@ double** jarvis_hypercube_approximation
   for (int i = 0; i < N;i++) {
     rho[i] = 0.0;
     for (int m = 0; m < C;m++) {
-      if (a[m][1] == i) rho[i] += lambda[m] * Tao[i][m];
+      if (a[m][0] == i) rho[i] += lambda[m] * Tao[i][m];
     }
   }
 
