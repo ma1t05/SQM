@@ -24,9 +24,6 @@ response_unit* SQM_heuristic
   double *d;
   double mu;
   double P_B0; // Pendiente
-  /* Variables por ajustar */
-  double v = 64.0;
-  double beta = 1.5;
   /* */
   double *Lambda;
   double delta_mu;
@@ -34,9 +31,11 @@ response_unit* SQM_heuristic
   int m = I->M; /* Number of demand points */
   int n = I->N; /* Number of potencial sites to locate a server*/
   point *V = I->V,*W = I->W;
+  /* Variables por ajustar */
+  double v = 64.0;
+  double beta = 1.5;
  
   /* Guess a location */
-  //cout << "/* Guess a location */" << endl;
   X = guess_a_location_03(p,n,W);
   for (int i = 0;i < p;i++) {
     X[i].v = v;
@@ -44,7 +43,6 @@ response_unit* SQM_heuristic
   }
 
   /* Populate matrix of distances */
-  //cout << "/* Populate matrix of distances */" << endl;
   Dist = new double*[m];
   for (int j = 0;j < m;j++)
     Dist[j] = new double [n];
@@ -71,37 +69,46 @@ response_unit* SQM_heuristic
   for (int k = 0;k < m;k++)
     a[k] = new int[p];
 
+  double demand = 0.0;
+  for (int k = 0;k < m;k++) demand += I->V[k].demand;
   for (int k = 0;k < m;k++)
-    Lambda[k] = I->V[k].demand * lambda;
+    Lambda[k] = I->V[k].demand * lambda / demand;
 
 
   for (int i = 0;i < p;i++)
     LogFile << X[i].location << " ";
   LogFile << endl;
   /* SERVICE MEAN TIME CALIBRATION */
-  //cout << "/* SERVICE MEAN TIME CALIBRATION */" << endl;
   do {
 
-    /* Current solution */
+    /* Print Current solution */
     cout << "Current solution" << endl;
     for (int i = 0;i < p;i++)
       cout << X[i].location << " ";
     cout << endl;
 
     T_r = t_r;
-    //cout << "\t// Step 0" << endl;
+
+    /* **Step 0**
+       Initialize Mean Service Time */
     for (int i = 0;i < p;i++)
-      MST[i] = 1 / Mu_NT;
+      mst[i] = 1 / Mu_NT;
+
     do {
+
+      for (int i = 0;i < p;i++)
+	MST[i] = mst[i];
 
       /* **Step 1**:
 	 Run the Hypercube Model */
+      /* Update matrix of response times */
       for (int i = 0;i < p;i++) {
 	for (int k = 0;k < m;k++) {
 	  Tao[i][k] = (1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/(60*24));
 	}
       }
       
+      /* Update matrix of pfreferred servers */
       for (int k = 0;k < m;k++) {
 	for (int i = 0;i < p;i++)
 	  d[i] = Dist[k][X[i].location];
@@ -115,6 +122,14 @@ response_unit* SQM_heuristic
 
       f = jarvis_hypercube_approximation(m,p,Lambda,Tao,a);
 
+      /* *Expected Response Time* */
+      /* + expected travel time component */
+      t_r = 0.0;
+      for (int i = 0;i < p;i++) {
+	for (int k = 0;k < m;k++)
+	  t_r += f[i][k] * Dist[k][X[i].location];
+      }
+
       P_B0 = 1.0;
       for (int i = 0;i < p;i++) {
 	double rho_i = 0.0;
@@ -123,19 +138,14 @@ response_unit* SQM_heuristic
 	P_B0 *= (1 - rho_i);
       }
 
-      /* the expected travel time component */
-      t_r = 0.0;
-      for (int i = 0;i < p;i++) {
-	for (int k = 0;k < m;k++)
-	  t_r += f[i][k] * Dist[k][X[i].location];
-      }
-      // the mean queue delay component
+      /* + mean queue delay component */
       mu = 0.0;
       for (int i = 0;i < p;i++)
 	mu += 1 / MST[i];
       t_r += P_B0 * mu / pow(mu - lambda,2.0);
       
-      /* Step 2 */
+      /* Step 2 
+	 Update mean service time */
       for (int i = 0;i < p;i++) {
 	double h = 0.0;
 	for (int k = 0;k < m;k++)
@@ -152,12 +162,6 @@ response_unit* SQM_heuristic
 	  delta_mu = abs(mst[i] - MST[i]);
       }
 
-      if (delta_mu > epsilon) {
-	//cout << "\tOther itetarion" << endl;
-	for (int i = 0;i < p;i++)
-	  MST[i] = mst[i];
-      }
-      
     } while (delta_mu > epsilon);
     
     double *h_i = new double[m];
@@ -192,8 +196,13 @@ response_unit* SQM_heuristic
       X[i].location = best_location;
 
       /* Print current solution to LogFile */
-      for (int i = 0;i < p;i++)
-	LogFile << X[i].location << "\t";
+      for (int i = 0;i < p;i++) {
+	LogFile << X[i].location;
+	if (X[i].past_location != X[i].location)
+	  LogFile << "*";
+	LogFile << "\t";
+	X[i].past_location = X[i].location;
+      }
       LogFile << endl;
 
     }
@@ -220,6 +229,15 @@ response_unit* SQM_heuristic
 int unif(int a) {
   return floor(double(a) * rand() / RAND_MAX);
 }
+
+
+
+
+
+
+
+
+
 
 int comp(const void *a,const void *b) {
   std::pair<double,int> *x,*y;
@@ -248,6 +266,7 @@ response_unit* guess_a_location_01(int p,int n, point *W){
   X = new response_unit[p];
   for (int i = 0;i < p;i++) {
     X[i].location = i;
+    X[i].past_location = i;
   }
   return X;
 }

@@ -93,12 +93,10 @@ int main(int argc,char *argv[]) {
   }
   results.close();
   */
-  demand = 0.0;
-  for (int i = 0;i < I->M;i++) demand += (I->V)[i].demand;
   
   response_unit *X;
   //cout << "Calling SQM_Heuristic" << endl;
-  X = SQM_heuristic(I,p,f / demand,mu);
+  X = SQM_heuristic(I,p,f,mu);
   for (int i = 0;i < p;i++) LogFile << X[i].location << " ";
   LogFile << endl;
   delete [] X;
