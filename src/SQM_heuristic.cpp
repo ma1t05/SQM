@@ -31,7 +31,8 @@ response_unit* SQM_heuristic
   double *Lambda;
   double delta_mu;
   int **a;
-  int n = I->N,m = I->M;
+  int m = I->M; /* Number of demand points */
+  int n = I->N; /* Number of potencial sites to locate a server*/
   point *V = I->V,*W = I->W;
  
   /* Guess a location */
@@ -93,7 +94,8 @@ response_unit* SQM_heuristic
       MST[i] = 1 / Mu_NT;
     do {
 
-      //cout << "\t// Step 1: Run the Hypercube Model" << endl;
+      /* **Step 1**:
+	 Run the Hypercube Model */
       for (int i = 0;i < p;i++) {
 	for (int k = 0;k < m;k++) {
 	  Tao[i][k] = (1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/(60*24));
@@ -102,15 +104,13 @@ response_unit* SQM_heuristic
       
       for (int k = 0;k < m;k++) {
 	for (int i = 0;i < p;i++)
-	  d[i] = Dist[X[i].location][k];
+	  d[i] = Dist[k][X[i].location];
 	sort_dist(p,d,a[k]);
-
 	/*
 	cout << k << ":";
 	for (int i = 0;i < p;i++) cout << " " << a[k][i];
 	cout << endl;
 	*/
-
       }
 
       f = jarvis_hypercube_approximation(m,p,Lambda,Tao,a);
@@ -123,12 +123,11 @@ response_unit* SQM_heuristic
 	P_B0 *= (1 - rho_i);
       }
 
-      //cout << "\t// T_R(X)" << endl;
+      /* the expected travel time component */
       t_r = 0.0;
-      // the expected travel time component
       for (int i = 0;i < p;i++) {
 	for (int k = 0;k < m;k++)
-	  t_r += f[i][k] * Dist[X[i].location][k];
+	  t_r += f[i][k] * Dist[k][X[i].location];
       }
       // the mean queue delay component
       mu = 0.0;
@@ -136,17 +135,17 @@ response_unit* SQM_heuristic
 	mu += 1 / MST[i];
       t_r += P_B0 * mu / pow(mu - lambda,2.0);
       
-      //cout << "\t// Step 2" << endl;
+      /* Step 2 */
       for (int i = 0;i < p;i++) {
 	double h = 0.0;
 	for (int k = 0;k < m;k++)
 	  h += f[i][k];
 	mst[i] = 0.0;
 	for (int k = 0;k < m;k++)
-	  mst[i] += (f[i][k]/h) * (Mu_NT + (X[i].beta / X[i].v) * Dist[X[i].location][k]);
+	  mst[i] += (f[i][k]/h) * (1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/(60*24));
       }
       
-      //cout << "\t// Step 3" << endl;
+      /* Step 3 */
       delta_mu = 0.0;
       for (int i = 0;i < p;i++) {
 	if (abs(mst[i] - MST[i]) > delta_mu)
@@ -168,10 +167,14 @@ response_unit* SQM_heuristic
       double h = 0.0;
       for (int k = 0;k < m;k++) 
 	h += f[i][k];
+      if (h == 0) cout << "for i = " << i+1 << " sum over f_ij is 0" << endl;
       for (int k = 0;k < m;k++) 
 	h_i[k] = f[i][k]/h;
 
       // Block B
+      cout << "improbe location of server " << i+1 
+	   << " at " << X[i].location << endl
+	   << "place\tresponse time" << endl;
       //cout << "\t\tBlock B " << i << endl;
       /* Solve te 1-median location model with h_i^j */
       int best_location = -1;
@@ -181,9 +184,7 @@ response_unit* SQM_heuristic
 	for (int k = 0;k < m;k++) 
 	  sol += h_i[k] * Dist[k][j];
 	if (best_location == -1 || sol < best_sol) {
-	  cout << "improbe location of " << i 
-	       << " at place " << j 
-	       << " with new response time: " << sol << endl;
+	  cout << j << "\t" << sol << endl;
 	  best_location = j;
 	  best_sol = sol;
 	}
@@ -192,7 +193,7 @@ response_unit* SQM_heuristic
 
       /* Print current solution to LogFile */
       for (int i = 0;i < p;i++)
-	LogFile << X[i].location << " ";
+	LogFile << X[i].location << "\t";
       LogFile << endl;
 
     }
