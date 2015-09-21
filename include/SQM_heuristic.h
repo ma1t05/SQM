@@ -10,6 +10,7 @@
 
 struct response_unit {
   int location;
+  int past_location;
   double v;
   double beta;
 };
