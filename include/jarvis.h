@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <cmath>
-#define epsilon 0.0000000001
+#define epsilon 0.00001
 using namespace std;
 
 double** jarvis_hypercube_approximation
