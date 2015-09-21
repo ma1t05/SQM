@@ -61,9 +61,19 @@ int main(int argc,char *argv[]) {
     I = IC_create_instance(M_clients,N_sites);
     IC_write_instance(I,filename+"_demand.ins",filename+"_facility.ins");
   }
+
+  LogFile << "*** Start SQM Heuristic ***" << endl
+	  << "with "
+	  << M_clients << " clients, "
+	  << N_sites << " sites, "
+	  << p << " servers, "
+	  << mu << " mean service time, "
+	  << f << " arrival rate"
+	  << endl;
+
   /*
   results << "," << filename << "_demand.ins," << filename << "_facility.ins";
-
+  
   Sol = SQM_model(I,p,l,mu,f,v);
   char sub[16];
   sprintf(sub,"_%02d_%02d",p,l);

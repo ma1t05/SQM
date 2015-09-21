@@ -69,9 +69,6 @@ double** jarvis_hypercube_approximation
   for (int m = 0;m < C;m++) tao += lambda[m] * Tao[a[m][0]][m];
   tao /= Lambda;
 
-  /* traffic intensity */
-  Rho = Lambda * tao / N;
-
   /* Define intial values for P_0 and P_N */
   P_0 = 1.0;
   for (int i = 0;i < N;i++)
@@ -89,6 +86,9 @@ double** jarvis_hypercube_approximation
     cout << "Current values for 'rho_i':" << endl;
     for (int i = 0;i < N;i++) cout << rho[i] << " ";
     cout << endl;
+
+    /* traffic intensity */
+    Rho = Lambda * tao / N;
 
     /* Compute Q(N,'rho',k) */
     for (int k = 0;k < N;k++)
@@ -128,13 +128,11 @@ double** jarvis_hypercube_approximation
     for (int i = 0;i < N;i++) P_0 *= (1 - rho[i]);
 
     /* Compute P_N */
-    //cout << "/* Compute P_N */" << endl;
     double s_rho = 0.0;
     for (int i = 0;i < N;i++) s_rho += rho[i];
     P_N = 1.0 - s_rho / (N * Rho);
 
-    /* Compute \tao */
-    //cout << "/* Compute \tao */" << endl;
+    /* Compute mean service time 'tao' */
     tao = 0.0;
     for (int m = 0;m < C;m++) {
       double tmp = 0.0;

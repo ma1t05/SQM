@@ -74,6 +74,9 @@ response_unit* SQM_heuristic
     Lambda[k] = I->V[k].demand * lambda;
 
 
+  for (int i = 0;i < p;i++)
+    LogFile << X[i].location << " ";
+  LogFile << endl;
   /* SERVICE MEAN TIME CALIBRATION */
   //cout << "/* SERVICE MEAN TIME CALIBRATION */" << endl;
   do {
@@ -93,7 +96,7 @@ response_unit* SQM_heuristic
       //cout << "\t// Step 1: Run the Hypercube Model" << endl;
       for (int i = 0;i < p;i++) {
 	for (int k = 0;k < m;k++) {
-	  Tao[i][k] = (1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]);
+	  Tao[i][k] = (1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/(60*24));
 	}
       }
       
@@ -114,9 +117,9 @@ response_unit* SQM_heuristic
 
       P_B0 = 1.0;
       for (int i = 0;i < p;i++) {
-	double rho_i = 1.0;
+	double rho_i = 0.0;
 	for (int k = 0;k < m;k++)
-	  rho_i =
+	  rho_i += Lambda[k] * f[i][k] * Tao[i][k];
 	P_B0 *= (1 - rho_i);
       }
 
@@ -186,6 +189,12 @@ response_unit* SQM_heuristic
 	}
       }
       X[i].location = best_location;
+
+      /* Print current solution to LogFile */
+      for (int i = 0;i < p;i++)
+	LogFile << X[i].location << " ";
+      LogFile << endl;
+
     }
     delete [] h_i;
 
