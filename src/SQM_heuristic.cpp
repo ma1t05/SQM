@@ -179,7 +179,6 @@ response_unit* SQM_heuristic
       cout << "improbe location of server " << i+1 
 	   << " at " << X[i].location << endl
 	   << "place\tresponse time" << endl;
-      //cout << "\t\tBlock B " << i << endl;
       /* Solve te 1-median location model with h_i^j */
       int best_location = -1;
       double best_sol,sol;
@@ -188,12 +187,13 @@ response_unit* SQM_heuristic
 	for (int k = 0;k < m;k++) 
 	  sol += h_i[k] * Dist[k][j];
 	if (best_location == -1 || sol < best_sol) {
-	  cout << j << "\t" << sol << endl;
+	  cout << j << "\t" << sol << "\r";
 	  best_location = j;
 	  best_sol = sol;
 	}
       }
       X[i].location = best_location;
+      cout << endl;
 
       /* Print current solution to LogFile */
       for (int i = 0;i < p;i++) {
@@ -223,6 +223,10 @@ response_unit* SQM_heuristic
   for (int j=0;j < m;j++) delete [] Dist[j];
   delete [] Dist;
 
+  for (int k = 0;k < n;k++)
+    for (int i = 0;i < p;i++)
+      if (X[i].location == k) cout << k << " ";
+  cout << endl;
   return X;
 }
 
