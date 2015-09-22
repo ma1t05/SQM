@@ -82,8 +82,8 @@ double** jarvis_hypercube_approximation
   new_rho = new double[N];
   do {
 
-    cout << "Current values for 'rho_i':" << endl;
-    for (int i = 0;i < N;i++) cout << rho[i] << " ";
+    cout << "'rho_i':";
+    for (int i = 0;i < N;i++) cout << " " << rho[i];
     cout << endl;
 
     /* traffic intensity */
@@ -97,26 +97,28 @@ double** jarvis_hypercube_approximation
     cout << "/* Aproximation of rho_i */" << endl;
     for (int i = 0;i < N;i++) {
       double Vi = 0.0;
-      for (int k = 0;k < N;k++) {
-	for (int m = 0;m < C;m++) {
-	  if (a[m][k] == i) {
-	    double rho_a_ml = 1.0;
-	    for (int l = 0;l < N;l++) 
-	      if (a[m][l] < a[m][k]) rho_a_ml *= rho[a[m][l]];
-	    Vi += lambda[m] * Tao[i][m] * Q_N_rho[k-1] * rho_a_ml;
-	  }
+      for (int m = 0;m < C;m++) {
+	double rho_a_ml = 1.0;
+	int k;
+	for (k = 0;k < N;k++) {
+	  if (a[m][k] == i)
+	    break;
+	  rho_a_ml *= rho[a[m][k]];
 	}
+	Vi += lambda[m] * Tao[i][m] * Q_N_rho[k] * rho_a_ml;
       }
       new_rho[i] = Vi / (1 + Vi);
     }
 
     /* Convergence criterion */
-    //cout << "/* Convergence criterion */" << endl;
     double max_change = 0.0;
     for (int i = 0;i < N;i++)
       if (abs(rho[i] - new_rho[i]) > max_change)
 	max_change = abs(rho[i] - new_rho[i]);
-    cout << "max change = " << max_change << endl;
+    cout << "max change = " << max_change;
+    if (max_change < epsilon)
+      cout << " **STOP**";
+    cout << endl;
     if (max_change < epsilon) break; /* STOP */
 
     for (int i = 0;i < N;i++)
@@ -136,19 +138,21 @@ double** jarvis_hypercube_approximation
     for (int m = 0;m < C;m++) {
       double tmp = 0.0;
       for (int i = 0;i < N;i++)
-	tmp += Tao[i][m] * f[i][m] / (1 - P_N);
-      tao += lambda[m] * tmp / Lambda;
+	tmp += Tao[i][m] * f[i][m];
+      tao += lambda[m] * tmp / (Lambda * (1 - P_N));
     }
  
     /* Compute f_{im} */
-    //cout << "/* Compute f_{im} */" << endl;
     for (int i = 0;i < N;i++) {
       for (int m = 0;m < C;m++) {
-	int k = a[m][i];
 	double rho_a_ml = 1.0;
-	for (int l = 0;l < N;l++)
-	  if (a[m][l] < k) rho_a_ml *= rho[a[m][l]];
-	f[i][m] = Q_N_rho[k - 1] * (1 - rho[i]) * rho_a_ml;
+	int k;
+	for (k = 0;k < N;k++) {
+	  if (a[m][k] == i)
+	    break;
+	  rho_a_ml *= rho[a[m][k]];
+	}
+	f[i][m] = Q_N_rho[k] * (1 - rho[i]) * rho_a_ml;
       }
     }
 
