@@ -3,7 +3,7 @@
 
 int unif(int);
 int comp(const void*,const void*);
-void sort_dist (int,double*,int*);
+void sort_dist (int,num*,int*);
 response_unit* guess_a_location_01(int,int,point*); // Returns the first p
 response_unit* guess_a_location_02(int,int,point*); // Returns p random with replace
 response_unit* guess_a_location_03(int,int,point*); // Returns p random
@@ -17,23 +17,23 @@ response_unit* SQM_heuristic
   
   /* Variable definitions */
   response_unit *X;
-  double *MST,*mst; // mean service time
-  double T_r,t_r; // expected response time
-  double **Dist; // Matrix of distances
-  double **f,**Tao;
-  double *d;
-  double mu;
-  double P_B0; // Pendiente
+  num *MST,*mst; // mean service time
+  num T_r,t_r; // expected response time
+  num **Dist; // Matrix of distances
+  num **f,**Tao;
+  num *d;
+  num mu;
+  num P_B0; // Pendiente
   /* */
-  double *Lambda;
-  double delta_mu;
+  num *Lambda;
+  num delta_mu;
   int **a;
   int m = I->M; /* Number of demand points */
   int n = I->N; /* Number of potencial sites to locate a server*/
   point *V = I->V,*W = I->W;
   /* Variables por ajustar */
-  double v = 64.0;
-  double beta = 1.5;
+  num v = 64.0;
+  num beta = 1.5;
  
   /* Guess a location */
   X = guess_a_location_03(p,n,W);
@@ -43,9 +43,9 @@ response_unit* SQM_heuristic
   }
 
   /* Populate matrix of distances */
-  Dist = new double*[m];
+  Dist = new num*[m];
   for (int j = 0;j < m;j++)
-    Dist[j] = new double [n];
+    Dist[j] = new num [n];
 
   for (int j = 0;j < m;j++) {
     for (int i = 0;i < n;i++) {
@@ -54,22 +54,22 @@ response_unit* SQM_heuristic
   }
 
   t_r = 99999.9;
-  MST = new double[p];
-  mst = new double[p];
-  d = new double[p];
-  Lambda = new double[m];
-  f = new double*[p];
+  MST = new num[p];
+  mst = new num[p];
+  d = new num[p];
+  Lambda = new num[m];
+  f = new num*[p];
   for (int i = 0;i < p;i++)
-    f[i] = new double[m];
-  Tao = new double*[p];
+    f[i] = new num[m];
+  Tao = new num*[p];
   for (int i = 0;i < p;i++)
-    Tao[i] = new double[m];
+    Tao[i] = new num[m];
 
   a = new int*[m];
   for (int k = 0;k < m;k++)
     a[k] = new int[p];
 
-  double demand = 0.0;
+  num demand = 0.0;
   for (int k = 0;k < m;k++) demand += I->V[k].demand;
   for (int k = 0;k < m;k++)
     Lambda[k] = I->V[k].demand * lambda / demand;
@@ -131,7 +131,7 @@ response_unit* SQM_heuristic
 
       P_B0 = 1.0;
       for (int i = 0;i < p;i++) {
-	double rho_i = 0.0;
+	num rho_i = 0.0;
 	for (int k = 0;k < m;k++)
 	  rho_i += Lambda[k] * f[i][k] * Tao[i][k];
 	P_B0 *= (1 - rho_i);
@@ -146,7 +146,7 @@ response_unit* SQM_heuristic
       /* Step 2 
 	 Update mean service time */
       for (int i = 0;i < p;i++) {
-	double h = 0.0;
+	num h = 0.0;
 	for (int k = 0;k < m;k++)
 	  h += f[i][k];
 	mst[i] = 0.0;
@@ -163,11 +163,11 @@ response_unit* SQM_heuristic
 
     } while (delta_mu > epsilon);
     
-    double *h_i = new double[m];
+    num *h_i = new num[m];
     for (int i = 0;i < p;i++) {
       // Block A
       //cout << "\t\tBlock A " << i << endl;
-      double h = 0.0;
+      num h = 0.0;
       for (int k = 0;k < m;k++) 
 	h += f[i][k];
       if (h == 0) cout << "for i = " << i+1 << " sum over f_ij is 0" << endl;
@@ -177,7 +177,7 @@ response_unit* SQM_heuristic
       // Block B
       /* Solve te 1-median location model with h_i^j */
       int best_location = -1;
-      double best_sol,sol;
+      num best_sol,sol;
       for (int j = 0;j < n;j++) {
 	sol = 0.0;
 	for (int k = 0;k < m;k++) 
@@ -229,22 +229,22 @@ int unif(int a) {
 }
 
 int comp(const void *a,const void *b) {
-  std::pair<double,int> *x,*y;
-  x = (std::pair<double,int>*)a;
-  y = (std::pair<double,int>*)b;
+  std::pair<num,int> *x,*y;
+  x = (std::pair<num,int>*)a;
+  y = (std::pair<num,int>*)b;
   if (x->first > y->first) return 1;
   else if (x->first < y->first) return -1;
   else return 0;
 }
 
-void sort_dist (int n,double *d,int *c) {
-  std::pair<double,int> *x;
-  x = new std::pair<double,int>[n];
+void sort_dist (int n,num *d,int *c) {
+  std::pair<num,int> *x;
+  x = new std::pair<num,int>[n];
   for (int i = 0;i < n;i++) {
     x[i].first = d[i];
     x[i].second = i;
   }
-  qsort(x,n,sizeof(std::pair<double,int>), comp);
+  qsort(x,n,sizeof(std::pair<num,int>), comp);
   for (int i = 0;i < n;i++)
     c[i] = x[i].second;
   delete[] x;

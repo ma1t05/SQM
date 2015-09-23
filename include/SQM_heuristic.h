@@ -7,6 +7,7 @@
 #include "point.h"
 #include "SQM.h"
 #include "jarvis.h"
+typedef long double num;
 
 struct response_unit {
   int location;

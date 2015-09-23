@@ -4,16 +4,18 @@
 
 #include <iostream>
 #include <cmath>
+#include <gmp.h>
 #define epsilon 0.00000001
 using namespace std;
+typedef long double num;
 
-double** jarvis_hypercube_approximation
+num** jarvis_hypercube_approximation
 (int C, /* Number of types of customers*/
  int N, /* Number of servers */
- double *lambda, /* */
- double **Tao, /* */
+ num *lambda, /* */
+ num **Tao, /* */
  int **a, /* */
- double **f /* */);
+ num **f /* */);
 
 #endif
 
