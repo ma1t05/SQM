@@ -38,7 +38,8 @@ double** jarvis_hypercube_approximation
  int N, /* Number of servers */
  double *lambda, /* arrive rate according to a Poisson process per type */
  double **Tao, /* expected service time for service i and customer of node m */
- int **a /* for customers of type m, the list of preferred servers */) {
+ int **a, /* for customers of type m, the list of preferred servers */
+ double **f) {
 
   double Lambda;
   double Rho;
@@ -46,11 +47,7 @@ double** jarvis_hypercube_approximation
   double *rho;
   double *Q_N_rho;
   double *new_rho;
-  double **f;
 
-  f = new double*[N];
-  for (int i = 0; i < N;i++) f[i] = new double[C];
-  
   /* INITIALIZE: */
   Lambda = 0.0;
   for (int m = 0;m < C;m++) Lambda += lambda[m];
@@ -82,9 +79,11 @@ double** jarvis_hypercube_approximation
   new_rho = new double[N];
   do {
 
+    /*
     cout << "'rho_i':";
     for (int i = 0;i < N;i++) cout << " " << rho[i];
-    cout << endl;
+    cout << "\r";
+    */
 
     /* traffic intensity */
     Rho = Lambda * tao / N;
@@ -94,7 +93,6 @@ double** jarvis_hypercube_approximation
       Q_N_rho[k] = correction_factor_Q(N,Rho,k);
   
     /* Aproximation of 'rho'_i */
-    cout << "/* Aproximation of rho_i */" << endl;
     for (int i = 0;i < N;i++) {
       double Vi = 0.0;
       for (int m = 0;m < C;m++) {
@@ -115,10 +113,13 @@ double** jarvis_hypercube_approximation
     for (int i = 0;i < N;i++)
       if (abs(rho[i] - new_rho[i]) > max_change)
 	max_change = abs(rho[i] - new_rho[i]);
+    /*
     cout << "max change = " << max_change;
     if (max_change < epsilon)
-      cout << " **STOP**";
-    cout << endl;
+      cout << " **STOP**" << endl;
+    else 
+      cout << "\r";
+    */
     if (max_change < epsilon) break; /* STOP */
 
     for (int i = 0;i < N;i++)

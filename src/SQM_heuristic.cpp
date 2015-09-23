@@ -82,10 +82,9 @@ response_unit* SQM_heuristic
   do {
 
     /* Print Current solution */
-    cout << "Current solution" << endl;
     for (int i = 0;i < p;i++)
       cout << X[i].location << " ";
-    cout << endl;
+    cout << "\r";
 
     T_r = t_r;
 
@@ -120,7 +119,7 @@ response_unit* SQM_heuristic
 	*/
       }
 
-      f = jarvis_hypercube_approximation(m,p,Lambda,Tao,a);
+      jarvis_hypercube_approximation(m,p,Lambda,Tao,a,f);
 
       /* *Expected Response Time* */
       /* + expected travel time component */
@@ -176,9 +175,6 @@ response_unit* SQM_heuristic
 	h_i[k] = f[i][k]/h;
 
       // Block B
-      cout << "improbe location of server " << i+1 
-	   << " at " << X[i].location << endl
-	   << "place\tresponse time" << endl;
       /* Solve te 1-median location model with h_i^j */
       int best_location = -1;
       double best_sol,sol;
@@ -187,13 +183,11 @@ response_unit* SQM_heuristic
 	for (int k = 0;k < m;k++) 
 	  sol += h_i[k] * Dist[k][j];
 	if (best_location == -1 || sol < best_sol) {
-	  cout << j << "\t" << sol << "\r";
 	  best_location = j;
 	  best_sol = sol;
 	}
       }
       X[i].location = best_location;
-      cout << endl;
 
       /* Print current solution to LogFile */
       for (int i = 0;i < p;i++) {
@@ -214,14 +208,14 @@ response_unit* SQM_heuristic
   delete [] a;
   for (int i = 0;i < p;i++) delete [] Tao[i];
   delete [] Tao;
-  for (int i = 0;i < p;i++) delete [] f[i];
-  delete [] f;
   delete [] Lambda;
   delete [] d;
   delete [] mst;
   delete [] MST;
   for (int j=0;j < m;j++) delete [] Dist[j];
   delete [] Dist;
+  for (int i = 0;i < p;i++) delete [] f[i];
+  delete [] f;
 
   for (int k = 0;k < n;k++)
     for (int i = 0;i < p;i++)
@@ -233,15 +227,6 @@ response_unit* SQM_heuristic
 int unif(int a) {
   return floor(double(a) * rand() / RAND_MAX);
 }
-
-
-
-
-
-
-
-
-
 
 int comp(const void *a,const void *b) {
   std::pair<double,int> *x,*y;
