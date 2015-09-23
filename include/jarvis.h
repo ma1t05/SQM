@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <cmath>
-#define epsilon 0.00001
+#define epsilon 0.00000001
 using namespace std;
 
 double** jarvis_hypercube_approximation
@@ -12,7 +12,8 @@ double** jarvis_hypercube_approximation
  int N, /* Number of servers */
  double *lambda, /* */
  double **Tao, /* */
- int **a /* */);
+ int **a, /* */
+ double **f /* */);
 
 #endif
 
