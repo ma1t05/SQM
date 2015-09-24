@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <cmath>
-#include <gmp.h>
+
 #define epsilon 0.00000001
 using namespace std;
 typedef long double num;
