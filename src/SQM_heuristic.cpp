@@ -223,18 +223,18 @@ response_unit* SQM_heuristic
 	}
       }
       X[i].location = best_location;
-
-      /* Print current solution to LogFile */
-      for (int i = 0;i < p;i++) {
-	LogFile << X[i].location;
-	if (X[i].past_location != X[i].location)
-	  LogFile << "*";
-	LogFile << "\t";
-	X[i].past_location = X[i].location;
-      }
-      LogFile << endl;
-
     }
+
+    /* Print current solution to LogFile */
+    for (int i = 0;i < p;i++) {
+      LogFile << X[i].location;
+      if (X[i].past_location != X[i].location)
+	LogFile << "*";
+      LogFile << "\t";
+      X[i].past_location = X[i].location;
+    }
+    LogFile << endl;
+
     mpf_clear(h);
     delete [] h_i;
 
@@ -342,7 +342,7 @@ response_unit* guess_a_location_03(int p,int n, point *W){
   for (int i = 0;i < n;i++) {
     if (option[i]) {
       X[--p].location = i;
-      //cout << i << " ";
+      X[p].past_location = i;
     }
   }
   //cout << endl;
