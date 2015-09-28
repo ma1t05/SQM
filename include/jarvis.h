@@ -7,15 +7,14 @@
 
 #define epsilon 0.00000001
 using namespace std;
-typedef long double num;
 
-num** jarvis_hypercube_approximation
+double** jarvis_hypercube_approximation
 (int C, /* Number of types of customers*/
  int N, /* Number of servers */
- num *lambda, /* */
- num **Tao, /* */
+ double *lambda, /* */
+ double **Tao, /* */
  int **a, /* */
- num **f /* */);
+ double **f /* */);
 
 #endif
 

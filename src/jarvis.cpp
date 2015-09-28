@@ -29,30 +29,30 @@
 
 #include "jarvis.h"
 
-num correction_factor_Q(int N,num rho,int k);
+double correction_factor_Q(int N,double rho,int k);
 int factorial(int k);
-num P_0,P_N; /* Pendiente: encontrar valores de P_0 y P_N */
+double P_0,P_N; /* Pendiente: encontrar valores de P_0 y P_N */
 
-num** jarvis_hypercube_approximation
+double** jarvis_hypercube_approximation
 (int C, /* Number of types of customers*/
  int N, /* Number of servers */
- num *lambda, /* arrive rate according to a Poisson process per type */
- num **Tao, /* expected service time for service i and customer of node m */
+ double *lambda, /* arrive rate according to a Poisson process per type */
+ double **Tao, /* expected service time for service i and customer of node m */
  int **a, /* for customers of type m, the list of preferred servers */
- num **f) {
+ double **f) {
 
-  num Lambda;
-  num Rho;
-  num tao;
-  num *rho;
-  num *Q_N_rho;
-  num *new_rho;
+  double Lambda;
+  double Rho;
+  double tao;
+  double *rho;
+  double *Q_N_rho;
+  double *new_rho;
 
   /* INITIALIZE: */
   Lambda = 0.0;
   for (int m = 0;m < C;m++) Lambda += lambda[m];
 
-  rho = new num[N];
+  rho = new double[N];
   for (int i = 0; i < N;i++) {
     rho[i] = 0.0;
     for (int m = 0; m < C;m++) {
@@ -75,8 +75,8 @@ num** jarvis_hypercube_approximation
     P_N *= rho[i];
 
   /* ITERATION: */
-  Q_N_rho = new num[N];
-  new_rho = new num[N];
+  Q_N_rho = new double[N];
+  new_rho = new double[N];
   do {
 
     /*
@@ -94,9 +94,9 @@ num** jarvis_hypercube_approximation
   
     /* Aproximation of 'rho'_i */
     for (int i = 0;i < N;i++) {
-      num Vi = 0.0;
+      double Vi = 0.0;
       for (int m = 0;m < C;m++) {
-	num rho_a_ml = 1.0;
+	double rho_a_ml = 1.0;
 	int k;
 	for (k = 0;k < N;k++) {
 	  if (a[m][k] == i)
@@ -109,7 +109,7 @@ num** jarvis_hypercube_approximation
     }
 
     /* Convergence criterion */
-    num max_change = 0.0;
+    double max_change = 0.0;
     for (int i = 0;i < N;i++)
       if (abs(rho[i] - new_rho[i]) > max_change)
 	max_change = abs(rho[i] - new_rho[i]);
@@ -129,24 +129,10 @@ num** jarvis_hypercube_approximation
     P_0 = 1.0;
     for (int i = 0;i < N;i++) P_0 *= (1 - rho[i]);
 
-    /* Compute P_N */
-    num s_rho = 0.0;
-    for (int i = 0;i < N;i++) s_rho += rho[i];
-    P_N = 1.0 - s_rho / (N * Rho);
-
-    /* Compute mean service time 'tao' */
-    tao = 0.0;
-    for (int m = 0;m < C;m++) {
-      num tmp = 0.0;
-      for (int i = 0;i < N;i++)
-	tmp += Tao[i][m] * f[i][m];
-      tao += lambda[m] * tmp / (Lambda * (1 - P_N));
-    }
- 
     /* Compute f_{im} */
     for (int i = 0;i < N;i++) {
       for (int m = 0;m < C;m++) {
-	num rho_a_ml = 1.0;
+	double rho_a_ml = 1.0;
 	int k;
 	for (k = 0;k < N;k++) {
 	  if (a[m][k] == i)
@@ -157,9 +143,24 @@ num** jarvis_hypercube_approximation
       }
     }
 
+    /* Compute P_N */
+    double s_rho = 0.0;
+    for (int i = 0;i < N;i++) s_rho += rho[i];
+    P_N = 1.0 - s_rho / (N * Rho);
+
+    /* Compute mean service time 'tao' */
+    tao = 0.0;
+    for (int m = 0;m < C;m++) {
+      double tmp = 0.0;
+      for (int i = 0;i < N;i++)
+	tmp += Tao[i][m] * f[i][m];
+      tao += lambda[m] * tmp / (Lambda * (1 - P_N));
+    }
+ 
   } while (1);
   delete [] new_rho;
   delete [] Q_N_rho;
+  delete [] rho;
 
   /*
   cout << "finsh jarvis" << endl;
@@ -180,10 +181,10 @@ num** jarvis_hypercube_approximation
    P_N probability all servers are busy
    \rho(1-P_N) average server workload or utilization (Sevast'yonov 1957)
 */
-num correction_factor_Q(int N,num rho,int k){
-  num Q;
-  num N_k_1 = factorial(N - k - 1);
-  num PNK_N_1_rho_1_PN = pow(1 - P_N,k) * factorial(N) * (1 - rho * (1 - P_N));
+double correction_factor_Q(int N,double rho,int k){
+  double Q;
+  double N_k_1 = factorial(N - k - 1);
+  double PNK_N_1_rho_1_PN = pow(1 - P_N,k) * factorial(N) * (1 - rho * (1 - P_N));
   if (PNK_N_1_rho_1_PN == 0) 
     cout << "Algun factor es 0 N = " << N 
 	 << " rho = " << rho 
