@@ -4,10 +4,10 @@
 
 #include <utility>
 #include <cstdlib>
+#include <gmp.h>
 #include "point.h"
 #include "SQM.h"
-#include "jarvis.h"
-typedef long double num;
+#include "mp_jarvis.h"
 
 struct response_unit {
   int location;
@@ -16,6 +16,7 @@ struct response_unit {
   double beta;
 };
 
+typedef mpf_t num;
 typedef struct response_unit response_unit;
 response_unit* SQM_heuristic(SQM_instance*,int,double,double);
 

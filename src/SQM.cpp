@@ -95,7 +95,7 @@ int main(int argc,char *argv[]) {
   */
   
   response_unit *X;
-  //cout << "Calling SQM_Heuristic" << endl;
+  cout << "Calling SQM_Heuristic" << endl;
   X = SQM_heuristic(I,p,f,mu);
   for (int i = 0;i < p;i++) LogFile << X[i].location << " ";
   LogFile << endl;
