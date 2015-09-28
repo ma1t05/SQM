@@ -30,7 +30,7 @@ CPLEXLIBDIR   = $(CPLEXDIR)/lib/$(SYSTEM)/$(LIBFORMAT)
 CONCERTLIBDIR = $(CONCERTDIR)/lib/$(SYSTEM)/$(LIBFORMAT)
 
 CCLNDIRS  = -L$(CPLEXLIBDIR) -L$(CONCERTLIBDIR)
-CCLNFLAGS = -lconcert -lilocplex -lcplex -m32 -lm -lpthread
+CCLNFLAGS = -lconcert -lilocplex -lcplex -m32 -lm -lpthread -lgmp
 
 CONCERTINCDIR = $(CONCERTDIR)/include
 CPLEXINCDIR   = $(CPLEXDIR)/include
@@ -59,7 +59,7 @@ $(CPP_EX): $(OBJS)
 	$(CCC) $(CCFLAGS) $(CCLNDIRS) $(OBJS) -o $@ $(CCLNFLAGS)
 
 $(OUT)/%.o: %.cpp $(INCLUDE)/%.h
-	$(CCC) $(CCFLAGS) -c $< -o $@
+	$(CCC) $(CCFLAGS) -c $< -o $@ $(CCLNFLAGS)
 
 # ------------------------------------------------------------
 .PHONY: clean
