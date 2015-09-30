@@ -7,6 +7,9 @@ void sort_dist (int,double*,int*);
 response_unit* guess_a_location_01(int,int,point*); // Returns the first p
 response_unit* guess_a_location_02(int,int,point*); // Returns p random with replace
 response_unit* guess_a_location_03(int,int,point*); // Returns p random
+void SQM_update_mst(mpf_t *mst,int m,int p,double Mu_NT,double **Dist,response_unit* X,mpf_t **f);
+void SQM_expected_travel_time(mpf_t,int,int,double**,response_unit*,mpf_t**);
+void SQM_mean_queue_delay(mpf_t,int,int,mpf_t*,mpf_t*,mpf_t**,mpf_t**);
 
 response_unit* SQM_heuristic
 (SQM_instance *I,
@@ -23,10 +26,10 @@ response_unit* SQM_heuristic
   num **f,**Tao;
   double *d;
   double mu;
-  double P_B0; // Pendiente
   /* */
   num tmp;
   num delta_mu;
+  num P_B0;
   num *Lambda;
   int **a;
   int m = I->M; /* Number of demand points */
@@ -67,6 +70,7 @@ response_unit* SQM_heuristic
 
   mpf_init(tmp);
   mpf_init(delta_mu);
+  mpf_init(P_B0);
   for (int i = 0;i < p;i++)
     mpf_init(MST[i]);
   for (int i = 0;i < p;i++)
@@ -109,8 +113,25 @@ response_unit* SQM_heuristic
 
     /* **Step 0**
        Initialize Mean Service Time */
+    /* Debug cout << "Step 0" << endl; /* */
     for (int i = 0;i < p;i++)
       mpf_set_d(mst[i],1 / Mu_NT);
+
+    /* Update matrix of response times */
+    /* Debug cout << "Step 0.1" << endl; /* */
+    for (int i = 0;i < p;i++) {
+      for (int k = 0;k < m;k++) {
+	mpf_set_d(Tao[i][k],1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/(60*24));
+      }
+    }
+
+    /* Update matrix of pfreferred servers */
+    /* Debug cout << "Step 0.2" << endl; /* */
+    for (int k = 0;k < m;k++) {
+      for (int i = 0;i < p;i++)
+	d[i] = Dist[k][X[i].location];
+      sort_dist(p,d,a[k]);
+    }
 
     do {
 
@@ -120,68 +141,34 @@ response_unit* SQM_heuristic
       /* **Step 1**:
 	Run the Hypercube Model */
       /* Update matrix of response times */
+      /* Debug cout << "Step 1" << endl; /* */
       for (int i = 0;i < p;i++) {
 	for (int k = 0;k < m;k++) {
-	  mpf_set_d(Tao[i][k],1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/(60*24));
+	  mpf_set_d(tmp,(X[i].beta / X[i].v) * Dist[k][X[i].location]);
+	  mpf_div_ui(tmp,tmp,60*24);
+	  mpf_set(Tao[i][k],mst[i]);
+	  //mpf_set_d(Tao[i][k],1 / Mu_NT);
+	  mpf_add(Tao[i][k],Tao[i][k],tmp);
 	}
       }
-      
-      /* Update matrix of pfreferred servers */
-      for (int k = 0;k < m;k++) {
-	for (int i = 0;i < p;i++)
-	  d[i] = Dist[k][X[i].location];
-	sort_dist(p,d,a[k]);
-	/*
-	  cout << k << ":";
-	  for (int i = 0;i < p;i++) cout << " " << a[k][i];
-	  cout << endl;
-	*/
-      }
 
+      /* Debug cout << "Step 1.1" << endl; /* */
       jarvis_hypercube_approximation(m,p,Lambda,Tao,a,f);
 
-      /* *Expected Response Time* */
-      /* + expected travel time component */
-      mpf_set_ui(t_r,0);
-      for (int i = 0;i < p;i++) {
-	for (int k = 0;k < m;k++) {
-	  mpf_set_d(tmp,Dist[k][X[i].location]);
-	  mpf_mul(tmp,tmp,f[i][k]);
-	  mpf_add(t_r,t_r,tmp);
-	}
-      }
-
-      P_B0 = 1.0;
-      for (int i = 0;i < p;i++) {
-	double rho_i = 0.0;
-	for (int k = 0;k < m;k++) {
-	  mpf_mul(tmp,Lambda[k],f[i][k]);
-	  mpf_mul(tmp,tmp,Tao[i][k]);
-	  rho_i += mpf_get_d(tmp);
-	  P_B0 *= (1 - rho_i);
-	}
-      }
-      /* + mean queue delay component */
-      mu = 0.0;
-      for (int i = 0;i < p;i++)
-	mu += 1 / mpf_get_d(MST[i]);
-      mpf_set_d(tmp,P_B0 * mu / pow(mu - lambda,2.0));
-      mpf_add(t_r,t_r,tmp);
-      
       /* Step 2 
 	 Update mean service time */
-      for (int i = 0;i < p;i++) {
-	double h = 0.0;
-	for (int k = 0;k < m;k++)
-	  h += mpf_get_d(f[i][k]);
-	mpf_set_ui(mst[i],0);
-	for (int k = 0;k < m;k++) {
-	  mpf_set_d(tmp,(mpf_get_d(f[i][k])/h) * (1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/(60*24)));
-	  mpf_add(mst[i],mst[i],tmp);
-	}
-      }
+      /* Debug cout << "Step 2" << endl; /* */
+      SQM_update_mst(mst,m,p,Mu_NT,Dist,X,f);
       
+      /* *Expected Response Time* */
+      mpf_set_ui(t_r,0);
+      /* + expected travel time component */
+      SQM_expected_travel_time(t_r,m,p,Dist,X,f);
+      /* + mean queue delay component */
+      SQM_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
+
       /* Step 3 */
+      /* Debug cout << "Step 3" << endl; /* */
       mpf_set_ui(delta_mu,0);
       for (int i = 0;i < p;i++) {
 	mpf_sub(tmp,mst[i],MST[i]);
@@ -258,6 +245,7 @@ response_unit* SQM_heuristic
   }
   for (int k = 0;k < m;k++)
     mpf_clear(Lambda[k]);
+  mpf_clear(P_B0);
   mpf_clear(delta_mu);
   mpf_clear(tmp);
 
@@ -348,4 +336,244 @@ response_unit* guess_a_location_03(int p,int n, point *W){
   //cout << endl;
   delete [] option;
   return X;
+}
+
+double SQM_response_time
+(SQM_instance *I,
+ int p, // Number of adjusters
+ response_unit* X,
+ double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
+ double Mu_NT // mean of non-travel time component of the service time
+ ) {
+  
+  /* Variable definitions */
+  num *MST,*mst; // mean service time
+  num T_r,t_r; // expected response time
+  double **Dist; // Matrix of distances
+  num **f,**Tao;
+  double *d;
+  double mu;
+  double P_B0; // Pendiente
+  /* */
+  num tmp;
+  num delta_mu;
+  num *Lambda;
+  int **a;
+  int m = I->M; /* Number of demand points */
+  int n = I->N; /* Number of potencial sites to locate a server*/
+  point *V = I->V,*W = I->W;
+  /* Variables por ajustar */
+  double v = 64.0;
+  double beta = 1.5;
+ 
+  /* Populate matrix of distances */
+  Dist = new  double*[m];
+  for (int j = 0;j < m;j++)
+    Dist[j] = new double [n];
+
+  for (int j = 0;j < m;j++) {
+    for (int i = 0;i < n;i++) {
+      Dist[j][i] = dist(&(V[j]),&(W[i]));
+    }
+  }
+
+  MST = new num[p];
+  mst = new num[p];
+  d = new double[p];
+  Lambda = new num[m];
+  Tao = new num*[p];
+  for (int i = 0;i < p;i++)
+    Tao[i] = new num[m];
+  f = new num*[p];
+  for (int i = 0;i < p;i++)
+    f[i] = new num[m];
+
+  mpf_init(tmp);
+  mpf_init(delta_mu);
+  for (int i = 0;i < p;i++)
+    mpf_init(MST[i]);
+  for (int i = 0;i < p;i++)
+    mpf_init(mst[i]);
+  for (int k = 0;k < m;k++)
+    mpf_init(Lambda[k]);
+  for (int i = 0;i < p;i++) {
+    for (int k = 0;k < m;k++)
+      mpf_init(Tao[i][k]);
+  }
+  for (int i = 0;i < p;i++) {
+    for (int k = 0;k < m;k++)
+      mpf_init(f[i][k]);
+  }
+  mpf_init(T_r);
+  mpf_init_set_d(t_r,99999.9);
+
+  a = new int*[m];
+  for (int k = 0;k < m;k++)
+    a[k] = new int[p];
+
+  double demand = 0.0;
+  for (int k = 0;k < m;k++) demand += I->V[k].demand;
+  for (int k = 0;k < m;k++)
+    mpf_set_d(Lambda[k],I->V[k].demand * lambda / demand);
+
+  /* Update matrix of response times */
+  for (int i = 0;i < p;i++) {
+    for (int k = 0;k < m;k++) {
+      mpf_set_d(Tao[i][k],1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/(60*24));
+    }
+  }
+      
+  /* Update matrix of pfreferred servers */
+  for (int k = 0;k < m;k++) {
+    for (int i = 0;i < p;i++)
+      d[i] = Dist[k][X[i].location];
+    sort_dist(p,d,a[k]);
+  }
+
+  /* SERVICE MEAN TIME CALIBRATION */
+
+  /* **Step 0**
+     Initialize Mean Service Time */
+  for (int i = 0;i < p;i++)
+    mpf_set_d(mst[i],1 / Mu_NT);
+
+  for (int i = 0;i < p;i++)
+    mpf_set(MST[i],mst[i]);
+
+  /* **Step 1**:
+     Run the Hypercube Model */
+  jarvis_hypercube_approximation(m,p,Lambda,Tao,a,f);
+
+  /* *Expected Response Time* */
+  mpf_set_ui(t_r,0);
+  /* + expected travel time component */
+  SQM_expected_travel_time(t_r,m,p,Dist,X,f);
+  /* + mean queue delay component */
+  SQM_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
+      
+  /* Step 2 
+     Update mean service time */
+  SQM_update_mst(mst,m,p,Mu_NT,Dist,X,f);
+      
+  
+  for (int k = 0;k < n;k++) delete a[k];
+  delete [] a;
+
+  mpf_clear(T_r);
+  mpf_clear(t_r);
+  for (int i = 0;i < p;i++) {
+    for (int j = 0;j < n;j++)
+      mpf_clear(f[i][j]);
+  }
+  for (int i = 0;i < p;i++) {
+    for (int j = 0;j < n;j++)
+      mpf_clear(Tao[i][j]);
+  }
+  for (int k = 0;k < m;k++)
+    mpf_clear(Lambda[k]);
+  mpf_clear(delta_mu);
+  mpf_clear(tmp);
+
+  for (int i = 0;i < p;i++)
+    delete [] Tao[i];
+  delete [] Tao;
+  delete [] Lambda;
+  delete [] d;
+  delete [] mst;
+  delete [] MST;
+  for (int j=0;j < m;j++) delete [] Dist[j];
+  delete [] Dist;
+  for (int i = 0;i < p;i++) delete [] f[i];
+  delete [] f;
+
+  for (int k = 0;k < n;k++)
+    for (int i = 0;i < p;i++)
+      if (X[i].location == k) cout << k << " ";
+  cout << endl;
+  return mpf_get_d(T_r);
+}
+
+void SQM_update_mst(mpf_t *mst,int m,int p,double Mu_NT,double **Dist,response_unit* X,mpf_t **f) {
+  mpf_t h,tmp;
+  mpf_init(h);
+  mpf_init(tmp);
+  for (int i = 0;i < p;i++) {
+
+    mpf_set_ui(mst[i],0);
+    for (int k = 0;k < m;k++) {
+      mpf_set_d(tmp,1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/(60*24));
+      mpf_mul(tmp,tmp,f[i][k]);
+      mpf_add(mst[i],mst[i],tmp);
+     }
+
+    mpf_set_ui(h,0);
+    for (int k = 0;k < m;k++)
+      mpf_add(h,h,f[i][k]);
+    mpf_div(mst[i],mst[i],h);
+  }
+  mpf_clear(tmp);
+  mpf_clear(h);
+}
+
+
+/* *Expected Travel Time Component* */
+void SQM_expected_travel_time
+(mpf_t t_r, /* stores the response time */
+ int m, /* number of clients */
+ int p, /* number of servers */
+ double **Dist,
+ response_unit* X,
+ mpf_t **f
+ ){
+  mpf_t tmp;
+
+  mpf_init(tmp);
+
+  for (int i = 0;i < p;i++) {
+    for (int k = 0;k < m;k++) {
+      mpf_set_d(tmp,Dist[k][X[i].location]/X[i].v);
+      mpf_div_ui(tmp,tmp,60*24);
+      mpf_mul(tmp,tmp,f[i][k]);
+      mpf_add(t_r,t_r,tmp);
+    }
+  } // m,p,Dist,X,f
+}
+
+/* mean queue delay component */
+void SQM_mean_queue_delay(mpf_t t_r,int m,int p,mpf_t *Lambda,mpf_t *MST,mpf_t **Tao,mpf_t **f) {
+  mpf_t mu;
+  mpf_t P_B0,rho_i;
+  mpf_t tmp;
+
+  mpf_init(tmp);
+  mpf_init_set_ui(mu,0);
+  for (int i = 0;i < p;i++) {
+    mpf_ui_div(tmp,1,MST[i]);
+    mpf_add(mu,mu,tmp);
+  }
+  mpf_set_ui(tmp,0);
+  for (int k = 0;k < m;k++)
+    mpf_add(tmp,tmp,Lambda[k]); // lambda
+  mpf_sub(tmp,mu,tmp); // mu - lambda
+  mpf_pow_ui(tmp,tmp,2);// (mu - lambda)^2
+  mpf_div(tmp,mu,tmp); // mu / (mu - lambda)^2
+
+  mpf_init(rho_i);
+  mpf_init_set_ui(P_B0,1);
+  for (int i = 0;i < p;i++) {
+    mpf_set_ui(rho_i,0);
+    for (int k = 0;k < m;k++) {
+      mpf_mul(tmp,Lambda[k],f[i][k]);
+      mpf_mul(tmp,tmp,Tao[i][k]);
+      mpf_add(rho_i,rho_i,tmp);
+    }
+    mpf_ui_sub(tmp,1,rho_i);
+    mpf_mul(P_B0,P_B0,tmp);
+  }
+  mpf_mul(tmp,tmp,P_B0); // P_B0 * mu / (mu - lambda)^2
+  mpf_add(t_r,t_r,tmp);
+
+  mpf_clear(P_B0);
+  mpf_clear(mu);
+  mpf_clear(tmp);
 }
