@@ -10,6 +10,8 @@ response_unit* guess_a_location_03(int,int,point*); // Returns p random
 void SQM_update_mst(mpf_t *mst,int m,int p,double Mu_NT,double **Dist,response_unit* X,mpf_t **f);
 void SQM_expected_travel_time(mpf_t,int,int,double**,response_unit*,mpf_t**);
 void SQM_mean_queue_delay(mpf_t,int,int,mpf_t*,mpf_t*,mpf_t**,mpf_t**);
+/* Populate matrix of distances */
+double** SQM_dist_matrix(SQM_instance*);
 
 response_unit* SQM_heuristic
 (SQM_instance *I,
@@ -25,11 +27,9 @@ response_unit* SQM_heuristic
   double **Dist; // Matrix of distances
   num **f,**Tao;
   double *d;
-  double mu;
   /* */
   num tmp;
   num delta_mu;
-  num P_B0;
   num *Lambda;
   int **a;
   int m = I->M; /* Number of demand points */
@@ -47,15 +47,7 @@ response_unit* SQM_heuristic
   }
 
   /* Populate matrix of distances */
-  Dist = new  double*[m];
-  for (int j = 0;j < m;j++)
-    Dist[j] = new double [n];
-
-  for (int j = 0;j < m;j++) {
-    for (int i = 0;i < n;i++) {
-      Dist[j][i] = dist(&(V[j]),&(W[i]));
-    }
-  }
+  Dist = SQM_dist_matrix(I);
 
   MST = new num[p];
   mst = new num[p];
@@ -70,7 +62,6 @@ response_unit* SQM_heuristic
 
   mpf_init(tmp);
   mpf_init(delta_mu);
-  mpf_init(P_B0);
   for (int i = 0;i < p;i++)
     mpf_init(MST[i]);
   for (int i = 0;i < p;i++)
@@ -245,7 +236,6 @@ response_unit* SQM_heuristic
   }
   for (int k = 0;k < m;k++)
     mpf_clear(Lambda[k]);
-  mpf_clear(P_B0);
   mpf_clear(delta_mu);
   mpf_clear(tmp);
 
@@ -362,19 +352,15 @@ double SQM_response_time
   int m = I->M; /* Number of demand points */
   int n = I->N; /* Number of potencial sites to locate a server*/
   point *V = I->V,*W = I->W;
-  /* Variables por ajustar */
-  double v = 64.0;
-  double beta = 1.5;
  
   /* Populate matrix of distances */
-  Dist = new  double*[m];
-  for (int j = 0;j < m;j++)
-    Dist[j] = new double [n];
+  Dist = SQM_dist_matrix(I);
 
-  for (int j = 0;j < m;j++) {
-    for (int i = 0;i < n;i++) {
-      Dist[j][i] = dist(&(V[j]),&(W[i]));
-    }
+  /* Populate matrix of pfreferred servers */
+  for (int k = 0;k < m;k++) {
+    for (int i = 0;i < p;i++)
+      d[i] = Dist[k][X[i].location];
+    sort_dist(p,d,a[k]);
   }
 
   MST = new num[p];
@@ -423,13 +409,6 @@ double SQM_response_time
     }
   }
       
-  /* Update matrix of pfreferred servers */
-  for (int k = 0;k < m;k++) {
-    for (int i = 0;i < p;i++)
-      d[i] = Dist[k][X[i].location];
-    sort_dist(p,d,a[k]);
-  }
-
   /* SERVICE MEAN TIME CALIBRATION */
 
   /* **Step 0**
@@ -576,4 +555,20 @@ void SQM_mean_queue_delay(mpf_t t_r,int m,int p,mpf_t *Lambda,mpf_t *MST,mpf_t *
   mpf_clear(P_B0);
   mpf_clear(mu);
   mpf_clear(tmp);
+}
+
+double** SQM_dist_matrix(SQM_instance *I) {
+  int n = I->N,m = I->M;
+  double **Dist;
+
+  Dist = new  double*[m];
+  for (int j = 0;j < m;j++)
+    Dist[j] = new double [n];
+
+  for (int j = 0;j < m;j++) {
+    for (int i = 0;i < n;i++) {
+      Dist[j][i] = dist(&(I->V[j]),&(I->W[i]));
+    }
+  }
+  return Dist;
 }
