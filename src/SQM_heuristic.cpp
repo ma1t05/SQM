@@ -337,13 +337,13 @@ double SQM_response_time
  ) {
   
   /* Variable definitions */
+  double T_r;
   num *MST,*mst; // mean service time
-  num T_r,t_r; // expected response time
+  num t_r; // expected response time
   double **Dist; // Matrix of distances
   num **f,**Tao;
   double *d;
   double mu;
-  double P_B0; // Pendiente
   /* */
   num tmp;
   num delta_mu;
@@ -357,12 +357,17 @@ double SQM_response_time
   Dist = SQM_dist_matrix(I);
 
   /* Populate matrix of pfreferred servers */
+  a = new int*[m]; 
+  for (int k = 0;k < m;k++)
+    a[k] = new int[p];
+
   for (int k = 0;k < m;k++) {
     for (int i = 0;i < p;i++)
       d[i] = Dist[k][X[i].location];
     sort_dist(p,d,a[k]);
   }
 
+  /* Allocate memory for arrays and matrix */
   MST = new num[p];
   mst = new num[p];
   d = new double[p];
@@ -374,6 +379,7 @@ double SQM_response_time
   for (int i = 0;i < p;i++)
     f[i] = new num[m];
 
+  /* Allocate memory for mpf numbers */
   mpf_init(tmp);
   mpf_init(delta_mu);
   for (int i = 0;i < p;i++)
@@ -390,25 +396,12 @@ double SQM_response_time
     for (int k = 0;k < m;k++)
       mpf_init(f[i][k]);
   }
-  mpf_init(T_r);
-  mpf_init_set_d(t_r,99999.9);
-
-  a = new int*[m];
-  for (int k = 0;k < m;k++)
-    a[k] = new int[p];
 
   double demand = 0.0;
   for (int k = 0;k < m;k++) demand += I->V[k].demand;
   for (int k = 0;k < m;k++)
     mpf_set_d(Lambda[k],I->V[k].demand * lambda / demand);
 
-  /* Update matrix of response times */
-  for (int i = 0;i < p;i++) {
-    for (int k = 0;k < m;k++) {
-      mpf_set_d(Tao[i][k],1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/(60*24));
-    }
-  }
-      
   /* SERVICE MEAN TIME CALIBRATION */
 
   /* **Step 0**
@@ -416,29 +409,50 @@ double SQM_response_time
   for (int i = 0;i < p;i++)
     mpf_set_d(mst[i],1 / Mu_NT);
 
-  for (int i = 0;i < p;i++)
-    mpf_set(MST[i],mst[i]);
+  do {
+    for (int i = 0;i < p;i++)
+      mpf_set(MST[i],mst[i]);
 
-  /* **Step 1**:
-     Run the Hypercube Model */
-  jarvis_hypercube_approximation(m,p,Lambda,Tao,a,f);
+    /* Update matrix of response times */
+    for (int i = 0;i < p;i++) {
+      for (int k = 0;k < m;k++) {
+	//mpf_set_d(Tao[i][k],1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/(60*24));
+	mpf_set_d(Tao[i][k],(X[i].beta / X[i].v) * Dist[k][X[i].location]/(60*24));
+	mpf_add(Tao[i][k],Tao[i][k],MST[i]);
+      }
+    }
+      
+    /* **Step 1**:
+       Run the Hypercube Model */
+    jarvis_hypercube_approximation(m,p,Lambda,Tao,a,f);
+
+      
+    /* Step 2 
+       Update mean service time */
+    SQM_update_mst(mst,m,p,Mu_NT,Dist,X,f);
+
+    /* Step 3 */
+    mpf_set_ui(delta_mu,0);
+    for (int i = 0;i < p;i++) {
+      mpf_sub(tmp,mst[i],MST[i]);
+      mpf_abs(tmp,tmp);
+      if (mpf_cmp(tmp,delta_mu) > 0)
+	mpf_set(delta_mu,tmp);
+    }
+    
+    /* Debug */ cout << "Delta in mst: " << mpf_get_d(delta_mu) << endl;
+  } while (mpf_cmp_d(delta_mu,epsilon) > 0);
 
   /* *Expected Response Time* */
-  mpf_set_ui(t_r,0);
+  mpf_init(t_r);
   /* + expected travel time component */
   SQM_expected_travel_time(t_r,m,p,Dist,X,f);
   /* + mean queue delay component */
   SQM_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
-      
-  /* Step 2 
-     Update mean service time */
-  SQM_update_mst(mst,m,p,Mu_NT,Dist,X,f);
-      
-  
-  for (int k = 0;k < n;k++) delete a[k];
-  delete [] a;
+  /* Conver mpf to double */
+  T_r = mpf_get_d(t_r);
 
-  mpf_clear(T_r);
+  /* Deallocate memory for mpf numbers */
   mpf_clear(t_r);
   for (int i = 0;i < p;i++) {
     for (int j = 0;j < n;j++)
@@ -450,9 +464,16 @@ double SQM_response_time
   }
   for (int k = 0;k < m;k++)
     mpf_clear(Lambda[k]);
+  for (int k = 0;k < m;k++)
+    mpf_clear(mst[i]);
+  for (int k = 0;k < m;k++)
+    mpf_clear(MST[i]);
   mpf_clear(delta_mu);
   mpf_clear(tmp);
 
+  /* Deallocate memory for arrays and matrix */
+  for (int i = 0;i < p;i++) delete [] f[i];
+  delete [] f;
   for (int i = 0;i < p;i++)
     delete [] Tao[i];
   delete [] Tao;
@@ -460,16 +481,12 @@ double SQM_response_time
   delete [] d;
   delete [] mst;
   delete [] MST;
+  for (int k = 0;k < n;k++) delete a[k];
+  delete [] a;
   for (int j=0;j < m;j++) delete [] Dist[j];
   delete [] Dist;
-  for (int i = 0;i < p;i++) delete [] f[i];
-  delete [] f;
-
-  for (int k = 0;k < n;k++)
-    for (int i = 0;i < p;i++)
-      if (X[i].location == k) cout << k << " ";
-  cout << endl;
-  return mpf_get_d(T_r);
+  
+  return T_r;
 }
 
 void SQM_update_mst(mpf_t *mst,int m,int p,double Mu_NT,double **Dist,response_unit* X,mpf_t **f) {
