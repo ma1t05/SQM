@@ -464,9 +464,9 @@ double SQM_response_time
   }
   for (int k = 0;k < m;k++)
     mpf_clear(Lambda[k]);
-  for (int k = 0;k < m;k++)
+  for (int i = 0;i < p;i++)
     mpf_clear(mst[i]);
-  for (int k = 0;k < m;k++)
+  for (int i = 0;i < p;i++)
     mpf_clear(MST[i]);
   mpf_clear(delta_mu);
   mpf_clear(tmp);
