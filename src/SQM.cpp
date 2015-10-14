@@ -43,17 +43,6 @@ int main(int argc,char *argv[]) {
   LogName << "SQM_" << M_clients << "_" << N_sites << "_" << p << ".log";
   LogFile.open(LogName.str().c_str(),std::ofstream::app);
 
-  /*
-  results.open("results.csv",std::ofstream::app);
-  results << M_clients
-	  << "," << N_sites
-	  << "," << p 
-	  << "," << l
-	  << "," << mu
-	  << "," << f 
-	  << "," << v;
-  */
-
   I = Load_instance(filename,M_clients,N_sites);
 
   /*
@@ -118,6 +107,16 @@ void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu) {
 
 void Call_SQM_model(SQM_instance* I,int p,int l,double f,double mu,double v,string filename) {
   int *Sol;
+
+  results.open("results.csv",std::ofstream::app);
+  results << M_clients
+	  << "," << N_sites
+	  << "," << p 
+	  << "," << l
+	  << "," << mu
+	  << "," << f 
+	  << "," << v;
+
   results << "," << filename << "_demand.ins," << filename << "_facility.ins";
   
   Sol = SQM_model(I,p,l,mu,f,v);
