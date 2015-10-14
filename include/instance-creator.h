@@ -11,10 +11,11 @@
 #define MIN_Y 0.0
 #define MAX_Y 1024.0
 
-SQM_instance* IC_create_instance (int n,int m);
+SQM_instance* IC_create_instance (int /* clients */,int /* sites */);
 SQM_instance* IC_read_instance (string,string);
 void IC_write_instance (SQM_instance*,string,string);
-void IC_plot_instance(SQM_instance*I,int*,string);
+void IC_plot_instance(SQM_instance*,int*,string);
+void IC_delete_instance(SQM_instance*);
 
 #endif
 

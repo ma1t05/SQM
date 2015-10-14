@@ -127,3 +127,9 @@ void IC_plot_instance(SQM_instance *I,int *Sol,string output) {
 float unif(float a,float b) {
   return a + (b - a) * rand() / RAND_MAX;
 }
+
+void IC_delete_instance(SQM_instance* I) {
+  delete [] I->V;
+  delete [] I->W;
+  delete I;
+}
