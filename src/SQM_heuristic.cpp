@@ -95,6 +95,14 @@ response_unit* SQM_heuristic
   /* SERVICE MEAN TIME CALIBRATION */
   do {
 
+    /* Update matrix of pfreferred servers */
+    /* Debug cout << "Step 0.2" << endl; /* */
+    for (int k = 0;k < m;k++) {
+      for (int i = 0;i < p;i++)
+	d[i] = Dist[k][X[i].location];
+      sort_dist(p,d,a[k]);
+    }
+
     /* Print Current solution */
     for (int i = 0;i < p;i++)
       cout << X[i].location << " ";
@@ -108,41 +116,23 @@ response_unit* SQM_heuristic
     for (int i = 0;i < p;i++)
       mpf_set_d(mst[i],1 / Mu_NT);
 
-    /* Update matrix of response times */
-    /* Debug cout << "Step 0.1" << endl; /* */
-    for (int i = 0;i < p;i++) {
-      for (int k = 0;k < m;k++) {
-	mpf_set_d(Tao[i][k],1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/(60*24));
-      }
-    }
-
-    /* Update matrix of pfreferred servers */
-    /* Debug cout << "Step 0.2" << endl; /* */
-    for (int k = 0;k < m;k++) {
-      for (int i = 0;i < p;i++)
-	d[i] = Dist[k][X[i].location];
-      sort_dist(p,d,a[k]);
-    }
-
     do {
 
       for (int i = 0;i < p;i++)
 	mpf_set(MST[i],mst[i]);
 
-      /* **Step 1**:
-	Run the Hypercube Model */
       /* Update matrix of response times */
-      /* Debug cout << "Step 1" << endl; /* */
+      /* Debug cout << "Step 0.1" << endl; /* */
       for (int i = 0;i < p;i++) {
 	for (int k = 0;k < m;k++) {
-	  mpf_set_d(tmp,(X[i].beta / X[i].v) * Dist[k][X[i].location]);
-	  mpf_div_ui(tmp,tmp,60*24);
-	  mpf_set(Tao[i][k],mst[i]);
-	  //mpf_set_d(Tao[i][k],1 / Mu_NT);
-	  mpf_add(Tao[i][k],Tao[i][k],tmp);
+	  mpf_set_d(Tao[i][k],(X[i].beta / X[i].v) * Dist[k][X[i].location]);
+	  mpf_div_ui(Tao[i][k],Tao[i][k],60*24);
+	  mpf_add(Tao[i][k],Tao[i][k],MST[i]);
 	}
       }
 
+      /* **Step 1**:
+	Run the Hypercube Model */
       /* Debug cout << "Step 1.1" << endl; /* */
       jarvis_hypercube_approximation(m,p,Lambda,Tao,a,f);
 
@@ -151,13 +141,6 @@ response_unit* SQM_heuristic
       /* Debug cout << "Step 2" << endl; /* */
       SQM_update_mst(mst,m,p,Mu_NT,Dist,X,f);
       
-      /* *Expected Response Time* */
-      mpf_set_ui(t_r,0);
-      /* + expected travel time component */
-      SQM_expected_travel_time(t_r,m,p,Dist,X,f);
-      /* + mean queue delay component */
-      SQM_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
-
       /* Step 3 */
       /* Debug cout << "Step 3" << endl; /* */
       mpf_set_ui(delta_mu,0);
@@ -171,6 +154,13 @@ response_unit* SQM_heuristic
       cout << "Delta in mst: " << mpf_get_d(delta_mu) << endl;
     } while (mpf_cmp_d(delta_mu,epsilon) > 0);
     
+    /* *Expected Response Time* */
+    mpf_set_ui(t_r,0);
+    /* + expected travel time component */
+    SQM_expected_travel_time(t_r,m,p,Dist,X,f);
+    /* + mean queue delay component */
+    SQM_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
+
     double *h_i = new double[m];
     num h;
     mpf_init(h);
@@ -180,8 +170,10 @@ response_unit* SQM_heuristic
       mpf_set_ui(h,0);
       for (int k = 0;k < m;k++) 
 	mpf_add(h,h,f[i][k]);
+      /*
       if (mpf_cmp_ui(h,0) == 0)
 	cout << "for i = " << i+1 << " sum over f_ij is 0" << endl;
+      */
       for (int k = 0;k < m;k++) {
 	mpf_div(tmp,f[i][k],h);
 	h_i[k] = mpf_get_d(tmp);
@@ -189,18 +181,7 @@ response_unit* SQM_heuristic
 
       // Block B
       /* Solve te 1-median location model with h_i^j */
-      int best_location = -1;
-      double best_sol,sol;
-      for (int j = 0;j < n;j++) {
-	sol = 0.0;
-	for (int k = 0;k < m;k++) 
-	  sol += h_i[k] * Dist[k][j];
-	if (best_location == -1 || sol < best_sol) {
-	  best_location = j;
-	  best_sol = sol;
-	}
-      }
-      X[i].location = best_location;
+      X[i].location = Solve_1_median_location_model(m,n,Dist,h_i);
     }
 
     /* Print current solution to LogFile */
@@ -588,4 +569,19 @@ double** SQM_dist_matrix(SQM_instance *I) {
     }
   }
   return Dist;
+}
+
+int Solve_1_median_location_model(int m,int n,double **Dist,double *h) {
+  int best_location = -1;
+  double best_sol,sol;
+  for (int j = 0;j < n;j++) {
+    sol = 0.0;
+    for (int k = 0;k < m;k++) 
+      sol += h[k] * Dist[k][j];
+    if (best_location == -1 || sol < best_sol) {
+      best_location = j;
+      best_sol = sol;
+    }
+  }
+  return best_location;
 }

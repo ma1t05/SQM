@@ -12,13 +12,13 @@ bool file_exists (const string&);
 SQM_instance* Load_instance(string filename,int M_clients,int N_sites);
 void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu);
 void Call_SQM_model(SQM_instance* I,int p,int l,double f,double mu,double v,string filename);
+void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f);
 
 int main(int argc,char *argv[]) {
   string filename;
   int M_clients,N_sites;
   int p,l;
   double mu,f,v;
-  double demand;
   stringstream LogName;
   SQM_instance *I;
 
@@ -40,26 +40,17 @@ int main(int argc,char *argv[]) {
   }
   
   srand(time(NULL));
+
+  /* Open Log File */
   LogName << "SQM_" << M_clients << "_" << N_sites << "_" << p << ".log";
   LogFile.open(LogName.str().c_str(),std::ofstream::app);
 
   I = Load_instance(filename,M_clients,N_sites);
-
-  /*
-    Call_SQM_model(I,p,l,f,mu,v,filename);
-  */
-  
-  LogFile << "*** Start SQM Heuristic ***" << endl
-	  << "with "
-	  << M_clients << " clients, "
-	  << N_sites << " sites, "
-	  << p << " servers, "
-	  << mu << " mean service time, "
-	  << f << " arrival rate"
-	  << endl;
-
+  // Call_SQM_model(I,p,l,f,mu,v,filename);
+  /* Log */ Log_Start_SQMH(M_clients,N_sites,p,mu,f);
   Call_SQM_heuristic(I,p,f,mu);
-  LogFile.close();
+  IC_delete_instance(I);
+  /* Log */ LogFile.close();
   cout << LogName.str() << endl;
 
   delete[] I->V;
@@ -96,6 +87,17 @@ SQM_instance* Load_instance(string filename,int M_clients,int N_sites) {
   return I;
 }
 
+void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f) {
+  LogFile << "*** Start SQM Heuristic ***" << endl
+	  << "with "
+	  << M_clients << " clients, "
+	  << N_sites << " sites, "
+	  << p << " servers, "
+	  << mu << " mean service time, "
+	  << f << " arrival rate"
+	  << endl;
+}
+
 void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu) {
   response_unit *X;
   cout << "Calling SQM_Heuristic" << endl;
@@ -109,8 +111,8 @@ void Call_SQM_model(SQM_instance* I,int p,int l,double f,double mu,double v,stri
   int *Sol;
 
   results.open("results.csv",std::ofstream::app);
-  results << M_clients
-	  << "," << N_sites
+  results << I->M
+	  << "," << I->N
 	  << "," << p 
 	  << "," << l
 	  << "," << mu
