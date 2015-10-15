@@ -13,6 +13,7 @@ SQM_instance* Load_instance(string filename,int M_clients,int N_sites);
 void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu);
 void Call_SQM_model(SQM_instance* I,int p,int l,double f,double mu,double v,string filename);
 void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f);
+void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT);
 
 int main(int argc,char *argv[]) {
   string filename;
@@ -47,8 +48,9 @@ int main(int argc,char *argv[]) {
 
   I = Load_instance(filename,M_clients,N_sites);
   // Call_SQM_model(I,p,l,f,mu,v,filename);
-  /* Log */ Log_Start_SQMH(M_clients,N_sites,p,mu,f);
-  Call_SQM_heuristic(I,p,f,mu);
+  /* Log Log_Start_SQMH(M_clients,N_sites,p,mu,f); /* */
+  // Call_SQM_heuristic(I,p,f,mu);
+  Call_SQM_random(I,p,f,mu);
   IC_delete_instance(I);
   /* Log */ LogFile.close();
   cout << LogName.str() << endl;
@@ -139,4 +141,13 @@ void Call_SQM_model(SQM_instance* I,int p,int l,double f,double mu,double v,stri
     Goldberg(I,p,mu,f);
   }
   results.close();
+}
+
+void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT) {
+  double T_r;
+  cout << "Start SMQ random" << endl;
+  response_unit *X = guess_a_location_03(p,I->N,I->W);
+  T_r = SQM_response_time(I,p,X,lambda,Mu_NT);
+  cout << "Response time : " << T_r << endl;
+  delete [] X;
 }
