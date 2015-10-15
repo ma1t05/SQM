@@ -4,14 +4,13 @@
 int unif(int);
 int comp(const void*,const void*);
 void sort_dist (int,double*,int*);
-response_unit* guess_a_location_01(int,int,point*); // Returns the first p
-response_unit* guess_a_location_02(int,int,point*); // Returns p random with replace
-response_unit* guess_a_location_03(int,int,point*); // Returns p random
 void SQM_update_mst(mpf_t *mst,int m,int p,double Mu_NT,double **Dist,response_unit* X,mpf_t **f);
 void SQM_expected_travel_time(mpf_t,int,int,double**,response_unit*,mpf_t**);
 void SQM_mean_queue_delay(mpf_t,int,int,mpf_t*,mpf_t*,mpf_t**,mpf_t**);
 /* Populate matrix of distances */
 double** SQM_dist_matrix(SQM_instance*);
+int Solve_1_median_location_model(int,int,double**,double*);
+void SQM_improve_locations(response_unit*,int,int,int,double**,num**);
 
 response_unit* SQM_heuristic
 (SQM_instance *I,
@@ -92,7 +91,6 @@ response_unit* SQM_heuristic
   for (int i = 0;i < p;i++)
     LogFile << X[i].location << " ";
   LogFile << endl;
-  /* SERVICE MEAN TIME CALIBRATION */
   do {
 
     /* Update matrix of pfreferred servers */
@@ -109,6 +107,8 @@ response_unit* SQM_heuristic
     cout << endl;
 
     mpf_set(T_r,t_r);
+
+    /* SERVICE MEAN TIME CALIBRATION */
 
     /* **Step 0**
        Initialize Mean Service Time */
@@ -151,7 +151,7 @@ response_unit* SQM_heuristic
 	  mpf_set(delta_mu,tmp);
       }
 
-      cout << "Delta in mst: " << mpf_get_d(delta_mu) << endl;
+      /* Debug cout << "Delta in mst: " << mpf_get_d(delta_mu) << endl; /* */
     } while (mpf_cmp_d(delta_mu,epsilon) > 0);
     
     /* *Expected Response Time* */
@@ -161,44 +161,11 @@ response_unit* SQM_heuristic
     /* + mean queue delay component */
     SQM_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
 
-    double *h_i = new double[m];
-    num h;
-    mpf_init(h);
-    for (int i = 0;i < p;i++) {
-      // Block A
-      //cout << "\t\tBlock A " << i << endl;
-      mpf_set_ui(h,0);
-      for (int k = 0;k < m;k++) 
-	mpf_add(h,h,f[i][k]);
-      /*
-      if (mpf_cmp_ui(h,0) == 0)
-	cout << "for i = " << i+1 << " sum over f_ij is 0" << endl;
-      */
-      for (int k = 0;k < m;k++) {
-	mpf_div(tmp,f[i][k],h);
-	h_i[k] = mpf_get_d(tmp);
-      }
-
-      // Block B
-      /* Solve te 1-median location model with h_i^j */
-      X[i].location = Solve_1_median_location_model(m,n,Dist,h_i);
-    }
-
-    /* Print current solution to LogFile */
-    for (int i = 0;i < p;i++) {
-      LogFile << X[i].location;
-      if (X[i].past_location != X[i].location)
-	LogFile << "*";
-      LogFile << "\t";
-      X[i].past_location = X[i].location;
-    }
-    LogFile << endl;
-
-    mpf_clear(h);
-    delete [] h_i;
-
     mpf_sub(tmp,T_r,t_r);
     mpf_abs(tmp,tmp);
+    
+    if (mpf_cmp_d(tmp,epsilon) > 0)
+      SQM_improve_locations(X,m,n,p,Dist,f);
 
   } while (mpf_cmp_d(tmp,epsilon) > 0);
   
@@ -334,24 +301,25 @@ double SQM_response_time
   int n = I->N; /* Number of potencial sites to locate a server*/
   point *V = I->V,*W = I->W;
  
-  /* Populate matrix of distances */
+  cout << "/* Populate matrix of distances */" << endl;
   Dist = SQM_dist_matrix(I);
 
-  /* Populate matrix of pfreferred servers */
+  cout << "/* Populate matrix of pfreferred servers */" << endl;
   a = new int*[m]; 
   for (int k = 0;k < m;k++)
     a[k] = new int[p];
 
+  d = new double[p];
   for (int k = 0;k < m;k++) {
     for (int i = 0;i < p;i++)
       d[i] = Dist[k][X[i].location];
     sort_dist(p,d,a[k]);
   }
+  delete [] d;
 
-  /* Allocate memory for arrays and matrix */
+  cout << "/* Allocate memory for arrays and matrix */" << endl;
   MST = new num[p];
   mst = new num[p];
-  d = new double[p];
   Lambda = new num[m];
   Tao = new num*[p];
   for (int i = 0;i < p;i++)
@@ -360,7 +328,7 @@ double SQM_response_time
   for (int i = 0;i < p;i++)
     f[i] = new num[m];
 
-  /* Allocate memory for mpf numbers */
+  cout << "/* Allocate memory for mpf numbers */" << endl;
   mpf_init(tmp);
   mpf_init(delta_mu);
   for (int i = 0;i < p;i++)
@@ -383,10 +351,10 @@ double SQM_response_time
   for (int k = 0;k < m;k++)
     mpf_set_d(Lambda[k],I->V[k].demand * lambda / demand);
 
-  /* SERVICE MEAN TIME CALIBRATION */
+  cout << "/* SERVICE MEAN TIME CALIBRATION */" << endl;
 
-  /* **Step 0**
-     Initialize Mean Service Time */
+  cout << "/* **Step 0**"
+       << "Initialize Mean Service Time */" << endl;
   for (int i = 0;i < p;i++)
     mpf_set_d(mst[i],1 / Mu_NT);
 
@@ -394,25 +362,29 @@ double SQM_response_time
     for (int i = 0;i < p;i++)
       mpf_set(MST[i],mst[i]);
 
-    /* Update matrix of response times */
+    cout << "/* Update matrix of response times */" << endl;
     for (int i = 0;i < p;i++) {
       for (int k = 0;k < m;k++) {
 	//mpf_set_d(Tao[i][k],1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/(60*24));
-	mpf_set_d(Tao[i][k],(X[i].beta / X[i].v) * Dist[k][X[i].location]/(60*24));
+	cout << "Set Tao " << i << "," << k << endl;
+	mpf_set_d(Tao[i][k],(X[i].beta / X[i].v) * Dist[k][X[i].location]);
+	cout << "Tao ij / 60 * 24" << endl;
+	mpf_div_ui(Tao[i][k],Tao[i][k],60*24);
+	cout << "Tao ij + MST" << endl;
 	mpf_add(Tao[i][k],Tao[i][k],MST[i]);
       }
     }
       
-    /* **Step 1**:
-       Run the Hypercube Model */
+    cout << "/* **Step 1**:"
+	 << "Run the Hypercube Model */" << endl;
     jarvis_hypercube_approximation(m,p,Lambda,Tao,a,f);
 
       
-    /* Step 2 
-       Update mean service time */
+    cout << "/* Step 2 "
+	 << "Update mean service time */" << endl;
     SQM_update_mst(mst,m,p,Mu_NT,Dist,X,f);
 
-    /* Step 3 */
+    cout << "/* Step 3 */" << endl;
     mpf_set_ui(delta_mu,0);
     for (int i = 0;i < p;i++) {
       mpf_sub(tmp,mst[i],MST[i]);
@@ -459,7 +431,6 @@ double SQM_response_time
     delete [] Tao[i];
   delete [] Tao;
   delete [] Lambda;
-  delete [] d;
   delete [] mst;
   delete [] MST;
   for (int k = 0;k < n;k++) delete a[k];
@@ -584,4 +555,44 @@ int Solve_1_median_location_model(int m,int n,double **Dist,double *h) {
     }
   }
   return best_location;
+}
+
+void SQM_improve_locations(response_unit *X,int m,int n,int p,double **Dist,num **f) {
+  double *h_i = new double[m];
+  num h,tmp;
+  mpf_init(h);
+  mpf_init(tmp);
+  for (int i = 0;i < p;i++) {
+    // Block A
+    //cout << "\t\tBlock A " << i << endl;
+    mpf_set_ui(h,0);
+    for (int k = 0;k < m;k++) 
+      mpf_add(h,h,f[i][k]);
+    /*
+      if (mpf_cmp_ui(h,0) == 0)
+      cout << "for i = " << i+1 << " sum over f_ij is 0" << endl;
+    */
+    for (int k = 0;k < m;k++) {
+      mpf_div(tmp,f[i][k],h);
+      h_i[k] = mpf_get_d(tmp);
+    }
+
+    // Block B
+    /* Solve te 1-median location model with h_i^j */
+    X[i].location = Solve_1_median_location_model(m,n,Dist,h_i);
+  }
+  mpf_clear(tmp);
+  mpf_clear(h);
+  delete [] h_i;
+
+  /* Print current solution to LogFile */
+  for (int i = 0;i < p;i++) {
+    LogFile << X[i].location;
+    if (X[i].past_location != X[i].location) {
+      X[i].past_location = X[i].location;
+      LogFile << "*";
+    }
+    LogFile << "\t";
+  }
+  LogFile << endl;
 }
