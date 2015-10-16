@@ -53,11 +53,7 @@ int main(int argc,char *argv[]) {
   Call_SQM_random(I,p,f,mu);
   IC_delete_instance(I);
   /* Log */ LogFile.close();
-  cout << LogName.str() << endl;
-
-  delete[] I->V;
-  delete[] I->W;
-  delete I;
+  cout << endl << "Saved in LogFile: " << LogName.str() << endl;
 }
 
 void read_config_file() {
@@ -144,10 +140,30 @@ void Call_SQM_model(SQM_instance* I,int p,int l,double f,double mu,double v,stri
 }
 
 void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT) {
-  double T_r;
+  double v = 64.0,beta = 1.5; 
+  double T_r,t_r;
   cout << "Start SMQ random" << endl;
-  response_unit *X = guess_a_location_03(p,I->N,I->W);
-  T_r = SQM_response_time(I,p,X,lambda,Mu_NT);
-  cout << "Response time : " << T_r << endl;
-  delete [] X;
+  response_unit *Best = NULL;
+  response_unit *X;
+  for (int r = 0;r < 1;r++) {
+    X = guess_a_location_03(p,I->N,I->W);
+    for (int i = 0;i < p;i++) {
+      X[i].v = v;
+      X[i].beta = beta;
+    }
+    T_r = SQM_response_time(I,p,X,lambda,Mu_NT);
+    for (int k = 0;k < I->N;k++)
+      for (int i = 0;i < p;i++)
+	if (X[i].location == k) cout << k << " ";
+    cout << endl;
+    cout << "Response time : " << T_r << endl;
+    if (Best == NULL || T_r < t_r) {
+      if (Best != NULL) delete [] Best;
+      Best = X;
+      t_r = T_r;
+    }
+    else delete [] X;
+  }
+  cout << "Best Response time : " << t_r << endl;
+  delete [] Best;
 }
