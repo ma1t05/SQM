@@ -12,15 +12,15 @@ double** SQM_dist_matrix(SQM_instance*);
 int Solve_1_median_location_model(int,int,double**,double*);
 void SQM_improve_locations(response_unit*,int,int,int,double**,num**);
 
-response_unit* SQM_heuristic
+void SQM_heuristic
 (SQM_instance *I,
  int p, // Number of adjusters
  double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
- double Mu_NT // mean of non-travel time component of the service time
+ double Mu_NT, // mean of non-travel time component of the service time
+ response_unit *X
  ) {
   
   /* Variable definitions */
-  response_unit *X;
   num *MST,*mst; // mean service time
   num T_r,t_r; // expected response time
   double **Dist; // Matrix of distances
@@ -34,17 +34,7 @@ response_unit* SQM_heuristic
   int m = I->M; /* Number of demand points */
   int n = I->N; /* Number of potencial sites to locate a server*/
   point *V = I->V,*W = I->W;
-  /* Variables por ajustar */
-  double v = 64.0;
-  double beta = 1.5;
  
-  /* Guess a location */
-  X = guess_a_location_03(p,n,W);
-  for (int i = 0;i < p;i++) {
-    X[i].v = v;
-    X[i].beta = beta;
-  }
-
   /* Populate matrix of distances */
   Dist = SQM_dist_matrix(I);
 
@@ -203,7 +193,6 @@ response_unit* SQM_heuristic
     for (int i = 0;i < p;i++)
       if (X[i].location == k) cout << k << " ";
   cout << endl;
-  return X;
 }
 
 int unif(int a) {
@@ -376,6 +365,18 @@ double SQM_response_time
        Run the Hypercube Model */
     jarvis_hypercube_approximation(m,p,Lambda,Tao,a,f);
 
+    mpf_t sum;
+    mpf_init(sum);
+    cout << "Sum_k[]:";
+    for (int i = 0;i < p;i++) {
+      mpf_set_ui(sum,0);
+      for (int k = 0;k < m;k++)
+	mpf_add(sum,sum,f[i][k]);
+      cout << " " << mpf_get_d(sum);
+    }
+    cout << endl;
+    mpf_clear(sum);
+
     /* Step 2
        Update mean service time */
     SQM_update_mst(mst,m,p,Mu_NT,Dist,X,f);
@@ -470,22 +471,15 @@ void SQM_expected_travel_time
  mpf_t **f
  ){
   mpf_t tmp;
-  mpf_t sum;
   mpf_init(tmp);
-  mpf_init(sum);
-  cout << "Sum_k[]:";
   for (int i = 0;i < p;i++) {
-    mpf_set_ui(sum,0);
     for (int k = 0;k < m;k++) {
       mpf_set_d(tmp,Dist[k][X[i].location]/X[i].v);
       mpf_div_ui(tmp,tmp,60*24);
       mpf_mul(tmp,tmp,f[i][k]);
       mpf_add(t_r,t_r,tmp);
-      mpf_add(sum,sum,f[i][k]);
     }
-    cout << " " << mpf_get_d(sum);
   } // m,p,Dist,X,f
-  cout << endl;
   cout << "expected travel time: " << 60 * 24 * mpf_get_d(t_r) << endl;
 }
 

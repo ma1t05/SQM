@@ -18,7 +18,7 @@ struct response_unit {
 
 typedef mpf_t num;
 typedef struct response_unit response_unit;
-response_unit* SQM_heuristic(SQM_instance*,int,double,double);
+void SQM_heuristic(SQM_instance*,int,double,double,response_unit*);
 response_unit* guess_a_location_01(int,int,point*); // Returns the first p
 response_unit* guess_a_location_02(int,int,point*); // Returns p random with replace
 response_unit* guess_a_location_03(int,int,point*); // Returns p random
