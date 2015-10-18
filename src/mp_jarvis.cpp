@@ -51,18 +51,29 @@ void jarvis_hypercube_approximation
   mpf_t max_change;
   mpf_t tmp;
 
+  mpf_init(Lambda);
+  rho = new mpf_t [N];
+  for (int i = 0; i < N;i++)
+    mpf_init(rho[i]);
+  mpf_init(tao);
+  mpf_init_set_ui(P__0,1);
+  mpf_init_set_ui(P__N,1);
+  Q_N_rho = new mpf_t [N];
+  for (int i = 0;i < N;i++)
+    mpf_init(Q_N_rho[i]);
+  new_rho = new mpf_t [N];
+  for (int i = 0;i < N;i++)
+    mpf_init(new_rho[i]);
+  mpf_init(Rho);
   mpf_init(max_change);
   mpf_init(tmp);
 
   /* INITIALIZE: */
-  mpf_init(Lambda);
   for (int m = 0;m < C;m++) 
     mpf_add(Lambda,Lambda,lambda[m]);
 
   /* Busy probability rho_i */
-  rho = (mpf_t *)malloc(N * sizeof(mpf_t));
   for (int i = 0; i < N;i++) {
-    mpf_init(rho[i]);
     for (int m = 0; m < C;m++) {
       if (a[m][0] == i) {
 	mpf_mul(tmp,lambda[m],Tao[i][m]);
@@ -72,7 +83,6 @@ void jarvis_hypercube_approximation
   }
 
   /* mean service time 'tao' */
-  mpf_init(tao);
   for (int m = 0;m < C;m++) {
     mpf_mul(tmp,lambda[m],Tao[a[m][0]][m]);
     mpf_add(tao,tao,tmp);
@@ -80,23 +90,14 @@ void jarvis_hypercube_approximation
   mpf_div(tao,tao,Lambda);
 
   /* Define intial values for P__0 and P__N */
-  mpf_init_set_ui(P__0,1);
   for (int i = 0;i < N;i++) {
     mpf_ui_sub(tmp,1,rho[i]);
     mpf_mul(P__0,P__0,tmp);
   }
 
-  mpf_init_set_ui(P__N,1);
   for (int i = 0;i < N;i++)
     mpf_mul(P__N,P__N,rho[i]);
 
-  Q_N_rho = (mpf_t *)malloc(N * sizeof(mpf_t));
-  for (int i = 0;i < N;i++)
-    mpf_init(Q_N_rho[i]);
-  new_rho = (mpf_t *)malloc(N * sizeof(mpf_t));
-  for (int i = 0;i < N;i++)
-    mpf_init(new_rho[i]);
-  mpf_init(Rho);
   /* ITERATION: */
   do {
 
@@ -135,8 +136,8 @@ void jarvis_hypercube_approximation
       mpf_add_ui(tmp,Vi,1);
       mpf_div(new_rho[i],Vi,tmp);
     }
-    mpf_clear(Vi);
     mpf_clear(rho_a_ml);
+    mpf_clear(Vi);
 
     /* Convergence criterion */
     mpf_set_ui(max_change,0);
@@ -203,11 +204,11 @@ void jarvis_hypercube_approximation
 	mpf_add(tmp,tmp,aux);
       }
       mpf_mul(tmp,lambda[m],tmp);
-      mpf_div(tmp,tmp,Lambda);
-      mpf_ui_sub(aux,1,P__N);
-      mpf_div(tmp,tmp,aux);
       mpf_add(tao,tao,tmp);
     }
+    mpf_div(tao,tao,Lambda); // / Lambda
+    mpf_ui_sub(aux,1,P__N); // 1 - P__N
+    mpf_div(tao,tao,aux); // / (1 - P__N)
     mpf_clear(aux);
  
   } while (1);
@@ -222,22 +223,22 @@ void jarvis_hypercube_approximation
     }
   */
 
+  mpf_clear(tmp);
+  mpf_clear(max_change);
   mpf_clear(Rho);
   for (int i = 0;i < N;i++)
     mpf_clear(new_rho[i]);
-  free(new_rho);
+  delete [] new_rho;
   for (int i = 0;i < N;i++)
     mpf_clear(Q_N_rho[i]);
-  free(Q_N_rho);
+  delete [] Q_N_rho;
   mpf_clear(P__N);
   mpf_clear(P__0);
   mpf_clear(tao);
   for (int i = 0;i < N;i++)
     mpf_clear(rho[i]);
-  free(rho);
+  delete [] rho;
   mpf_clear(Lambda);
-  mpf_clear(tmp);
-  mpf_clear(max_change);
 }
 
 /* 
@@ -250,7 +251,6 @@ void jarvis_hypercube_approximation
 			    
 void correction_factor_Q(mpf_t Q, int N,mpf_t rho,int k){
   unsigned long int f;
-  mpf_t PNK_N_1_rho_1_PN; /* pow(1 - P__N,k) * factorial(N) * (1 - rho * (1 - P__N)) */
   mpf_t tmp,tmp1,tmp2;
   /*
   if (PNK_N_1_rho_1_PN == 0) 
@@ -279,13 +279,14 @@ void correction_factor_Q(mpf_t Q, int N,mpf_t rho,int k){
   mpf_mul(tmp2,tmp2,rho); // rho * (1 - P__N)
   mpf_ui_sub(tmp2,1,tmp2); // 1 - rho * (1 - P__N)
   
-  mpf_init(PNK_N_1_rho_1_PN);
-  mpf_mul(PNK_N_1_rho_1_PN,tmp1,tmp2);
-  mpf_mul_ui(PNK_N_1_rho_1_PN,PNK_N_1_rho_1_PN,factorial(N));
-  mpf_div(Q,Q,PNK_N_1_rho_1_PN);
-  mpf_mul_ui(Q,Q,factorial(N-k-1));
+  mpf_mul(Q,Q,P__0); // * P__0
+  mpf_mul_ui(Q,Q,factorial(N-k-1)); // * (N - k - 1)!
 
-  mpf_clear(PNK_N_1_rho_1_PN);
+  /* pow(1 - P__N,k) * factorial(N) * (1 - rho * (1 - P__N)) */
+  mpf_mul(tmp2,tmp1,tmp2); // (1 - P__N)^k * (1 - rho * (1 - P__N))
+  mpf_mul_ui(tmp2,tmp2,factorial(N)); // (1 - P__N)^k * (1 - rho * (1 - P__N)) * N!
+  mpf_div(Q,Q,tmp2); // / [(1 - P__N)^k * (1 - rho * (1 - P__N)) * N!]
+
   mpf_clear(tmp);
   mpf_clear(tmp1);
   mpf_clear(tmp2);
