@@ -283,6 +283,7 @@ void correction_factor_Q(mpf_t Q, int N,mpf_t rho,int k){
   mpf_mul(PNK_N_1_rho_1_PN,tmp1,tmp2);
   mpf_mul_ui(PNK_N_1_rho_1_PN,PNK_N_1_rho_1_PN,factorial(N));
   mpf_div(Q,Q,PNK_N_1_rho_1_PN);
+  mpf_mul_ui(Q,Q,factorial(N-k-1));
 
   mpf_clear(PNK_N_1_rho_1_PN);
   mpf_clear(tmp);
