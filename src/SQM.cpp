@@ -48,9 +48,9 @@ int main(int argc,char *argv[]) {
 
   I = Load_instance(filename,M_clients,N_sites);
   // Call_SQM_model(I,p,l,f,mu,v,filename);
+  Call_SQM_random(I,p,f,mu);
   /* Log Log_Start_SQMH(M_clients,N_sites,p,mu,f); /* */
   // Call_SQM_heuristic(I,p,f,mu);
-  Call_SQM_random(I,p,f,mu);
   IC_delete_instance(I);
   /* Log */ LogFile.close();
   cout << endl << "Saved in LogFile: " << LogName.str() << endl;
@@ -99,7 +99,8 @@ void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f) {
 void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu) {
   response_unit *X;
   cout << "Calling SQM_Heuristic" << endl;
-  X = SQM_heuristic(I,p,f,mu);
+  X = guess_a_location_03(p,I->N,I->W);
+  SQM_heuristic(I,p,f,mu,X);
   for (int i = 0;i < p;i++) LogFile << X[i].location << " ";
   LogFile << endl;
   delete [] X;
@@ -157,6 +158,8 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT) {
 	if (X[i].location == k) cout << k << " ";
     cout << endl;
     cout << "Response time : " << T_r << endl;
+    /* Log */ Log_Start_SQMH(I->M,I->N,p,Mu_NT,2); /* */
+    SQM_heuristic(I,p,2,Mu_NT,X);
     if (Best == NULL || T_r < t_r) {
       if (Best != NULL) delete [] Best;
       Best = X;
