@@ -73,7 +73,28 @@ bool file_exists (const string& name) {
 
 SQM_instance* Load_instance(string filename,int M_clients,int N_sites) {
   SQM_instance *I;
+  string Path = "../git/PMCLAP/Instancias/Q_MCLP_";
   /*I = read_points(demad_file.c_str());*/
+  if ((M_clients == N_sites) && (filename == "Q_MCLP")) {
+    switch (M_clients) {
+    case 30 : 
+      filename = Path+"30.txt";
+      break;
+    case 324 : 
+      filename = Path+"324.txt";
+      break;
+    case 818 : 
+      filename = Path+"818.txt";
+      break;
+    case 3283 : 
+      filename = Path+"3283.txt";
+      break;
+    defautl:
+      return NULL;
+    }
+    cout << "Read file: " << filename << endl;
+    I = IC_load_instance(filename);
+  }
   if (file_exists(filename+"_demand.ins") &&
       file_exists(filename+"_facility.ins")) {
     I = IC_read_instance (filename+"_demand.ins",filename+"_facility.ins");
@@ -152,14 +173,15 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT) {
       X[i].v = v;
       X[i].beta = beta;
     }
-    T_r = SQM_response_time(I,p,X,lambda,Mu_NT);
+    // T_r = SQM_response_time(I,p,X,lambda,Mu_NT);
     for (int k = 0;k < I->N;k++)
       for (int i = 0;i < p;i++)
 	if (X[i].location == k) cout << k << " ";
     cout << endl;
-    cout << "Response time : " << T_r << endl;
+    // cout << "Response time : " << T_r << endl;
     /* Log */ Log_Start_SQMH(I->M,I->N,p,Mu_NT,2); /* */
     SQM_heuristic(I,p,2,Mu_NT,X);
+    T_r = SQM_response_time(I,p,X,lambda,Mu_NT);
     if (Best == NULL || T_r < t_r) {
       if (Best != NULL) delete [] Best;
       Best = X;

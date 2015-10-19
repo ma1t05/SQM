@@ -33,6 +33,7 @@ void SQM_heuristic
   int **a;
   int m = I->M; /* Number of demand points */
   int n = I->N; /* Number of potencial sites to locate a server*/
+  int it = 0; /* iterator counter */
   point *V = I->V,*W = I->W;
  
   /* Populate matrix of distances */
@@ -84,7 +85,6 @@ void SQM_heuristic
   do {
 
     /* Update matrix of pfreferred servers */
-    /* Debug cout << "Step 0.2" << endl; /* */
     for (int k = 0;k < m;k++) {
       for (int i = 0;i < p;i++)
 	d[i] = Dist[k][X[i].location];
@@ -102,17 +102,14 @@ void SQM_heuristic
 
     /* **Step 0**
        Initialize Mean Service Time */
-    /* Debug cout << "Step 0" << endl; /* */
     for (int i = 0;i < p;i++)
       mpf_set_d(mst[i],1 / Mu_NT);
 
     do {
-
       for (int i = 0;i < p;i++)
 	mpf_set(MST[i],mst[i]);
 
       /* Update matrix of response times */
-      /* Debug cout << "Step 0.1" << endl; /* */
       for (int i = 0;i < p;i++) {
 	for (int k = 0;k < m;k++) {
 	  mpf_set_d(Tao[i][k],(X[i].beta / X[i].v) * Dist[k][X[i].location]);
@@ -123,16 +120,13 @@ void SQM_heuristic
 
       /* **Step 1**:
 	Run the Hypercube Model */
-      /* Debug cout << "Step 1.1" << endl; /* */
       jarvis_hypercube_approximation(m,p,Lambda,Tao,a,f);
 
       /* Step 2 
 	 Update mean service time */
-      /* Debug cout << "Step 2" << endl; /* */
       SQM_update_mst(mst,m,p,Mu_NT,Dist,X,f);
       
       /* Step 3 */
-      /* Debug cout << "Step 3" << endl; /* */
       mpf_set_ui(delta_mu,0);
       for (int i = 0;i < p;i++) {
 	mpf_sub(tmp,mst[i],MST[i]);
@@ -150,6 +144,9 @@ void SQM_heuristic
     SQM_expected_travel_time(t_r,m,p,Dist,X,f);
     /* + mean queue delay component */
     SQM_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
+
+    cout << "Iteration " << ++it << endl;
+    cout << "\tExpected Response Time :\t" << mpf_get_d(t_r) << endl;
 
     mpf_sub(tmp,T_r,t_r);
     mpf_abs(tmp,tmp);
@@ -354,7 +351,6 @@ double SQM_response_time
     /* Update matrix of response times */
     for (int i = 0;i < p;i++) {
       for (int k = 0;k < m;k++) {
-	//mpf_set_d(Tao[i][k],1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/(60*24));
 	mpf_set_d(Tao[i][k],(X[i].beta / X[i].v) * Dist[k][X[i].location]);
 	mpf_div_ui(Tao[i][k],Tao[i][k],60*24);
 	mpf_add(Tao[i][k],Tao[i][k],MST[i]);
@@ -390,7 +386,7 @@ double SQM_response_time
 	mpf_set(delta_mu,tmp);
     }
     
-    /* Debug */ cout << "Delta in mst: " << mpf_get_d(delta_mu) << endl;
+    /* Debug cout << "Delta in mst: " << mpf_get_d(delta_mu) << endl; /* */
   } while (mpf_cmp_d(delta_mu,epsilon) > 0);
 
   /* *Expected Response Time* */
@@ -480,7 +476,7 @@ void SQM_expected_travel_time
       mpf_add(t_r,t_r,tmp);
     }
   } // m,p,Dist,X,f
-  cout << "expected travel time: " << 60 * 24 * mpf_get_d(t_r) << endl;
+  /* Debug cout << "expected travel time: " << 60 * 24 * mpf_get_d(t_r) << endl; /* */
 }
 
 /* mean queue delay component */
