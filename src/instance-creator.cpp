@@ -48,6 +48,31 @@ SQM_instance* IC_read_instance (string Demand_nodes,string facility_nodes) {
   return I;
 }
 
+SQM_instance* IC_load_instance (string Demand_nodes) {
+  int m;
+  double S;
+  fstream demandfile;
+  SQM_instance *I;
+  I = new SQM_instance;
+  demandfile.open(Demand_nodes.c_str(),fstream::in);
+  demandfile >> m >> S;
+  I->M = m;
+  I->V = new point[m];
+  for (int i = 0;i < m;i++) {
+    demandfile >> (I->V)[i].x >> (I->V)[i].y >> (I->V)[i].demand;
+  }
+  demandfile.close();
+  
+  I->N = m;
+  I->W = new point[m];
+  for (int j = 0;j < m;j++) {
+    (I->W)[j].x = (I->V)[j].x;
+    (I->W)[j].y = (I->V)[j].y;
+  }
+
+  return I;
+}
+
 void IC_write_instance(SQM_instance* I,string demand_output,string facility_output) {
   fstream demandfile,facilityfile;
   
