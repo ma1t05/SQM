@@ -92,9 +92,11 @@ void SQM_heuristic
     }
 
     /* Print Current solution */
+    /*
     for (int i = 0;i < p;i++)
       cout << X[i].location << " ";
     cout << endl;
+    */
 
     mpf_set(T_r,t_r);
 
@@ -145,9 +147,8 @@ void SQM_heuristic
     /* + mean queue delay component */
     SQM_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
 
-    cout << "Iteration " << ++it << endl;
-    cout << "\tExpected Response Time :\t" << mpf_get_d(t_r) << endl;
-
+    cout << "Iteration " << ++it;
+    cout << "\tExpected Response Time :\t" << mpf_get_d(t_r) << "\r";
     mpf_sub(tmp,T_r,t_r);
     mpf_abs(tmp,tmp);
     
@@ -155,6 +156,7 @@ void SQM_heuristic
       SQM_improve_locations(X,m,n,p,Dist,f);
 
   } while (mpf_cmp_d(tmp,epsilon) > 0);
+  cout << endl;
   
   for (int k = 0;k < n;k++) delete a[k];
   delete [] a;
@@ -186,10 +188,12 @@ void SQM_heuristic
   for (int i = 0;i < p;i++) delete [] f[i];
   delete [] f;
 
+  /*
   for (int k = 0;k < n;k++)
     for (int i = 0;i < p;i++)
       if (X[i].location == k) cout << k << " ";
   cout << endl;
+  */
 }
 
 int unif(int a) {
@@ -363,14 +367,14 @@ double SQM_response_time
 
     mpf_t sum;
     mpf_init(sum);
-    cout << "Sum_k[]:";
+    // cout << "Sum_k[]:";
     for (int i = 0;i < p;i++) {
       mpf_set_ui(sum,0);
       for (int k = 0;k < m;k++)
 	mpf_add(sum,sum,f[i][k]);
-      cout << " " << mpf_get_d(sum);
+      // cout << " " << mpf_get_d(sum);
     }
-    cout << endl;
+    // cout << endl;
     mpf_clear(sum);
 
     /* Step 2
@@ -587,4 +591,54 @@ void SQM_improve_locations(response_unit *X,int m,int n,int p,double **Dist,num 
     LogFile << "\t";
   }
   LogFile << endl;
+}
+
+
+response_unit* SQM_GRASP
+(SQM_instance *I,
+ int p, // Number of adjusters
+ double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
+ double Mu_NT, // mean of non-travel time component of the service time
+ double v // Speed
+ ) {
+  int n = I->N,m = I->M;
+  int r;
+  int element;
+  int *rcl;
+  double *T_r;
+  double alpha = 0.15;
+  double beta = 1.5;
+  response_unit *X;
+
+  if (p < 1) return NULL;
+  X = new response_unit[p];
+  for (int i = 0;i < p;i++) {
+    X[i].v = v;
+    X[i].beta = beta;
+  }
+
+  /* Locate the first server */
+  X[0].location = unif(n);
+  r = 1;
+  T_r = new double [n];
+  rcl = new int [n];
+  while (r < p) 
+    {
+      /* Evaluate posible locations*/
+      for (int i = 0;i < n;i++) {
+	X[r].location = i;
+	T_r[i] = SQM_response_time(I,r+1,X,lambda,Mu_NT);
+      }
+
+      /* Sort Restricted Candidates List */
+      sort_dist(n,T_r,rcl);
+      /* Choose random element from the rcl */
+      element = unif(ceil(alpha * n));
+      X[r++].location = rcl[element];
+    }
+    
+
+  delete [] rcl;
+  delete [] T_r;
+  return X;
 }

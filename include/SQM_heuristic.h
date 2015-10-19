@@ -29,6 +29,13 @@ double SQM_response_time
  double lambda, /* mean arrival rate */
  double Mu_NT // mean of non-travel time component of the service time
  );
+response_unit* SQM_GRASP
+(SQM_instance *I,
+ int p, // Number of adjusters
+ double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
+ double Mu_NT, // mean of non-travel time component of the service time
+ double v // Speed
+ );
 
 #endif
 

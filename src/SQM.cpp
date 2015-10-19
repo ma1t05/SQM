@@ -13,7 +13,7 @@ SQM_instance* Load_instance(string filename,int M_clients,int N_sites);
 void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu);
 void Call_SQM_model(SQM_instance* I,int p,int l,double f,double mu,double v,string filename);
 void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f);
-void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT);
+void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 
 int main(int argc,char *argv[]) {
   string filename;
@@ -48,7 +48,7 @@ int main(int argc,char *argv[]) {
 
   I = Load_instance(filename,M_clients,N_sites);
   // Call_SQM_model(I,p,l,f,mu,v,filename);
-  Call_SQM_random(I,p,f,mu);
+  Call_SQM_random(I,p,f,mu,v);
   /* Log Log_Start_SQMH(M_clients,N_sites,p,mu,f); /* */
   // Call_SQM_heuristic(I,p,f,mu);
   IC_delete_instance(I);
@@ -161,34 +161,57 @@ void Call_SQM_model(SQM_instance* I,int p,int l,double f,double mu,double v,stri
   results.close();
 }
 
-void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT) {
-  double v = 64.0,beta = 1.5; 
-  double T_r,t_r;
-  cout << "Start SMQ random" << endl;
+void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
+  double beta = 1.5;
+  double T_r1,T_r2,t_r;
+  double gap = 0.0,best_gap = 0.0,worst_gap = 1.0,avg_gap = 0.0;
+  int N = 100;
+  // cout << "Start SMQ random" << endl;
   response_unit *Best = NULL;
-  response_unit *X;
-  for (int r = 0;r < 1;r++) {
+  response_unit *X,*G;
+  for (int r = 0;r < 100;r++) {
     X = guess_a_location_03(p,I->N,I->W);
     for (int i = 0;i < p;i++) {
       X[i].v = v;
       X[i].beta = beta;
     }
-    // T_r = SQM_response_time(I,p,X,lambda,Mu_NT);
+    T_r1 = SQM_response_time(I,p,X,lambda,Mu_NT);
+    /*
     for (int k = 0;k < I->N;k++)
       for (int i = 0;i < p;i++)
 	if (X[i].location == k) cout << k << " ";
     cout << endl;
+    */
     // cout << "Response time : " << T_r << endl;
     /* Log */ Log_Start_SQMH(I->M,I->N,p,Mu_NT,2); /* */
-    SQM_heuristic(I,p,2,Mu_NT,X);
-    T_r = SQM_response_time(I,p,X,lambda,Mu_NT);
-    if (Best == NULL || T_r < t_r) {
+    SQM_heuristic(I,p,lambda,Mu_NT,X);
+    T_r2 = SQM_response_time(I,p,X,lambda,Mu_NT);
+
+    gap = (T_r1 - T_r2) / T_r1;
+    avg_gap  += gap;
+    if (best_gap < gap) best_gap = gap;
+    if (worst_gap > gap) worst_gap = gap;
+
+    if (Best == NULL || T_r2 < t_r) {
       if (Best != NULL) delete [] Best;
       Best = X;
-      t_r = T_r;
+      t_r = T_r2;
     }
     else delete [] X;
+
+    G = SQM_GRASP(I,p,lambda,Mu_NT,v);
+    T_r2 = SQM_response_time(I,p,G,lambda,Mu_NT);
+    if (Best == NULL || T_r2 < t_r) {
+      if (Best != NULL) delete [] Best;
+      Best = G;
+      t_r = T_r2;
+    }
+    else delete [] G;
+
   }
   cout << "Best Response time : " << t_r << endl;
+  cout << "Gap of improvement : " << 100 * avg_gap / N << endl;
+  cout << "          Best gap : " << 100 * best_gap << endl;
+  cout << "         Worst gap : " << 100 * worst_gap << endl;
   delete [] Best;
 }
