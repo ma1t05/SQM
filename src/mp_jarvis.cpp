@@ -101,9 +101,11 @@ void jarvis_hypercube_approximation
   /* ITERATION: */
   do {
 
+    /*
     cout << "'rho_i':";
     for (int i = 0;i < N;i++) cout << " " << mpf_get_d(rho[i]);
     cout << endl;
+    */
 
     /* traffic intensity */
     mpf_mul(Rho,Lambda,tao);
@@ -148,11 +150,13 @@ void jarvis_hypercube_approximation
 	mpf_set(max_change,tmp);
     }
     
+    /*
     cout << "max change = " << mpf_get_d(max_change);
     if (mpf_cmp_d(max_change,epsilon) < 0)
       cout << " **STOP**" << endl;
     else 
       cout << "\r";
+    */
 
     if (mpf_cmp_d(max_change,epsilon) < 0) break; /* STOP */
 
