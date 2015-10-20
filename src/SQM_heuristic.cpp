@@ -457,9 +457,10 @@ void SQM_update_mst(mpf_t *mst,int m,int p,double Mu_NT,double **Dist,response_u
 
     cout << "mst sum over f_ij" << endl;
     mpf_set_ui(h,0);
-    for (int k = 0;k < m;k++)
+    for (int k = 0;k < m;k++) {
       mpf_add(h,h,f[i][k]);
-    cout << "[" << i << "] h != 0?" << mpf_cmp(h,0) << endl;
+    }
+    cout << "[" << i << "] h != 0?" << mpf_cmp_ui(h,0) << endl;
     mpf_div(mst[i],mst[i],h);
   }
   mpf_clear(tmp);
