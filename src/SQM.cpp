@@ -94,6 +94,7 @@ SQM_instance* Load_instance(string filename,int M_clients,int N_sites) {
     }
     cout << "Read file: " << filename << endl;
     I = IC_load_instance(filename);
+    return I;
   }
   if (file_exists(filename+"_demand.ins") &&
       file_exists(filename+"_facility.ins")) {
@@ -210,8 +211,17 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
 
   }
   cout << "Best Response time : " << t_r << endl;
-  cout << "Gap of improvement : " << 100 * avg_gap / N << endl;
-  cout << "          Best gap : " << 100 * best_gap << endl;
-  cout << "         Worst gap : " << 100 * worst_gap << endl;
+  cout << "          Best gap : " << 100 * best_gap << endl
+       << "       Average gap : " << 100 * avg_gap / N << endl
+       << "         Worst gap : " << 100 * worst_gap << endl;
+
+  /* Plot Best Solution */
+  int *Sol = new int [I->N];
+  for (int k = 0;k < I->N;k++)
+    Sol[k] = 0;
+  for (int i = 0;i < p;i++)
+    Sol[Best[i].location]++;
+  IC_plot_instance(I,Sol,"SQM_Best_Sol");
+  delete [] Sol;
   delete [] Best;
 }

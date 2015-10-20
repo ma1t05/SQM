@@ -36,6 +36,7 @@ void SQM_heuristic
   int it = 0; /* iterator counter */
   point *V = I->V,*W = I->W;
  
+  /* Debug */ cout << "Start Berman Heuristic" << "\r"; /* */
   /* Populate matrix of distances */
   Dist = SQM_dist_matrix(I);
 
@@ -147,8 +148,7 @@ void SQM_heuristic
     /* + mean queue delay component */
     SQM_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
 
-    cout << "Iteration " << ++it;
-    cout << "\tExpected Response Time :\t" << mpf_get_d(t_r) << "\r";
+    cout << "Expected Response Time [" << ++it << "]:\t" << mpf_get_d(t_r) << "\r";
     mpf_sub(tmp,T_r,t_r);
     mpf_abs(tmp,tmp);
     
@@ -164,8 +164,8 @@ void SQM_heuristic
   mpf_clear(T_r);
   mpf_clear(t_r);
   for (int i = 0;i < p;i++) {
-    for (int j = 0;j < n;j++)
-      mpf_clear(f[i][j]);
+    for (int k = 0;k < k;k++)
+      mpf_clear(f[i][k]);
   }
   for (int i = 0;i < p;i++) {
     for (int j = 0;j < n;j++)
@@ -194,6 +194,7 @@ void SQM_heuristic
       if (X[i].location == k) cout << k << " ";
   cout << endl;
   */
+  /* Debug */ cout << "Finish Berman Heuristic" << endl;
 }
 
 int unif(int a) {
@@ -341,10 +342,10 @@ double SQM_response_time
   for (int k = 0;k < m;k++)
     mpf_set_d(Lambda[k],I->V[k].demand * lambda / demand);
 
-  /* SERVICE MEAN TIME CALIBRATION */
+  cout << "/* SERVICE MEAN TIME CALIBRATION */" << endl;
 
-  /* **Step 0**
-     Initialize Mean Service Time */
+  cout << "/* **Step 0**" << endl
+       << "\tInitialize Mean Service Time */" << endl;
   for (int i = 0;i < p;i++)
     mpf_set_d(mst[i],1 / Mu_NT);
 
@@ -352,7 +353,7 @@ double SQM_response_time
     for (int i = 0;i < p;i++)
       mpf_set(MST[i],mst[i]);
 
-    /* Update matrix of response times */
+    cout << "/* Update matrix of response times */" << endl;
     for (int i = 0;i < p;i++) {
       for (int k = 0;k < m;k++) {
 	mpf_set_d(Tao[i][k],(X[i].beta / X[i].v) * Dist[k][X[i].location]);
@@ -361,27 +362,29 @@ double SQM_response_time
       }
     }
       
-    /* **Step 1**:
-       Run the Hypercube Model */
+    cout << "/* **Step 1**:" << endl
+	 << "\tRun the Hypercube Model */" << endl;
     jarvis_hypercube_approximation(m,p,Lambda,Tao,a,f);
 
+    /*
     mpf_t sum;
     mpf_init(sum);
-    // cout << "Sum_k[]:";
+    cout << "Sum_k[]:";
     for (int i = 0;i < p;i++) {
       mpf_set_ui(sum,0);
       for (int k = 0;k < m;k++)
 	mpf_add(sum,sum,f[i][k]);
-      // cout << " " << mpf_get_d(sum);
+      cout << " " << mpf_get_d(sum);
     }
-    // cout << endl;
+    cout << endl;
     mpf_clear(sum);
+    */
 
-    /* Step 2
-       Update mean service time */
+    cout <<"/* Step 2" << endl
+	 << "\tUpdate mean service time */" << endl;
     SQM_update_mst(mst,m,p,Mu_NT,Dist,X,f);
 
-    /* Step 3 */
+    cout << "/* Step 3 */" << endl;
     mpf_set_ui(delta_mu,0);
     for (int i = 0;i < p;i++) {
       mpf_sub(tmp,mst[i],MST[i]);
@@ -405,8 +408,8 @@ double SQM_response_time
   /* Deallocate memory for mpf numbers */
   mpf_clear(t_r);
   for (int i = 0;i < p;i++) {
-    for (int j = 0;j < n;j++)
-      mpf_clear(f[i][j]);
+    for (int k = 0;k < m;k++)
+      mpf_clear(f[i][k]);
   }
   for (int i = 0;i < p;i++) {
     for (int j = 0;j < n;j++)
@@ -442,6 +445,7 @@ void SQM_update_mst(mpf_t *mst,int m,int p,double Mu_NT,double **Dist,response_u
   mpf_t h,tmp;
   mpf_init(h);
   mpf_init(tmp);
+  cout << "Start update mst" << endl;
   for (int i = 0;i < p;i++) {
 
     mpf_set_ui(mst[i],0);
@@ -449,15 +453,18 @@ void SQM_update_mst(mpf_t *mst,int m,int p,double Mu_NT,double **Dist,response_u
       mpf_set_d(tmp,1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/(60*24));
       mpf_mul(tmp,tmp,f[i][k]);
       mpf_add(mst[i],mst[i],tmp);
-     }
+    }
 
+    cout << "mst sum over f_ij" << endl;
     mpf_set_ui(h,0);
     for (int k = 0;k < m;k++)
       mpf_add(h,h,f[i][k]);
+    cout << "[" << i << "] h != 0?" << mpf_cmp(h,0) << endl;
     mpf_div(mst[i],mst[i],h);
   }
   mpf_clear(tmp);
   mpf_clear(h);
+  cout << "End update mst" << endl;
 }
 
 
@@ -610,6 +617,7 @@ response_unit* SQM_GRASP
   double beta = 1.5;
   response_unit *X;
 
+  /* Debug */ cout << "Start GRASP" << endl; /* */
   if (p < 1) return NULL;
   X = new response_unit[p];
   for (int i = 0;i < p;i++) {
@@ -617,28 +625,29 @@ response_unit* SQM_GRASP
     X[i].beta = beta;
   }
 
-  /* Locate the first server */
+  cout << "/* Locate the first server */" << endl;
   X[0].location = unif(n);
   r = 1;
   T_r = new double [n];
   rcl = new int [n];
   while (r < p) 
     {
-      /* Evaluate posible locations*/
+      cout << "[" << r << "]/* Evaluate posible locations*/" << endl;
       for (int i = 0;i < n;i++) {
 	X[r].location = i;
 	T_r[i] = SQM_response_time(I,r+1,X,lambda,Mu_NT);
       }
 
-      /* Sort Restricted Candidates List */
+      cout << "/* Sort Restricted Candidates List */" << endl;
       sort_dist(n,T_r,rcl);
-      /* Choose random element from the rcl */
+      cout << "/* Choose random element from the rcl */" << endl;
+      cout <<"\r";
       element = unif(ceil(alpha * n));
       X[r++].location = rcl[element];
     }
-    
 
   delete [] rcl;
   delete [] T_r;
+  /* Debug */ cout << "Finish GRASP" << endl; /* */
   return X;
 }
