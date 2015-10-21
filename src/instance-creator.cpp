@@ -141,7 +141,7 @@ void IC_plot_instance(SQM_instance *I,int *Sol,string output) {
   fprintf(gnuPipe,"plot ");
   fprintf(gnuPipe,"'%s' using 1:2 with points title 'Demand'",demand_output);
   fprintf(gnuPipe,", '%s' using 1:2 with points title 'Facility'",facility_output);
-  fprintf(gnuPipe,", '%s' using 1:2:($3*10) with circles title 'Opened'",centers_output);
+  fprintf(gnuPipe,", '%s' using 1:2:($3*0.1) with circles title 'Opened'",centers_output);
   fprintf(gnuPipe,"\n");
   pclose(gnuPipe);
   remove(demand_output);
