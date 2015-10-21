@@ -200,6 +200,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
     }
     else delete [] X;
 
+    /*
     G = SQM_GRASP(I,p,lambda,Mu_NT,v);
     T_r2 = SQM_response_time(I,p,G,lambda,Mu_NT);
     if (Best == NULL || T_r2 < t_r) {
@@ -208,6 +209,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
       t_r = T_r2;
     }
     else delete [] G;
+    */
 
   }
   cout << "Best Response time : " << t_r << endl;

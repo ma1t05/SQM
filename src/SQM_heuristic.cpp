@@ -83,6 +83,7 @@ void SQM_heuristic
   for (int i = 0;i < p;i++)
     LogFile << X[i].location << " ";
   LogFile << endl;
+
   do {
 
     /* Update matrix of pfreferred servers */
@@ -343,7 +344,10 @@ double SQM_response_time
     mpf_set_d(Lambda[k],I->V[k].demand * lambda / demand);
 
   cout << "/* SERVICE MEAN TIME CALIBRATION */" << endl;
-
+  cout << "Solution:";
+  for (int i = 0;i < p;i++)
+    cout << " " << X[i].location;
+  cout << endl;
   cout << "/* **Step 0**" << endl
        << "\tInitialize Mean Service Time */" << endl;
   for (int i = 0;i < p;i++)
@@ -366,7 +370,6 @@ double SQM_response_time
 	 << "\tRun the Hypercube Model */" << endl;
     jarvis_hypercube_approximation(m,p,Lambda,Tao,a,f);
 
-    /*
     mpf_t sum;
     mpf_init(sum);
     cout << "Sum_k[]:";
@@ -377,8 +380,15 @@ double SQM_response_time
       cout << " " << mpf_get_d(sum);
     }
     cout << endl;
+    if (mpf_cmp_ui(sum,0) == 0) {
+      for (int i = 0;i < p;i++) {
+	cout << "[" << i+1 << "]:";
+	for (int k = 0;k < m;k++)
+	  cout << " " << mpf_get_d(Tao[i][k]);
+	cout << endl;
+      }
+    }
     mpf_clear(sum);
-    */
 
     cout <<"/* Step 2" << endl
 	 << "\tUpdate mean service time */" << endl;
@@ -437,7 +447,7 @@ double SQM_response_time
   delete [] a;
   for (int j=0;j < m;j++) delete [] Dist[j];
   delete [] Dist;
-  
+  cout << "Finish Response time" << endl << endl;
   return T_r;
 }
 
@@ -445,7 +455,7 @@ void SQM_update_mst(mpf_t *mst,int m,int p,double Mu_NT,double **Dist,response_u
   mpf_t h,tmp;
   mpf_init(h);
   mpf_init(tmp);
-  cout << "Start update mst" << endl;
+  /* cout << "Start update mst" << endl; */
   for (int i = 0;i < p;i++) {
 
     mpf_set_ui(mst[i],0);
@@ -455,17 +465,19 @@ void SQM_update_mst(mpf_t *mst,int m,int p,double Mu_NT,double **Dist,response_u
       mpf_add(mst[i],mst[i],tmp);
     }
 
-    cout << "mst sum over f_ij" << endl;
     mpf_set_ui(h,0);
     for (int k = 0;k < m;k++) {
       mpf_add(h,h,f[i][k]);
     }
-    cout << "[" << i << "] h != 0?" << mpf_cmp_ui(h,0) << endl;
-    mpf_div(mst[i],mst[i],h);
+    cout << "[" << i << "] h" << X[i].location 
+	 << " != 0?" << mpf_cmp_ui(h,0) << "\r";
+    if (mpf_cmp_ui(h,0) > 0) /* WARNING: This sum shoudn't be 0 */
+      mpf_div(mst[i],mst[i],h);
+    else cout << endl;
   }
   mpf_clear(tmp);
   mpf_clear(h);
-  cout << "End update mst" << endl;
+  /* cout << "End update mst" << endl; */
 }
 
 
@@ -496,6 +508,8 @@ void SQM_mean_queue_delay(mpf_t t_r,int m,int p,mpf_t *Lambda,mpf_t *MST,mpf_t *
   mpf_t mu;
   mpf_t P_B0,rho_i;
   mpf_t tmp;
+
+  /* cout << "mean queue delay START" << endl; */
 
   mpf_init(tmp);
   mpf_init_set_ui(mu,0);
@@ -528,6 +542,7 @@ void SQM_mean_queue_delay(mpf_t t_r,int m,int p,mpf_t *Lambda,mpf_t *MST,mpf_t *
   mpf_clear(P_B0);
   mpf_clear(mu);
   mpf_clear(tmp);
+  /* cout << "mean queue delay FINISH" << endl; */
 }
 
 double** SQM_dist_matrix(SQM_instance *I) {
@@ -618,7 +633,7 @@ response_unit* SQM_GRASP
   double beta = 1.5;
   response_unit *X;
 
-  /* Debug */ cout << "Start GRASP" << endl; /* */
+  /* Debug */ cout << endl << endl << "*****Start GRASP*****" << endl << endl << endl; /* */
   if (p < 1) return NULL;
   X = new response_unit[p];
   for (int i = 0;i < p;i++) {
