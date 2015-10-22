@@ -21,19 +21,19 @@ void SQM_heuristic
  ) {
   
   /* Variable definitions */
-  num *MST,*mst; // mean service time
-  num T_r,t_r; // expected response time
-  double **Dist; // Matrix of distances
-  num **f,**Tao;
-  double *d;
-  /* */
-  num tmp;
-  num delta_mu;
-  num *Lambda;
-  int **a;
   int m = I->M; /* Number of demand points */
   int n = I->N; /* Number of potencial sites to locate a server*/
   int it = 0; /* iterator counter */
+  num tmp;
+  num delta_mu;
+  num T_r,t_r; // expected response time
+  double *d;
+  num *MST,*mst; // mean service time
+  double **Dist; // Matrix of distances
+  num **f,**Tao;
+  /* */
+  num *Lambda;
+  int **a;
   point *V = I->V,*W = I->W;
  
   /* Debug */ cout << "Start Berman Heuristic" << "\r"; /* */
@@ -149,7 +149,7 @@ void SQM_heuristic
     /* + mean queue delay component */
     SQM_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
 
-    cout << "Expected Response Time [" << ++it << "]:\t" << mpf_get_d(t_r) << "\r";
+    cout << "Berman Heuristic ERT [" << ++it << "]:\t" << mpf_get_d(t_r) << endl;
     mpf_sub(tmp,T_r,t_r);
     mpf_abs(tmp,tmp);
     
@@ -195,7 +195,7 @@ void SQM_heuristic
       if (X[i].location == k) cout << k << " ";
   cout << endl;
   */
-  /* Debug */ cout << "Finish Berman Heuristic" << endl;
+  /* Debug cout << "Finish Berman Heuristic" << endl; /* */
 }
 
 int unif(int a) {
@@ -343,13 +343,14 @@ double SQM_response_time
   for (int k = 0;k < m;k++)
     mpf_set_d(Lambda[k],I->V[k].demand * lambda / demand);
 
-  cout << "/* SERVICE MEAN TIME CALIBRATION */" << endl;
-  cout << "Solution:";
+  /* SERVICE MEAN TIME CALIBRATION */
+  /* Debug cout << "Solution:"; 
   for (int i = 0;i < p;i++)
     cout << " " << X[i].location;
-  cout << endl;
-  cout << "/* **Step 0**" << endl
-       << "\tInitialize Mean Service Time */" << endl;
+  cout << endl; /* */
+
+  /* **Step 0**
+     Initialize Mean Service Time */
   for (int i = 0;i < p;i++)
     mpf_set_d(mst[i],1 / Mu_NT);
 
@@ -357,7 +358,7 @@ double SQM_response_time
     for (int i = 0;i < p;i++)
       mpf_set(MST[i],mst[i]);
 
-    cout << "/* Update matrix of response times */" << endl;
+    /* Update matrix of response times */
     for (int i = 0;i < p;i++) {
       for (int k = 0;k < m;k++) {
 	mpf_set_d(Tao[i][k],(X[i].beta / X[i].v) * Dist[k][X[i].location]);
@@ -366,10 +367,11 @@ double SQM_response_time
       }
     }
       
-    cout << "/* **Step 1**:" << endl
-	 << "\tRun the Hypercube Model */" << endl;
+    /* **Step 1**
+	 Run the Hypercube Model */
     jarvis_hypercube_approximation(m,p,Lambda,Tao,a,f);
 
+    /* 
     mpf_t sum;
     mpf_init(sum);
     cout << "Sum_k[]:";
@@ -389,12 +391,13 @@ double SQM_response_time
       }
     }
     mpf_clear(sum);
+    */
 
-    cout <<"/* Step 2" << endl
-	 << "\tUpdate mean service time */" << endl;
+    /* Step 2
+       Update mean service time */
     SQM_update_mst(mst,m,p,Mu_NT,Dist,X,f);
 
-    cout << "/* Step 3 */" << endl;
+    /* Step 3 */
     mpf_set_ui(delta_mu,0);
     for (int i = 0;i < p;i++) {
       mpf_sub(tmp,mst[i],MST[i]);
@@ -447,7 +450,7 @@ double SQM_response_time
   delete [] a;
   for (int j=0;j < m;j++) delete [] Dist[j];
   delete [] Dist;
-  cout << "Finish Response time" << endl << endl;
+  //cout << "Finish Response time" << endl << endl;
   return T_r;
 }
 
@@ -577,10 +580,11 @@ int Solve_1_median_location_model(int m,int n,double **Dist,double *h) {
 }
 
 void SQM_improve_locations(response_unit *X,int m,int n,int p,double **Dist,num **f) {
-  double *h_i = new double[m];
+  double *h_i;
   num h,tmp;
   mpf_init(h);
   mpf_init(tmp);
+  h_i = new double[m];
   for (int i = 0;i < p;i++) {
     // Block A
     //cout << "\t\tBlock A " << i << endl;
@@ -598,6 +602,7 @@ void SQM_improve_locations(response_unit *X,int m,int n,int p,double **Dist,num 
 
     // Block B
     /* Solve te 1-median location model with h_i^j */
+    X[i].past_location = X[i].location;
     X[i].location = Solve_1_median_location_model(m,n,Dist,h_i);
   }
   mpf_clear(tmp);
@@ -608,7 +613,6 @@ void SQM_improve_locations(response_unit *X,int m,int n,int p,double **Dist,num 
   for (int i = 0;i < p;i++) {
     LogFile << X[i].location;
     if (X[i].past_location != X[i].location) {
-      X[i].past_location = X[i].location;
       LogFile << "*";
     }
     LogFile << "\t";

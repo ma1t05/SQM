@@ -184,7 +184,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
     cout << endl;
     */
     // cout << "Response time : " << T_r << endl;
-    /* Log */ Log_Start_SQMH(I->M,I->N,p,Mu_NT,2); /* */
+    /* Log */ Log_Start_SQMH(I->M,I->N,p,Mu_NT,lambda); /* */
     SQM_heuristic(I,p,lambda,Mu_NT,X);
     T_r2 = SQM_response_time(I,p,X,lambda,Mu_NT);
 
@@ -209,9 +209,15 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
       t_r = T_r2;
     }
     else delete [] G;
-    */
+    /* */
 
   }
+  /*
+  double demand;
+  demand = 0.0;
+  for (int k = 0;k < I->M;k++) demand += (I->V)[k].demand;
+  cout << "      Total Demand : " << demand << endl;
+  */
   cout << "Best Response time : " << t_r << endl;
   cout << "          Best gap : " << 100 * best_gap << endl
        << "       Average gap : " << 100 * avg_gap / N << endl
