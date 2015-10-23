@@ -11,6 +11,7 @@ void SQM_mean_queue_delay(mpf_t,int,int,mpf_t*,mpf_t*,mpf_t**,mpf_t**);
 double** SQM_dist_matrix(SQM_instance*);
 int Solve_1_median_location_model(int,int,double**,double*);
 void SQM_improve_locations(response_unit*,int,int,int,double**,num**);
+void SQM_return_previous_solution(response_unit*,int);
 
 void SQM_heuristic
 (SQM_instance *I,
@@ -149,12 +150,26 @@ void SQM_heuristic
     /* + mean queue delay component */
     SQM_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
 
-    cout << "Berman Heuristic ERT [" << ++it << "]:\t" << mpf_get_d(t_r) << endl;
     mpf_sub(tmp,T_r,t_r);
-    mpf_abs(tmp,tmp);
-    
+    cout << "Berman Heuristic ERT [" << ++it << "]:\t" << mpf_get_d(t_r);
+    if (mpf_cmp_ui(tmp,0) < 0)
+      cout << "*\t";
+    else cout << "\t";
+    /* Print current solution */
+    for (int i = 0;i < p;i++) {
+      cout << X[i].location;
+      if (X[i].past_location != X[i].location) {
+	cout << "*";
+      }
+      cout << "\t";
+    }
+    cout << endl;
+    /* mpf_abs(tmp,tmp); */ // This is a bad 
+
     if (mpf_cmp_d(tmp,epsilon) > 0)
       SQM_improve_locations(X,m,n,p,Dist,f);
+    else if (mpf_cmp_ui(tmp,0) < 0)
+      SQM_return_previous_solution(X,p);
 
   } while (mpf_cmp_d(tmp,epsilon) > 0);
   cout << endl;
@@ -472,8 +487,10 @@ void SQM_update_mst(mpf_t *mst,int m,int p,double Mu_NT,double **Dist,response_u
     for (int k = 0;k < m;k++) {
       mpf_add(h,h,f[i][k]);
     }
+    /*
     cout << "[" << i << "] h" << X[i].location 
 	 << " != 0?" << mpf_cmp_ui(h,0) << "\r";
+    */
     if (mpf_cmp_ui(h,0) > 0) /* WARNING: This sum shoudn't be 0 */
       mpf_div(mst[i],mst[i],h);
     else cout << endl;
@@ -580,6 +597,7 @@ int Solve_1_median_location_model(int m,int n,double **Dist,double *h) {
 }
 
 void SQM_improve_locations(response_unit *X,int m,int n,int p,double **Dist,num **f) {
+  int new_location;
   double *h_i;
   num h,tmp;
   mpf_init(h);
@@ -602,8 +620,9 @@ void SQM_improve_locations(response_unit *X,int m,int n,int p,double **Dist,num 
 
     // Block B
     /* Solve te 1-median location model with h_i^j */
+    new_location = Solve_1_median_location_model(m,n,Dist,h_i);
     X[i].past_location = X[i].location;
-    X[i].location = Solve_1_median_location_model(m,n,Dist,h_i);
+    X[i].location = new_location;
   }
   mpf_clear(tmp);
   mpf_clear(h);
@@ -652,22 +671,28 @@ response_unit* SQM_GRASP
   rcl = new int [n];
   while (r < p) 
     {
-      cout << "[" << r << "]/* Evaluate posible locations*/" << endl;
+      cout << "[" << r << "]/* Evaluate posible locations*/" << "\t";
       for (int i = 0;i < n;i++) {
 	X[r].location = i;
 	T_r[i] = SQM_response_time(I,r+1,X,lambda,Mu_NT);
       }
 
-      cout << "/* Sort Restricted Candidates List */" << endl;
+      cout << "/* Sort Restricted Candidates List */" << "\t";
       sort_dist(n,T_r,rcl);
-      cout << "/* Choose random element from the rcl */" << endl;
+      cout << "/* Choose random element from the rcl */";
       cout <<"\r";
       element = unif(ceil(alpha * n));
       X[r++].location = rcl[element];
     }
+  cout << endl;
 
   delete [] rcl;
   delete [] T_r;
   /* Debug */ cout << "Finish GRASP" << endl; /* */
   return X;
+}
+
+void SQM_return_previous_solution(response_unit *X,int p) {
+  for (int i = 0;i < p;i++)
+    X[i].location = X[i].past_location;
 }

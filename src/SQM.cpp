@@ -1,9 +1,5 @@
 
 #include "SQM.h"
-#include "SQM_model.h"
-#include "Goldberg.h"
-#include "SQM_heuristic.h"
-#include "config.h"
 
 std::ofstream LogFile;
 std::ofstream results;
@@ -145,7 +141,7 @@ void Call_SQM_model(SQM_instance* I,int p,int l,double f,double mu,double v,stri
   Sol = SQM_model(I,p,l,mu,f,v);
   char sub[16];
   sprintf(sub,"_%02d_%02d",p,l);
-  IC_plot_instance(I,Sol,filename+sub);
+  plot_instance_solution(I,Sol,filename+sub);
   delete[] Sol;
 
   if (l == p) {
@@ -200,7 +196,6 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
     }
     else delete [] X;
 
-    /*
     G = SQM_GRASP(I,p,lambda,Mu_NT,v);
     T_r2 = SQM_response_time(I,p,G,lambda,Mu_NT);
     if (Best == NULL || T_r2 < t_r) {
@@ -229,7 +224,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
     Sol[k] = 0;
   for (int i = 0;i < p;i++)
     Sol[Best[i].location]++;
-  IC_plot_instance(I,Sol,"SQM_Best_Sol");
+  plot_instance_solution(I,Sol,"SQM_Best_Sol");
   delete [] Sol;
   delete [] Best;
 }
