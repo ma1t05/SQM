@@ -2,7 +2,6 @@
 #ifndef _INSTANCE_CREATOR_H
 #define _INSTANCE_CREATOR_H 1
 
-#include <cstdlib>
 #include <ctime>
 #include "SQM.h"
 
