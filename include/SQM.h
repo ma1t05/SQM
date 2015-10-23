@@ -34,6 +34,12 @@ typedef struct SQM_instance SQM_instance;
 extern std::ofstream LogFile;
 extern std::ofstream results;
 
+#include "SQM_model.h"
+#include "Goldberg.h"
+#include "SQM_heuristic.h"
+#include "config.h"
+#include "gnuplot.h"
+
 #endif
 
 
