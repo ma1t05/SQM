@@ -161,12 +161,14 @@ void Call_SQM_model(SQM_instance* I,int p,int l,double f,double mu,double v,stri
 void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
   double beta = 1.5;
   double T_r1,T_r2,t_r;
-  double gap = 0.0,best_gap = 0.0,worst_gap = 1.0,avg_gap = 0.0;
+  double gap = 0.0,best_gap = -1.0,worst_gap = 1.0,avg_gap = 0.0;
   int N = 100;
-  // cout << "Start SMQ random" << endl;
-  response_unit *Best = NULL;
+  response_unit *Best,*Best_RS,*Best_GRASP;
   response_unit *X,*G;
-  for (int r = 0;r < 100;r++) {
+
+  // cout << "Start SMQ random" << endl;
+  Best_RS = NULL;
+  for (int r = 0;r < N;r++) {
     X = guess_a_location_03(p,I->N,I->W);
     for (int i = 0;i < p;i++) {
       X[i].v = v;
@@ -189,42 +191,77 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
     if (best_gap < gap) best_gap = gap;
     if (worst_gap > gap) worst_gap = gap;
 
-    if (Best == NULL || T_r2 < t_r) {
-      if (Best != NULL) delete [] Best;
-      Best = X;
+    if (Best_RS == NULL || T_r2 < t_r) {
+      if (Best_RS != NULL) delete [] Best_RS;
+      Best_RS = X;
       t_r = T_r2;
     }
     else delete [] X;
+  }
 
-    G = SQM_GRASP(I,p,lambda,Mu_NT,v);
+  cout << "\t *** \tRandom results\t ***" << endl;
+  cout << "Best Response time : " << t_r << endl;
+  cout << "          Best gap : " << 100 * best_gap << endl
+       << "       Average gap : " << 100 * avg_gap / N << endl
+       << "         Worst gap : " << 100 * worst_gap << endl;
+
+  /* Plot Random Best Solution */
+  int *Sol = new int [I->N];
+  for (int k = 0;k < I->N;k++) Sol[k] = 0;
+  for (int i = 0;i < p;i++) Sol[Best_RS[i].location]++;
+  plot_instance_solution(I,Sol,"SQM_Best_Random_Sol");
+
+  /* Evaluate GRASP */
+  Best_GRASP = NULL;
+  best_gap = -1.0,worst_gap = 1.0,avg_gap = 0.0;
+  for (int r = 0;r < N;r++) {
+    G = SQM_GRASP(I,p,lambda,Mu_NT,v,0.25);
+    T_r1 = SQM_response_time(I,p,G,lambda,Mu_NT);
+    /* Log */ Log_Start_SQMH(I->M,I->N,p,Mu_NT,lambda); /* */
+    SQM_heuristic(I,p,lambda,Mu_NT,G);
     T_r2 = SQM_response_time(I,p,G,lambda,Mu_NT);
-    if (Best == NULL || T_r2 < t_r) {
-      if (Best != NULL) delete [] Best;
-      Best = G;
+
+    gap = (T_r1 - T_r2) / T_r1;
+    avg_gap += gap;
+    if (best_gap < gap) best_gap = gap;
+    if (worst_gap > gap) worst_gap = gap;
+
+    if (Best_GRASP == NULL || T_r2 < t_r) {
+      if (Best_GRASP != NULL) delete [] Best_GRASP;
+      Best_GRASP = G;
       t_r = T_r2;
     }
     else delete [] G;
-    /* */
-
   }
+
+  cout << "\t *** \t GRASP results\t ***" << endl;
+  cout << "Best Response time : " << t_r << endl;
+  cout << "          Best gap : " << 100 * best_gap << endl
+       << "       Average gap : " << 100 * avg_gap / N << endl
+       << "         Worst gap : " << 100 * worst_gap << endl;
+
+  /* Plot Best GRASP Solution */
+  for (int k = 0;k < I->N;k++) Sol[k] = 0;
+  for (int i = 0;i < p;i++) Sol[Best_GRASP[i].location]++;
+  plot_instance_solution(I,Sol,"SQM_Best_GRASP_Sol");
+
+  T_r1 = SQM_response_time(I,p,Best_RS,lambda,Mu_NT);
+  T_r2 = SQM_response_time(I,p,Best_GRASP,lambda,Mu_NT);
+  Best = (T_r1 < T_r2 ? Best_RS : Best_GRASP);
+
+  /* Plot Best Solution */
+  for (int k = 0;k < I->N;k++) Sol[k] = 0;
+  for (int i = 0;i < p;i++) Sol[Best[i].location]++;
+  plot_instance_solution(I,Sol,"SQM_Best_Sol");
+
   /*
   double demand;
   demand = 0.0;
   for (int k = 0;k < I->M;k++) demand += (I->V)[k].demand;
   cout << "      Total Demand : " << demand << endl;
   */
-  cout << "Best Response time : " << t_r << endl;
-  cout << "          Best gap : " << 100 * best_gap << endl
-       << "       Average gap : " << 100 * avg_gap / N << endl
-       << "         Worst gap : " << 100 * worst_gap << endl;
 
-  /* Plot Best Solution */
-  int *Sol = new int [I->N];
-  for (int k = 0;k < I->N;k++)
-    Sol[k] = 0;
-  for (int i = 0;i < p;i++)
-    Sol[Best[i].location]++;
-  plot_instance_solution(I,Sol,"SQM_Best_Sol");
   delete [] Sol;
-  delete [] Best;
+  delete [] Best_RS;
+  delete [] Best_GRASP;
 }

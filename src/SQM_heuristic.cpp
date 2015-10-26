@@ -37,7 +37,7 @@ void SQM_heuristic
   int **a;
   point *V = I->V,*W = I->W;
  
-  /* Debug */ cout << "Start Berman Heuristic" << "\r"; /* */
+  /* Debug cout << "Start Berman Heuristic" << "\r"; /* */
   /* Populate matrix of distances */
   Dist = SQM_dist_matrix(I);
 
@@ -150,12 +150,13 @@ void SQM_heuristic
     /* + mean queue delay component */
     SQM_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
 
+    /*
     mpf_sub(tmp,T_r,t_r);
     cout << "Berman Heuristic ERT [" << ++it << "]:\t" << mpf_get_d(t_r);
     if (mpf_cmp_ui(tmp,0) < 0)
       cout << "*\t";
     else cout << "\t";
-    /* Print current solution */
+    /* Print current solution 
     for (int i = 0;i < p;i++) {
       cout << X[i].location;
       if (X[i].past_location != X[i].location) {
@@ -164,6 +165,7 @@ void SQM_heuristic
       cout << "\t";
     }
     cout << endl;
+    
     /* mpf_abs(tmp,tmp); */ // This is a bad 
 
     if (mpf_cmp_d(tmp,epsilon) > 0)
@@ -172,7 +174,7 @@ void SQM_heuristic
       SQM_return_previous_solution(X,p);
 
   } while (mpf_cmp_d(tmp,epsilon) > 0);
-  cout << endl;
+  //cout << endl;
   
   for (int k = 0;k < n;k++) delete a[k];
   delete [] a;
@@ -645,18 +647,18 @@ response_unit* SQM_GRASP
  int p, // Number of adjusters
  double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
  double Mu_NT, // mean of non-travel time component of the service time
- double v // Speed
+ double v, // Speed
+ double alpha // Random factor {1: random, 0: greedy}
  ) {
   int n = I->N,m = I->M;
   int r;
   int element;
   int *rcl;
   double *T_r;
-  double alpha = 0.15;
   double beta = 1.5;
   response_unit *X;
 
-  /* Debug */ cout << endl << endl << "*****Start GRASP*****" << endl << endl << endl; /* */
+  /* Debug cout << endl << endl << "*****Start GRASP*****" << endl << endl << endl; /* */
   if (p < 1) return NULL;
   X = new response_unit[p];
   for (int i = 0;i < p;i++) {
@@ -664,31 +666,31 @@ response_unit* SQM_GRASP
     X[i].beta = beta;
   }
 
-  cout << "/* Locate the first server */" << endl;
+  // cout << "/* Locate the first server */" << endl;
   X[0].location = unif(n);
   r = 1;
   T_r = new double [n];
   rcl = new int [n];
   while (r < p) 
     {
-      cout << "[" << r << "]/* Evaluate posible locations*/" << "\t";
+      // cout << "[" << r << "]/* Evaluate posible locations*/" << "\t";
       for (int i = 0;i < n;i++) {
 	X[r].location = i;
 	T_r[i] = SQM_response_time(I,r+1,X,lambda,Mu_NT);
       }
 
-      cout << "/* Sort Restricted Candidates List */" << "\t";
+      // cout << "/* Sort Restricted Candidates List */" << "\t";
       sort_dist(n,T_r,rcl);
-      cout << "/* Choose random element from the rcl */";
-      cout <<"\r";
+      // cout << "/* Choose random element from the rcl */";
+      // cout <<"\r";
       element = unif(ceil(alpha * n));
       X[r++].location = rcl[element];
     }
-  cout << endl;
+  // cout << endl;
 
   delete [] rcl;
   delete [] T_r;
-  /* Debug */ cout << "Finish GRASP" << endl; /* */
+  /* Debug cout << "Finish GRASP" << endl; /* */
   return X;
 }
 

@@ -34,7 +34,8 @@ response_unit* SQM_GRASP
  int p, // Number of adjusters
  double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
  double Mu_NT, // mean of non-travel time component of the service time
- double v // Speed
+ double v, // Speed
+ double alpha
  );
 
 #endif
