@@ -31,6 +31,9 @@ typedef struct instance instance;
 
 float dist(point*,point*);
 instance* read_points(const char*);
+int unif(int);
+int comp(const void*,const void*);
+void sort_dist (int,double*,int*);
 
 #endif
 
