@@ -1,9 +1,6 @@
 
 #include "SQM_heuristic.h"
 
-int unif(int);
-int comp(const void*,const void*);
-void sort_dist (int,double*,int*);
 void SQM_update_mst(mpf_t *mst,int m,int p,double Mu_NT,double **Dist,response_unit* X,mpf_t **f);
 void SQM_expected_travel_time(mpf_t,int,int,double**,response_unit*,mpf_t**);
 void SQM_mean_queue_delay(mpf_t,int,int,mpf_t*,mpf_t*,mpf_t**,mpf_t**);
@@ -118,7 +115,7 @@ void SQM_heuristic
       for (int i = 0;i < p;i++) {
 	for (int k = 0;k < m;k++) {
 	  mpf_set_d(Tao[i][k],(X[i].beta / X[i].v) * Dist[k][X[i].location]);
-	  mpf_div_ui(Tao[i][k],Tao[i][k],60*24);
+	  mpf_div_ui(Tao[i][k],Tao[i][k],MINS_PER_BLOCK*BLOCKS_PER_HORIZON);
 	  mpf_add(Tao[i][k],Tao[i][k],MST[i]);
 	}
       }
@@ -213,32 +210,6 @@ void SQM_heuristic
   cout << endl;
   */
   /* Debug cout << "Finish Berman Heuristic" << endl; /* */
-}
-
-int unif(int a) {
-  return floor(double(a) * rand() / RAND_MAX);
-}
-
-int comp(const void *a,const void *b) {
-  std::pair<double,int> *x,*y;
-  x = (std::pair<double,int>*)a;
-  y = (std::pair<double,int>*)b;
-  if (x->first > y->first) return 1;
-  else if (x->first < y->first) return -1;
-  else return 0;
-}
-
-void sort_dist (int n,double *d,int *c) {
-  std::pair<double,int> *x;
-  x = new std::pair<double,int>[n];
-  for (int i = 0;i < n;i++) {
-    x[i].first = d[i];
-    x[i].second = i;
-  }
-  qsort(x,n,sizeof(std::pair<double,int>), comp);
-  for (int i = 0;i < n;i++)
-    c[i] = x[i].second;
-  delete[] x;
 }
 
 response_unit* guess_a_location_01(int p,int n, point *W){
@@ -379,7 +350,7 @@ double SQM_response_time
     for (int i = 0;i < p;i++) {
       for (int k = 0;k < m;k++) {
 	mpf_set_d(Tao[i][k],(X[i].beta / X[i].v) * Dist[k][X[i].location]);
-	mpf_div_ui(Tao[i][k],Tao[i][k],60*24);
+	mpf_div_ui(Tao[i][k],Tao[i][k],MINS_PER_BLOCK*BLOCKS_PER_HORIZON);
 	mpf_add(Tao[i][k],Tao[i][k],MST[i]);
       }
     }
@@ -480,7 +451,7 @@ void SQM_update_mst(mpf_t *mst,int m,int p,double Mu_NT,double **Dist,response_u
 
     mpf_set_ui(mst[i],0);
     for (int k = 0;k < m;k++) {
-      mpf_set_d(tmp,1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/(60*24));
+      mpf_set_d(tmp,1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/(MINS_PER_BLOCK*BLOCKS_PER_HORIZON));
       mpf_mul(tmp,tmp,f[i][k]);
       mpf_add(mst[i],mst[i],tmp);
     }
@@ -517,12 +488,12 @@ void SQM_expected_travel_time
   for (int i = 0;i < p;i++) {
     for (int k = 0;k < m;k++) {
       mpf_set_d(tmp,Dist[k][X[i].location]/X[i].v);
-      mpf_div_ui(tmp,tmp,60*24);
+      mpf_div_ui(tmp,tmp,MINS_PER_BLOCK*BLOCKS_PER_HORIZON);
       mpf_mul(tmp,tmp,f[i][k]);
       mpf_add(t_r,t_r,tmp);
     }
   } // m,p,Dist,X,f
-  /* Debug cout << "expected travel time: " << 60 * 24 * mpf_get_d(t_r) << endl; /* */
+  /* Debug cout << "expected travel time: " << MINS_PER_BLOCK * BLOCKS_PER_HORIZON * mpf_get_d(t_r) << endl; /* */
 }
 
 /* mean queue delay component */
@@ -639,59 +610,6 @@ void SQM_improve_locations(response_unit *X,int m,int n,int p,double **Dist,num 
     LogFile << "\t";
   }
   LogFile << endl;
-}
-
-
-response_unit* SQM_GRASP
-(SQM_instance *I,
- int p, // Number of adjusters
- double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
- double Mu_NT, // mean of non-travel time component of the service time
- double v, // Speed
- double alpha // Random factor {1: random, 0: greedy}
- ) {
-  int n = I->N,m = I->M;
-  int r;
-  int element;
-  int *rcl;
-  double *T_r;
-  double beta = 1.5;
-  response_unit *X;
-
-  /* Debug cout << endl << endl << "*****Start GRASP*****" << endl << endl << endl; /* */
-  if (p < 1) return NULL;
-  X = new response_unit[p];
-  for (int i = 0;i < p;i++) {
-    X[i].v = v;
-    X[i].beta = beta;
-  }
-
-  // cout << "/* Locate the first server */" << endl;
-  X[0].location = unif(n);
-  r = 1;
-  T_r = new double [n];
-  rcl = new int [n];
-  while (r < p) 
-    {
-      // cout << "[" << r << "]/* Evaluate posible locations*/" << "\t";
-      for (int i = 0;i < n;i++) {
-	X[r].location = i;
-	T_r[i] = SQM_response_time(I,r+1,X,lambda,Mu_NT);
-      }
-
-      // cout << "/* Sort Restricted Candidates List */" << "\t";
-      sort_dist(n,T_r,rcl);
-      // cout << "/* Choose random element from the rcl */";
-      // cout <<"\r";
-      element = unif(ceil(alpha * n));
-      X[r++].location = rcl[element];
-    }
-  // cout << endl;
-
-  delete [] rcl;
-  delete [] T_r;
-  /* Debug cout << "Finish GRASP" << endl; /* */
-  return X;
 }
 
 void SQM_return_previous_solution(response_unit *X,int p) {
