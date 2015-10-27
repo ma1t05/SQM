@@ -14,8 +14,10 @@ typedef IloArray<IloIntArray> IntMatrix;
 
 using namespace std;
 
-#define EPSILON 0.001
-#define TIME_MAX 1200.0
+#define            EPSILON 0.001
+#define           TIME_MAX 1200.0
+#define     MINS_PER_BLOCK 60
+#define BLOCKS_PER_HORIZON 24
 
 struct network {
   int n;
@@ -39,6 +41,7 @@ extern std::ofstream results;
 #include "SQM_heuristic.h"
 #include "config.h"
 #include "gnuplot.h"
+#include "GRASP.h"
 
 #endif
 
