@@ -22,6 +22,7 @@ using namespace std;
 struct network {
   int n;
 };
+typedef struct network network;
 
 struct SQM_instance {
   int M; /* Number of customers */
@@ -29,9 +30,15 @@ struct SQM_instance {
   point* V; /* Set of demand points */
   point* W; /* Set of potencial locations sites */
 };
-
-typedef struct network network;
 typedef struct SQM_instance SQM_instance;
+
+struct response_unit {
+  int location;
+  int past_location;
+  double v;
+  double beta;
+};
+typedef struct response_unit response_unit;
 
 extern std::ofstream LogFile;
 extern std::ofstream results;
@@ -41,9 +48,8 @@ extern std::ofstream results;
 #include "SQM_heuristic.h"
 #include "config.h"
 #include "gnuplot.h"
-#include "GRASP.h"
+#include "SQM_GRASP.h"
 
 #endif
-
 
 /* eof */
