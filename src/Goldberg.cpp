@@ -4,6 +4,7 @@
  */
 
 #include "Goldberg.h"
+#include <sstream>
 
 void Goldberg
 (SQM_instance* I, // Set of points
