@@ -17,6 +17,8 @@ void IC_write_instance (SQM_instance*,string,string);
 void IC_plot_instance(SQM_instance*,int*,string);
 void IC_delete_instance(SQM_instance*);
 
+double** SQM_dist_matrix(SQM_instance*);
+
 #endif
 
 /* eof */

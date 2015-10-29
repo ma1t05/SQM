@@ -105,3 +105,19 @@ void IC_delete_instance(SQM_instance* I) {
   delete [] I->W;
   delete I;
 }
+
+double** SQM_dist_matrix(SQM_instance *I) {
+  int n = I->N,m = I->M;
+  double **Dist;
+
+  Dist = new  double*[m];
+  for (int j = 0;j < m;j++)
+    Dist[j] = new double [n];
+
+  for (int j = 0;j < m;j++) {
+    for (int i = 0;i < n;i++) {
+      Dist[j][i] = dist(&(I->V[j]),&(I->W[i]));
+    }
+  }
+  return Dist;
+}
