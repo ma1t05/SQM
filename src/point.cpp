@@ -1,6 +1,12 @@
 
+#include <cstdlib>
+#include <iostream>
+#include <fstream>
+#include <cmath>
+/*#include <utility>*/
 #include "point.h"
-
+#include "log.h"
+using namespace std;
 
 float dist(point *i,point *j){
   return sqrt((i->x - j->x)*(i->x - j->x) + (i->y - j->y) * (i->y - j->y));
@@ -13,8 +19,7 @@ instance* read_points(const char *filename){
   ifstream file(filename);
   
   if (!file) {
-    cerr << "ERROR: colud not open file '" << filename
-	 << "' for reading" << endl;
+    logError(cerr << "ERROR: colud not open file '" << filename << "' for reading" << endl);
     return NULL;
   }
 
