@@ -43,13 +43,7 @@ typedef struct response_unit response_unit;
 extern std::ofstream LogFile;
 extern std::ofstream results;
 
-#include "SQM_model.h"
-#include "Goldberg.h"
-#include "SQM_heuristic.h"
-#include "config.h"
-#include "gnuplot.h"
-#include "SQM_GRASP.h"
-
 #endif
 
 /* eof */
+

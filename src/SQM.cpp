@@ -1,5 +1,12 @@
 
 #include "SQM.h"
+#include "SQM_model.h"
+#include "Goldberg.h"
+#include "SQM_heuristic.h"
+#include "config.h"
+#include "gnuplot.h"
+#include "SQM_GRASP.h"
+#include "MST.h"
 
 std::ofstream LogFile;
 std::ofstream results;
@@ -174,7 +181,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
       X[i].v = v;
       X[i].beta = beta;
     }
-    T_r1 = SQM_response_time(I,p,X,lambda,Mu_NT);
+    T_r1 = MST_response_time(I,p,X,lambda,Mu_NT);
     /*
     for (int k = 0;k < I->N;k++)
       for (int i = 0;i < p;i++)
@@ -184,7 +191,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
     // cout << "Response time : " << T_r << endl;
     /* Log */ Log_Start_SQMH(I->M,I->N,p,Mu_NT,lambda); /* */
     SQM_heuristic(I,p,lambda,Mu_NT,X);
-    T_r2 = SQM_response_time(I,p,X,lambda,Mu_NT);
+    T_r2 = MST_response_time(I,p,X,lambda,Mu_NT);
 
     gap = (T_r1 - T_r2) / T_r1;
     avg_gap  += gap;
@@ -216,10 +223,10 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   best_gap = -1.0,worst_gap = 1.0,avg_gap = 0.0;
   for (int r = 0;r < N;r++) {
     G = GRASP(I,p,lambda,Mu_NT,v,0.25); /* */
-    T_r1 = SQM_response_time(I,p,G,lambda,Mu_NT);
+    T_r1 = MST_response_time(I,p,G,lambda,Mu_NT);
     /* Log */ Log_Start_SQMH(I->M,I->N,p,Mu_NT,lambda); /* */
     SQM_heuristic(I,p,lambda,Mu_NT,G);
-    T_r2 = SQM_response_time(I,p,G,lambda,Mu_NT);
+    T_r2 = MST_response_time(I,p,G,lambda,Mu_NT);
 
     gap = (T_r1 - T_r2) / T_r1;
     avg_gap += gap;
@@ -245,8 +252,8 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   for (int i = 0;i < p;i++) Sol[Best_GRASP[i].location]++;
   plot_instance_solution(I,Sol,"SQM_Best_GRASP_Sol");
 
-  T_r1 = SQM_response_time(I,p,Best_RS,lambda,Mu_NT);
-  T_r2 = SQM_response_time(I,p,Best_GRASP,lambda,Mu_NT);
+  T_r1 = MST_response_time(I,p,Best_RS,lambda,Mu_NT);
+  T_r2 = MST_response_time(I,p,Best_GRASP,lambda,Mu_NT);
   Best = (T_r1 < T_r2 ? Best_RS : Best_GRASP);
 
   /* Plot Best Solution */

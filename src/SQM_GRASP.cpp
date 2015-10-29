@@ -1,5 +1,7 @@
 
 #include "SQM_GRASP.h"
+#include "mp_jarvis.h"
+#include "MST.h"
 
 bool GRASP_closest_to_b(SQM_instance *I,int node,int center_a,int center_b);
 
@@ -37,7 +39,7 @@ response_unit* GRASP
       // cout << "[" << r << "]/* Evaluate posible locations*/" << "\t";
       for (int i = 0;i < n;i++) {
 	X[r].location = i;
-	T_r[i] = SQM_response_time(I,r+1,X,lambda,Mu_NT);
+	T_r[i] = MST_response_time(I,r+1,X,lambda,Mu_NT);
       }
 
       // cout << "/* Sort Restricted Candidates List */" << "\t";

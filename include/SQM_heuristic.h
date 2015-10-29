@@ -2,11 +2,8 @@
 #ifndef _SQM_HEURISTIC_H
 #define _SQM_HEURISTIC_H
 
-#include <utility>
 #include <gmp.h>
-#include "point.h"
 #include "SQM.h"
-#include "mp_jarvis.h"
 
 typedef mpf_t num;
 void SQM_heuristic(SQM_instance*,int,double,double,response_unit*);
