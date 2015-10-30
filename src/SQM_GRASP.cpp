@@ -2,6 +2,7 @@
 #include "SQM_GRASP.h"
 #include "mp_jarvis.h"
 #include "MST.h"
+#include "log.h"
 
 bool GRASP_closest_to_b(SQM_instance *I,int node,int center_a,int center_b);
 
@@ -39,7 +40,8 @@ response_unit* GRASP
       // cout << "[" << r << "]/* Evaluate posible locations*/" << "\t";
       for (int i = 0;i < n;i++) {
 	X[r].location = i;
-	T_r[i] = MST_response_time(I,r+1,X,lambda,Mu_NT);
+	T_r[i] = GRASP_func_NN(I,r+1,X,lambda,Mu_NT);
+	/* T_r[i] = MST_response_time(I,r+1,X,lambda,Mu_NT);*/
       }
 
       // cout << "/* Sort Restricted Candidates List */" << "\t";
@@ -64,6 +66,7 @@ double GRASP_func_NN
  double lambda,
  double Mu_NT
  ) {
+  logDebug(cout << "Start GRASP_func_NN" << endl);
   /* Variables definition */
   int n = I->N,m = I->M;
   int nearest,k;
@@ -74,6 +77,7 @@ double GRASP_func_NN
   Obj = 0.0;
   for (int j = 0;j < m;j++) {
     /* Obtain the nearest server */
+    k = 0;
     nearest = X[0].location;
     for (int i = 1;i < p;i++) {
       if (GRASP_closest_to_b(I,j,nearest,X[i].location)) {
@@ -85,6 +89,7 @@ double GRASP_func_NN
   }
   Obj /= MINS_PER_BLOCK * BLOCKS_PER_HORIZON;
 
+  logDebug(cout << "Finish GRASP_func_NN" << endl);
   return Obj;
 }
 
