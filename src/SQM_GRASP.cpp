@@ -5,6 +5,7 @@
 #include "log.h"
 
 bool GRASP_closest_to_b(SQM_instance *I,int node,int center_a,int center_b);
+int GRASP_nearest_server(SQM_instance *I,int j,int p,response_unit *X);
 
 response_unit* GRASP
 (SQM_instance *I,
@@ -76,15 +77,8 @@ double GRASP_func_NN
 
   Obj = 0.0;
   for (int j = 0;j < m;j++) {
-    /* Obtain the nearest server */
-    k = 0;
-    nearest = X[0].location;
-    for (int i = 1;i < p;i++) {
-      if (GRASP_closest_to_b(I,j,nearest,X[i].location)) {
-	nearest = X[i].location;
-	k = i;
-      }
-    }
+    k = GRASP_nearest_server(I,j,p,X); /* Obtain the nearest server */
+    nearest = X[k].location;
     Obj += dist(&(I->V[j]),&(I->W[nearest])) / X[k].v;
   }
   Obj /= MINS_PER_BLOCK * BLOCKS_PER_HORIZON;
@@ -95,4 +89,14 @@ double GRASP_func_NN
 
 bool GRASP_closest_to_b(SQM_instance *I,int node,int center_a,int center_b) {
   return (dist(&(I->V[node]),&(I->W[center_a])) > dist(&(I->V[node]),&(I->W[center_b])));
+}
+
+int GRASP_nearest_server(SQM_instance *I,int j,int p,response_unit *X) {
+  int k = 0;
+  for (int i = 1;i < p;i++) {
+    if (GRASP_closest_to_b(I,j,X[k].location,X[i].location)) {
+      k = i;
+    }
+  }
+  return k;
 }
