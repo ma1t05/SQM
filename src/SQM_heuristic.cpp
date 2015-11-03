@@ -3,6 +3,8 @@
 #include "instance-creator.h"
 #include "mp_jarvis.h"
 #include "MST.h"
+#include "gnuplot.h"
+#include <sstream>
 
 /* Populate matrix of distances */
 int Solve_1_median_location_model(int,int,double**,double*);
@@ -27,6 +29,9 @@ void SQM_heuristic
   double *d;
   num *MST,*mst; // mean service time
   double **Dist; // Matrix of distances
+  double **F; // Version double of matrix f
+  int key = rand(); // key number to naming plots
+  char plot_output[32];
   num **f,**Tao;
   /* */
   num *Lambda;
@@ -36,7 +41,9 @@ void SQM_heuristic
   /* Debug cout << "Start Berman Heuristic" << "\r"; /* */
   /* Populate matrix of distances */
   Dist = SQM_dist_matrix(I);
-
+  F = new double*[p];
+  for (int i = 0;i < p;i++)
+    F[i] = new double[m];
   MST = new num[p];
   mst = new num[p];
   d = new double[p];
@@ -123,6 +130,15 @@ void SQM_heuristic
 	Run the Hypercube Model */
       jarvis_hypercube_approximation(m,p,Lambda,Tao,a,f);
 
+      /* Plot Iteration */
+      for (int i = 0;i < p;i++)
+	for (int k = 0;k < m;k++)
+	  F[i][k] = mpf_get_d(f[i][k]);
+      stringstream Key;
+      sprintf(plot_output,"./plots/SQM_Heuristic_%010d",key);
+      Key << ++it;
+      plot_solution_allocation(I,p,X,F,string(plot_output),Key.str());
+
       /* Step 2 
 	 Update mean service time */
       MST_update_mst(mst,m,p,Mu_NT,Dist,X,f);
@@ -199,6 +215,8 @@ void SQM_heuristic
   delete [] MST;
   for (int j=0;j < m;j++) delete [] Dist[j];
   delete [] Dist;
+  for (int i = 0;i < p;i++) delete [] F[i];
+  delete [] F;
   for (int i = 0;i < p;i++) delete [] f[i];
   delete [] f;
 

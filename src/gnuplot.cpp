@@ -41,7 +41,7 @@ void plot_instance_solution(SQM_instance *I,int *Sol,string output) {
   remove(centers_output);
 }
 
-void plot_solution_allocation(SQM_instance* I,int p,response_unit *X,double **f,string output) {
+void plot_solution_allocation(SQM_instance* I,int p,response_unit *X,double **f,string output,string suffix) {
   int j,r;
   int edge_key;
   fstream centersfile,edges_file;
@@ -76,7 +76,7 @@ void plot_solution_allocation(SQM_instance* I,int p,response_unit *X,double **f,
       if (100 * f[i][j] > 1)
 	edges_file << (I->W)[j].x << " " << (I->W)[j].y << " "
 		   << (I->V)[k].x << " " << (I->V)[k].y << " "
-		   << ceil(f[i][k] * 100) << endl;
+		   << ceil(sqrt(f[i][k] * 100)) << endl;
     }
     edges_file.close();
   }
@@ -86,14 +86,32 @@ void plot_solution_allocation(SQM_instance* I,int p,response_unit *X,double **f,
   gnuplot_unsets(gnuPipe);
   fprintf(gnuPipe,"set for [i=1:101] style arrow i lw i/10.0 nohead\n");
 
-  /* Pendiente, hacer loop sobre centros */
-  fprintf(gnuPipe,"set output '%s.svg'\n",output.c_str());
+  fprintf(gnuPipe,"set output '%s_%s.svg'\n",output.c_str(),suffix.c_str());
   fprintf(gnuPipe,"plot ");
   fprintf(gnuPipe,"'%s' using 1:2 with points title 'Demand'",demand_output);
   fprintf(gnuPipe,", '%s' using 1:2 with points title 'Facility'",facility_output);
   fprintf(gnuPipe,", '%s' using 1:2:($3*0.1) with circles title 'Opened'",centers_output);
+  for (int i = 0;i < p;i++) {
+    sprintf(edges_output,"Tmp_edges_center_%d_%d.dat",i+1,edge_key);
+    fprintf(gnuPipe,", '%s' using 1:2:($3-$1):($4-$2):5 with vectors arrowstyle variable",edges_output);
+  }
   fprintf(gnuPipe,"\n");
+
+  for (int i = 0;i < p;i++) {
+    sprintf(edges_output,"Tmp_edges_center_%d_%d.dat",i+1,edge_key);
+    fprintf(gnuPipe,"set output '%s_center_%02d_%s.svg'\n",output.c_str(),i+1,suffix.c_str()); 
+    fprintf(gnuPipe,"plot ");
+    fprintf(gnuPipe,"'%s' using 1:2 with points title 'Demand'",demand_output);
+    fprintf(gnuPipe,", '%s' using 1:2:($3*0.1) with circles title 'Opened'",centers_output);
+    fprintf(gnuPipe,", '%s' using 1:2:($3-$1):($4-$2):5 with vectors arrowstyle variable",edges_output);
+    fprintf(gnuPipe,"\n");
+  }
+
   pclose(gnuPipe);
+  for (int i = 0;i < p;i++) {
+    sprintf(edges_output,"Tmp_edges_center_%d_%d.dat",i+1,edge_key);
+    remove(edges_output);
+  }
   remove(demand_output);
   remove(facility_output);
   remove(centers_output);

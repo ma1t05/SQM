@@ -6,6 +6,7 @@
 #include "SQM.h"
 
 void plot_instance_solution(SQM_instance*,int*,string);
+void plot_solution_allocation(SQM_instance*,int,response_unit*,double**,string,string);
 
 #endif
 
