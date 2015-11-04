@@ -4,6 +4,7 @@
 #include "mp_jarvis.h"
 #include "MST.h"
 #include "gnuplot.h"
+#include "log.h"
 #include <sstream>
 
 /* Populate matrix of distances */
@@ -130,15 +131,6 @@ void SQM_heuristic
 	Run the Hypercube Model */
       jarvis_hypercube_approximation(m,p,Lambda,Tao,a,f);
 
-      /* Plot Iteration */
-      for (int i = 0;i < p;i++)
-	for (int k = 0;k < m;k++)
-	  F[i][k] = mpf_get_d(f[i][k]);
-      stringstream Key;
-      sprintf(plot_output,"./plots/SQM_Heuristic_%010d",key);
-      Key << ++it;
-      plot_solution_allocation(I,p,X,F,string(plot_output),Key.str());
-
       /* Step 2 
 	 Update mean service time */
       MST_update_mst(mst,m,p,Mu_NT,Dist,X,f);
@@ -162,26 +154,29 @@ void SQM_heuristic
     /* + mean queue delay component */
     MST_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
 
-    /*
     mpf_sub(tmp,T_r,t_r);
-    cout << "Berman Heuristic ERT [" << ++it << "]:\t" << mpf_get_d(t_r);
-    if (mpf_cmp_ui(tmp,0) < 0)
-      cout << "*\t";
-    else cout << "\t";
-    /* Print current solution 
-    for (int i = 0;i < p;i++) {
-      cout << X[i].location;
-      if (X[i].past_location != X[i].location) {
-	cout << "*";
-      }
-      cout << "\t";
-    }
-    cout << endl;
-    
+    logInfo(cout << "Berman Heuristic ERT [" << ++it << "]:\t" << mpf_get_d(t_r) << (mpf_cmp_ui(tmp,0) < 0 ? "*\t" : "\t"));
+    /* Print current solution */
+    if (LogDebug) {
+      for (int i = 0;i < p;i++)
+	cout << X[i].location << (X[i].past_location != X[i].location ? "*\t" : "\t");
+      cout << endl;
+    } else logInfo(cout << endl);
     /* mpf_abs(tmp,tmp); */ // This is a bad 
 
-    if (mpf_cmp_d(tmp,epsilon) > 0)
+    if (mpf_cmp_d(tmp,epsilon) > 0) {
+      /* Plot Iteration */
+      if (LogInfo) {
+	for (int i = 0;i < p;i++)
+	  for (int k = 0;k < m;k++)
+	    F[i][k] = mpf_get_d(f[i][k]);
+	stringstream Key;
+	sprintf(plot_output,"./plots/SQM_Heuristic_%010d",key);
+	Key << it;
+	plot_solution_allocation(I,p,X,F,string(plot_output),Key.str());
+      }
       SQM_improve_locations(X,m,n,p,Dist,f);
+    }
     else if (mpf_cmp_ui(tmp,0) < 0)
       SQM_return_previous_solution(X,p);
 

@@ -169,7 +169,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   double beta = 1.5;
   double T_r1,T_r2,t_r;
   double gap = 0.0,best_gap = -1.0,worst_gap = 1.0,avg_gap = 0.0;
-  int N = 2;
+  int N = 10;
   response_unit *Best,*Best_RS,*Best_GRASP;
   response_unit *X,*G;
 

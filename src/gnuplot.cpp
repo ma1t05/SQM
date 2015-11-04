@@ -76,7 +76,7 @@ void plot_solution_allocation(SQM_instance* I,int p,response_unit *X,double **f,
       if (100 * f[i][j] > 1)
 	edges_file << (I->W)[j].x << " " << (I->W)[j].y << " "
 		   << (I->V)[k].x << " " << (I->V)[k].y << " "
-		   << ceil(sqrt(f[i][k] * 100)) << endl;
+		   << ceil(sqrt(f[i][k]) * 100) << endl;
     }
     edges_file.close();
   }
@@ -84,28 +84,31 @@ void plot_solution_allocation(SQM_instance* I,int p,response_unit *X,double **f,
   FILE *gnuPipe = popen("gnuplot","w");
   gnuplot_sets(gnuPipe);
   gnuplot_unsets(gnuPipe);
-  fprintf(gnuPipe,"set for [i=1:101] style arrow i lw i/10.0 nohead\n");
+  for (int i = 1;i < 10;i++)
+    fprintf(gnuPipe,"set for [i=%d:%d] style arrow i nohead lt %d lc 3 lw sqrt(i-%d)/3\n",11*(i-1)+1,11*i,10-i,11*(i-1));
 
   fprintf(gnuPipe,"set output '%s_%s.svg'\n",output.c_str(),suffix.c_str());
   fprintf(gnuPipe,"plot ");
-  fprintf(gnuPipe,"'%s' using 1:2 with points title 'Demand'",demand_output);
-  fprintf(gnuPipe,", '%s' using 1:2 with points title 'Facility'",facility_output);
-  fprintf(gnuPipe,", '%s' using 1:2:($3*0.1) with circles title 'Opened'",centers_output);
+  fprintf(gnuPipe,"'%s' using 1:2 w p lt 2 pt 10 title 'Facility'",facility_output);
   for (int i = 0;i < p;i++) {
     sprintf(edges_output,"Tmp_edges_center_%d_%d.dat",i+1,edge_key);
     fprintf(gnuPipe,", '%s' using 1:2:($3-$1):($4-$2):5 with vectors arrowstyle variable",edges_output);
   }
+  fprintf(gnuPipe,", '%s' using 1:2 w p lt 2 pt 7 lc rgb 'blue' title 'Demand'",demand_output);
+  fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ps variable lc rgb 'dark-grey' title 'Opened'",centers_output);
   fprintf(gnuPipe,"\n");
 
+  /*
   for (int i = 0;i < p;i++) {
     sprintf(edges_output,"Tmp_edges_center_%d_%d.dat",i+1,edge_key);
     fprintf(gnuPipe,"set output '%s_center_%02d_%s.svg'\n",output.c_str(),i+1,suffix.c_str()); 
     fprintf(gnuPipe,"plot ");
-    fprintf(gnuPipe,"'%s' using 1:2 with points title 'Demand'",demand_output);
-    fprintf(gnuPipe,", '%s' using 1:2:($3*0.1) with circles title 'Opened'",centers_output);
-    fprintf(gnuPipe,", '%s' using 1:2:($3-$1):($4-$2):5 with vectors arrowstyle variable",edges_output);
+    fprintf(gnuPipe,"'%s' using 1:2:($3-$1):($4-$2):5 with vectors arrowstyle variable",edges_output);
+    fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ps variable lc rgb 'dark-grey' title 'Opened'",centers_output);
+    fprintf(gnuPipe,", '%s' using 1:2 w p lt 2 pt 7 lc rgb 'blue' title 'Demand'",demand_output);
     fprintf(gnuPipe,"\n");
   }
+  */
 
   pclose(gnuPipe);
   for (int i = 0;i < p;i++) {
