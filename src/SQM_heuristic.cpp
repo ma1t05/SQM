@@ -39,7 +39,7 @@ void SQM_heuristic
   int **a;
   point *V = I->V,*W = I->W;
  
-  /* Debug cout << "Start Berman Heuristic" << "\r"; /* */
+  logDebug(cout << "Start Berman Heuristic" << "\r");
   /* Populate matrix of distances */
   Dist = SQM_dist_matrix(I);
   F = new double*[p];
@@ -144,7 +144,7 @@ void SQM_heuristic
 	  mpf_set(delta_mu,tmp);
       }
 
-      /* Debug cout << "Delta in mst: " << mpf_get_d(delta_mu) << endl; /* */
+      logDebug(cout << "Delta in mst: " << mpf_get_d(delta_mu) << endl);
     } while (mpf_cmp_d(delta_mu,epsilon) > 0);
     
     /* *Expected Response Time* */
@@ -155,18 +155,18 @@ void SQM_heuristic
     MST_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
 
     mpf_sub(tmp,T_r,t_r);
-    logInfo(cout << "Berman Heuristic ERT [" << ++it << "]:\t" << mpf_get_d(t_r) << (mpf_cmp_ui(tmp,0) < 0 ? "*\t" : "\t"));
+    logDebug(cout << "Berman Heuristic ERT [" << ++it << "]:\t" << mpf_get_d(t_r) << (mpf_cmp_ui(tmp,0) < 0 ? "*\t" : "\t"));
     /* Print current solution */
     if (LogDebug) {
       for (int i = 0;i < p;i++)
 	cout << X[i].location << (X[i].past_location != X[i].location ? "*\t" : "\t");
       cout << endl;
-    } else logInfo(cout << endl);
+    }
     /* mpf_abs(tmp,tmp); */ // This is a bad 
 
     if (mpf_cmp_d(tmp,epsilon) > 0) {
       /* Plot Iteration */
-      if (LogInfo) {
+      if (LogDebug) {
 	for (int i = 0;i < p;i++)
 	  for (int k = 0;k < m;k++)
 	    F[i][k] = mpf_get_d(f[i][k]);
@@ -215,13 +215,13 @@ void SQM_heuristic
   for (int i = 0;i < p;i++) delete [] f[i];
   delete [] f;
 
-  /*
-  for (int k = 0;k < n;k++)
-    for (int i = 0;i < p;i++)
-      if (X[i].location == k) cout << k << " ";
-  cout << endl;
-  */
-  /* Debug cout << "Finish Berman Heuristic" << endl; /* */
+  if (LogDebug) {
+    for (int k = 0;k < n;k++)
+      for (int i = 0;i < p;i++)
+	if (X[i].location == k) cout << k << " ";
+    cout << endl;
+    cout << "Finish Berman Heuristic" << endl;
+  }
 }
 
 response_unit* guess_a_location_01(int p,int n, point *W){
@@ -251,7 +251,7 @@ response_unit* guess_a_location_03(int p,int n, point *W){
   for (int i = 0;i < n;i++) option[i] = false;
   do {
     location = unif(n);
-    //cout << "location = " << location << endl;
+    logDebug(cout << "location = " << location << endl);
     if (option[location] == false) {
       locations++;
       option[location] = true;
@@ -263,7 +263,7 @@ response_unit* guess_a_location_03(int p,int n, point *W){
       X[p].past_location = i;
     }
   }
-  //cout << endl;
+  logDebug(cout << endl);
   delete [] option;
   return X;
 }
@@ -292,14 +292,12 @@ void SQM_improve_locations(response_unit *X,int m,int n,int p,double **Dist,num 
   h_i = new double[m];
   for (int i = 0;i < p;i++) {
     // Block A
-    //cout << "\t\tBlock A " << i << endl;
+    logDebug(cout << "\t\tBlock A " << i << endl);
     mpf_set_ui(h,0);
     for (int k = 0;k < m;k++) 
       mpf_add(h,h,f[i][k]);
-    /*
-      if (mpf_cmp_ui(h,0) == 0)
+    if (LogInfo && mpf_cmp_ui(h,0) == 0)
       cout << "for i = " << i+1 << " sum over f_ij is 0" << endl;
-    */
     for (int k = 0;k < m;k++) {
       mpf_div(tmp,f[i][k],h);
       h_i[k] = mpf_get_d(tmp);
