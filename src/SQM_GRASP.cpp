@@ -2,6 +2,7 @@
 #include "SQM_GRASP.h"
 #include "mp_jarvis.h"
 #include "MST.h"
+#include "instance-creator.h"
 #include "log.h"
 
 bool GRASP_closest_to_b(SQM_instance *I,int node,int center_a,int center_b);
@@ -100,3 +101,39 @@ int GRASP_nearest_server(SQM_instance *I,int j,int p,response_unit *X) {
   }
   return k;
 }
+
+double GRASP_func_kNN
+(SQM_instance *I,
+ int p,
+ response_unit *X,
+ double lambda,
+ double Mu_NT,
+ int K
+ ) {
+  logDebug(cout << "Start GRASP_func_kNN" << endl);
+  /* Variable definitions */
+  int m = I->M; /* Number of demand points */
+  int **a;
+  double **Dist;
+  double *d;
+
+  a = new int*[m];
+  for (int k = 0;k < m;k++)
+    a[k] = new int[p];
+  Dist = SQM_dist_matrix(I);
+  d = new double[p];
+
+  for (int k = 0;k < m;k++) {
+    for (int i = 0;i < p;i++)
+      d[i] = Dist[k][X[i].location];
+    sort_dist(p,d,a[k]);
+  }
+
+  delete [] d;
+  for (int j=0;j < m;j++) delete [] Dist[j];
+  delete [] Dist;
+  for (int k = 0;k < m;k++) delete [] a[k];
+  delete [] a;
+  logDebug(cout << "Finish GRASP_func_kNN" << endl);
+}
+ 
