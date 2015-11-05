@@ -1,4 +1,5 @@
 
+#include <ctime>
 #include "SQM.h"
 #include "SQM_model.h"
 #include "Goldberg.h"
@@ -7,6 +8,7 @@
 #include "gnuplot.h"
 #include "SQM_GRASP.h"
 #include "MST.h"
+#include "log.h"
 
 std::ofstream LogFile;
 std::ofstream results;
@@ -166,14 +168,16 @@ void Call_SQM_model(SQM_instance* I,int p,int l,double f,double mu,double v,stri
 }
 
 void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
+  clock_t beginning,now;
   double beta = 1.5;
   double T_r1,T_r2,t_r;
   double gap = 0.0,best_gap = -1.0,worst_gap = 1.0,avg_gap = 0.0;
-  int N = 10;
+  int N = 100;
   response_unit *Best,*Best_RS,*Best_GRASP;
   response_unit *X,*G;
 
-  // cout << "Start SMQ random" << endl;
+  logInfo(cout << "Start SMQ random" << endl);
+  beginning = clock();
   Best_RS = NULL;
   for (int r = 0;r < N;r++) {
     X = guess_a_location_03(p,I->N,I->W);
@@ -182,13 +186,13 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
       X[i].beta = beta;
     }
     T_r1 = MST_response_time(I,p,X,lambda,Mu_NT);
-    /*
-    for (int k = 0;k < I->N;k++)
-      for (int i = 0;i < p;i++)
-	if (X[i].location == k) cout << k << " ";
-    cout << endl;
-    */
-    // cout << "Response time : " << T_r << endl;
+    if (LogDebug) {
+      for (int k = 0;k < I->N;k++)
+	for (int i = 0;i < p;i++)
+	  if (X[i].location == k) cout << k << " ";
+      cout << endl;
+      cout << "Response time : " << T_r1 << endl;
+    }
     /* Log */ Log_Start_SQMH(I->M,I->N,p,Mu_NT,lambda); /* */
     SQM_heuristic(I,p,lambda,Mu_NT,X);
     T_r2 = MST_response_time(I,p,X,lambda,Mu_NT);
@@ -205,12 +209,13 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
     }
     else delete [] X;
   }
-
+  now = clock();
   cout << "\t *** \tRandom results\t ***" << endl;
   cout << "Best Response time : " << t_r << endl;
   cout << "          Best gap : " << 100 * best_gap << endl
        << "       Average gap : " << 100 * avg_gap / N << endl
-       << "         Worst gap : " << 100 * worst_gap << endl;
+       << "         Worst gap : " << 100 * worst_gap << endl
+       << "              time : " << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
 
   /* Plot Random Best Solution */
   int *Sol = new int [I->N];
@@ -219,6 +224,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   plot_instance_solution(I,Sol,"SQM_Best_Random_Sol");
 
   /* Evaluate GRASP */
+  beginning = clock();
   Best_GRASP = NULL;
   best_gap = -1.0,worst_gap = 1.0,avg_gap = 0.0;
   for (int r = 0;r < N;r++) {
@@ -240,12 +246,13 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
     }
     else delete [] G;
   }
-
+  now = clock();
   cout << "\t *** \t GRASP results\t ***" << endl;
   cout << "Best Response time : " << t_r << endl;
   cout << "          Best gap : " << 100 * best_gap << endl
        << "       Average gap : " << 100 * avg_gap / N << endl
-       << "         Worst gap : " << 100 * worst_gap << endl;
+       << "         Worst gap : " << 100 * worst_gap << endl
+       << "              time : " << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
 
   /* Plot Best GRASP Solution */
   for (int k = 0;k < I->N;k++) Sol[k] = 0;
