@@ -170,10 +170,10 @@ void Call_SQM_model(SQM_instance* I,int p,int l,double f,double mu,double v,stri
 void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
   clock_t beginning,now;
   double beta = 1.5;
-  double T_r1,T_r2,t_r;
+  double T_r1,T_r2,t_r,BRT;
   double gap = 0.0,best_gap = -1.0,worst_gap = 1.0,avg_gap = 0.0;
   int N = 100;
-  response_unit *Best,*Best_RS,*Best_GRASP;
+  response_unit *Best,*Best_RS,*Best_GRASP,*BEST_GRASP;
   response_unit *X,*G;
 
   logInfo(cout << "Start SMQ random" << endl);
@@ -224,44 +224,60 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   plot_instance_solution(I,Sol,"SQM_Best_Random_Sol");
 
   /* Evaluate GRASP */
-  beginning = clock();
-  Best_GRASP = NULL;
-  best_gap = -1.0,worst_gap = 1.0,avg_gap = 0.0;
-  for (int r = 0;r < N;r++) {
-    G = GRASP(I,p,lambda,Mu_NT,v,0.25); /* */
-    T_r1 = MST_response_time(I,p,G,lambda,Mu_NT);
-    /* Log */ Log_Start_SQMH(I->M,I->N,p,Mu_NT,lambda); /* */
-    SQM_heuristic(I,p,lambda,Mu_NT,G);
-    T_r2 = MST_response_time(I,p,G,lambda,Mu_NT);
+  results.open("GRASP_results.csv",std::ofstream::app);
+  for (double alpha = 0.0;alpha < 1.01;alpha += 0.05) {
+    results << I->M << "," << I->N << "," << p << ","
+	    << Mu_NT << "," << lambda << "," << alpha << ",";
+    beginning = clock();
+    Best_GRASP = NULL;
+    best_gap = -1.0,worst_gap = 1.0,avg_gap = 0.0;
+    for (int r = 0;r < N;r++) {
+      G = GRASP(I,p,lambda,Mu_NT,v,alpha); /* */
+      T_r1 = MST_response_time(I,p,G,lambda,Mu_NT);
+      /* Log */ Log_Start_SQMH(I->M,I->N,p,Mu_NT,lambda); /* */
+      SQM_heuristic(I,p,lambda,Mu_NT,G);
+      T_r2 = MST_response_time(I,p,G,lambda,Mu_NT);
 
-    gap = (T_r1 - T_r2) / T_r1;
-    avg_gap += gap;
-    if (best_gap < gap) best_gap = gap;
-    if (worst_gap > gap) worst_gap = gap;
+      gap = (T_r1 - T_r2) / T_r1;
+      avg_gap += gap;
+      if (best_gap < gap) best_gap = gap;
+      if (worst_gap > gap) worst_gap = gap;
 
-    if (Best_GRASP == NULL || T_r2 < t_r) {
-      if (Best_GRASP != NULL) delete [] Best_GRASP;
-      Best_GRASP = G;
-      t_r = T_r2;
+      if (Best_GRASP == NULL || T_r2 < t_r) {
+	if (Best_GRASP != NULL) delete [] Best_GRASP;
+	Best_GRASP = G;
+	t_r = T_r2;
+      }
+      else delete [] G;
     }
-    else delete [] G;
+    now = clock();
+    results << t_r << "," << 100 * best_gap << "," << 100 * avg_gap / N << ","
+	    << 100 * worst_gap << "," << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
+    cout << "\t *** \t GRASP results alpha = " << alpha << "\t ***" << endl;
+    cout << "Best Response time : " << t_r << endl;
+    cout << "          Best gap : " << 100 * best_gap << endl
+	 << "       Average gap : " << 100 * avg_gap / N << endl
+	 << "         Worst gap : " << 100 * worst_gap << endl
+	 << "              time : " << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
+    if (BEST_GRASP == NULL || t_r < BRT) {
+      BEST_GRASP = Best_GRASP;
+      BRT = t_r;
+    }
+    else {
+      delete [] Best_GRASP;
+      Best_GRASP = NULL;
+    }
   }
-  now = clock();
-  cout << "\t *** \t GRASP results\t ***" << endl;
-  cout << "Best Response time : " << t_r << endl;
-  cout << "          Best gap : " << 100 * best_gap << endl
-       << "       Average gap : " << 100 * avg_gap / N << endl
-       << "         Worst gap : " << 100 * worst_gap << endl
-       << "              time : " << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
-
+  results.close();
+  
   /* Plot Best GRASP Solution */
   for (int k = 0;k < I->N;k++) Sol[k] = 0;
-  for (int i = 0;i < p;i++) Sol[Best_GRASP[i].location]++;
+  for (int i = 0;i < p;i++) Sol[BEST_GRASP[i].location]++;
   plot_instance_solution(I,Sol,"SQM_Best_GRASP_Sol");
 
   T_r1 = MST_response_time(I,p,Best_RS,lambda,Mu_NT);
-  T_r2 = MST_response_time(I,p,Best_GRASP,lambda,Mu_NT);
-  Best = (T_r1 < T_r2 ? Best_RS : Best_GRASP);
+  T_r2 = MST_response_time(I,p,BEST_GRASP,lambda,Mu_NT);
+  Best = (T_r1 < T_r2 ? Best_RS : BEST_GRASP);
 
   /* Plot Best Solution */
   for (int k = 0;k < I->N;k++) Sol[k] = 0;
@@ -277,5 +293,5 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
 
   delete [] Sol;
   delete [] Best_RS;
-  delete [] Best_GRASP;
+  delete [] BEST_GRASP;
 }
