@@ -228,7 +228,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   Best_GRASP = NULL;
   best_gap = -1.0,worst_gap = 1.0,avg_gap = 0.0;
   for (int r = 0;r < N;r++) {
-    G = GRASP(I,p,lambda,Mu_NT,v,0.25); /* */
+    G = GRASP(I,p,lambda,Mu_NT,v,0.9); /* */
     T_r1 = MST_response_time(I,p,G,lambda,Mu_NT);
     /* Log */ Log_Start_SQMH(I->M,I->N,p,Mu_NT,lambda); /* */
     SQM_heuristic(I,p,lambda,Mu_NT,G);
