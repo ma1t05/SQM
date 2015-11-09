@@ -80,7 +80,7 @@ double GRASP_func_NN
   for (int j = 0;j < m;j++) {
     k = GRASP_nearest_server(I,j,p,X); /* Obtain the nearest server */
     nearest = X[k].location;
-    Obj += dist(&(I->V[j]),&(I->W[nearest])) / X[k].v;
+    Obj += I->V[j].demand * dist(&(I->V[j]),&(I->W[nearest])) / X[k].v;
   }
   Obj /= MINS_PER_BLOCK * BLOCKS_PER_HORIZON;
 
