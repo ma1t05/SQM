@@ -129,8 +129,16 @@ double GRASP_func_kNN
     sort_dist(p,d,a[k]);
   }
 
+  /* Pendiente: Calculo de Tao, normalizar lambda * demanda / demanda total */
+  for (int i = 0; i < p;i++) {
+    rho[i] = 0.0;
+    for (int k = 0; k < m;k++)
+      if (a[k][0] == i)
+	rho[i] += Tao * lambda * I->V[k].demand;
+  }
+
   delete [] d;
-  for (int j=0;j < m;j++) delete [] Dist[j];
+  for (int j = 0;j < m;j++) delete [] Dist[j];
   delete [] Dist;
   for (int k = 0;k < m;k++) delete [] a[k];
   delete [] a;
