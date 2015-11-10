@@ -5,6 +5,8 @@
 #include "instance-creator.h"
 #include "log.h"
 
+#define min(A,B) ((A)>(B)?(A):(B))
+
 bool GRASP_closest_to_b(SQM_instance *I,int node,int center_a,int center_b);
 int GRASP_nearest_server(SQM_instance *I,int j,int p,response_unit *X);
 
@@ -42,8 +44,9 @@ response_unit* GRASP
       // cout << "[" << r << "]/* Evaluate posible locations*/" << "\t";
       for (int i = 0;i < n;i++) {
 	X[r].location = i;
-	T_r[i] = GRASP_func_NN(I,r+1,X,lambda,Mu_NT);
 	/* T_r[i] = MST_response_time(I,r+1,X,lambda,Mu_NT);*/
+	/* T_r[i] = GRASP_func_NN(I,r+1,X,lambda,Mu_NT);*/
+	T_r[i] = GRASP_func_kNN(I,r+1,X,lambda,Mu_NT,min(r+1,3));
       }
 
       // cout << "/* Sort Restricted Candidates List */" << "\t";
@@ -113,27 +116,75 @@ double GRASP_func_kNN
   logDebug(cout << "Start GRASP_func_kNN" << endl);
   /* Variable definitions */
   int m = I->M; /* Number of demand points */
+  double RT = 0.0; /* Response Time */
   int **a;
   double **Dist;
-  double *d;
+  double *Lambda;
+  double demand;
+  logInfo(cout << "Termina definicion de variables" << endl);
 
   a = new int*[m];
   for (int k = 0;k < m;k++)
     a[k] = new int[p];
   Dist = SQM_dist_matrix(I);
-  d = new double[p];
 
+  double *d = new double[p];
   for (int k = 0;k < m;k++) {
     for (int i = 0;i < p;i++)
       d[i] = Dist[k][X[i].location];
     sort_dist(p,d,a[k]);
   }
-
   delete [] d;
+
+  Lambda = new double[m];
+  demand = 0.0;
+  for (int k = 0;k < m;k++) demand += I->V[k].demand;
+  for (int k = 0;k < m;k++) Lambda[k] = I->V[k].demand * lambda / demand;
+
+  logDebug(cout << "Comienza calculo de rho_i" << endl);
+  /* Calculate the first approach for rho */
+  double distance;
+  double *rho = new double[p];
+  for (int i = 0;i < p;i++) rho[i] = 0.0;
+  for (int i = 0;i < p;i++) {
+    distance = 0.0;
+    for (int k = 0;k < m;k++)
+      if (a[k][0] == i) {
+	rho[i] += Lambda[k] * (1/Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/ (MINS_PER_BLOCK * BLOCKS_PER_HORIZON));
+	distance += Dist[k][X[i].location];
+      }
+    RT += rho[i] * distance / (X[i].v * MINS_PER_BLOCK * BLOCKS_PER_HORIZON);
+  }
+  
+  logDebug(cout << "Comienza calculo de rho_i para resto de ordenes" << endl);
+  int t = 1;
+  double rho_a_ml;
+  double *new_rho = new double [p];
+  do {
+    for (int i = 0;i < p;i++) new_rho[i] = 0.0;
+    for (int i = 0;i < p;i++) {
+      distance = 0.0;
+      for (int k = 0;k < m;k++)
+	if (a[k][t] == i) {
+	  rho_a_ml = 1;
+	  for (int l = 0;l < t;l++) rho_a_ml *= rho[a[k][l]];
+	  new_rho[i] += (1 - rho[i]) * rho_a_ml * Lambda[k] * (1/Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location] / (MINS_PER_BLOCK * BLOCKS_PER_HORIZON));
+	  distance += Dist[k][X[i].location];
+	}
+      RT += new_rho[i] * distance / (X[i].v * MINS_PER_BLOCK * BLOCKS_PER_HORIZON);
+      rho[i] += new_rho[i];
+      if (rho[i] > 1)
+	logError(cout << "¡rho_" << i+1 << " > 1! in order " << t << endl);
+    }
+  } while (++t < K &&  t < p);
+  logDebug(cout << "Comienza a liberar memoria" << endl);
+
+  delete [] new_rho;    
+  delete [] Lambda;
   for (int j=0;j < m;j++) delete [] Dist[j];
   delete [] Dist;
   for (int k = 0;k < m;k++) delete [] a[k];
   delete [] a;
   logDebug(cout << "Finish GRASP_func_kNN" << endl);
+  return RT;
 }
- 
