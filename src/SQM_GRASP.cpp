@@ -26,7 +26,7 @@ response_unit* GRASP
   double beta = 1.5;
   response_unit *X;
 
-  /* Debug cout << endl << endl << "*****Start GRASP*****" << endl << endl << endl; /* */
+  logDebug(cout << endl << endl << "*****Start GRASP*****" << endl << endl);
   if (p < 1) return NULL;
   X = new response_unit[p];
   for (int i = 0;i < p;i++) {
@@ -34,14 +34,14 @@ response_unit* GRASP
     X[i].beta = beta;
   }
 
-  // cout << "/* Locate the first server */" << endl;
+  logDebug(cout << "/* Locate the first server */" << endl);
   X[0].location = unif(n);
   r = 1;
   T_r = new double [n];
   rcl = new int [n];
   while (r < p) 
     {
-      // cout << "[" << r << "]/* Evaluate posible locations*/" << "\t";
+      logDebug(cout << "[" << r << "]/* Evaluate posible locations*/" << "\t");
       for (int i = 0;i < n;i++) {
 	X[r].location = i;
 	/* T_r[i] = MST_response_time(I,r+1,X,lambda,Mu_NT);*/
@@ -49,18 +49,17 @@ response_unit* GRASP
 	T_r[i] = GRASP_func_kNN(I,r+1,X,lambda,Mu_NT,min(r+1,3));
       }
 
-      // cout << "/* Sort Restricted Candidates List */" << "\t";
+      logDebug(cout << "/* Sort Restricted Candidates List */" << "\t");
       sort_dist(n,T_r,rcl);
-      // cout << "/* Choose random element from the rcl */";
-      // cout <<"\r";
+      logDebug(cout << "/* Choose random element from the rcl */" << "\r");
       element = unif(ceil(alpha * n));
       X[r++].location = rcl[element];
     }
-  // cout << endl;
+  logDebug(cout << endl);
 
   delete [] rcl;
   delete [] T_r;
-  /* Debug cout << "Finish GRASP" << endl; /* */
+  logDebug(cout << "Finish GRASP" << endl);
   return X;
 }
 
@@ -121,7 +120,7 @@ double GRASP_func_kNN
   double **Dist;
   double *Lambda;
   double demand;
-  logInfo(cout << "Termina definicion de variables" << endl);
+  logDebug(cout << "Termina definicion de variables" << endl);
 
   a = new int*[m];
   for (int k = 0;k < m;k++)
