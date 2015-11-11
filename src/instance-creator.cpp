@@ -1,4 +1,6 @@
 
+#include <fstream>
+#include <cstdlib>
 #include "instance-creator.h"
 
 float unif(float,float);

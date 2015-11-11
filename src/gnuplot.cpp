@@ -1,5 +1,9 @@
 
+#include <fstream>
+#include <cstdlib>
 #include "gnuplot.h"
+
+using namespace std;
 
 void gnuplot_sets(FILE*);
 void gnuplot_unsets(FILE*);

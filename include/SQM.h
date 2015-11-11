@@ -2,15 +2,9 @@
 #ifndef _SQM_H
 #define _SQM_H
 
+#include <fstream>
 #include <math.h>
 #include "point.h"
-#include <ilcplex/ilocplex.h>
-ILOSTLBEGIN
-
-typedef IloArray<IloBoolVarArray> BoolVarMatrix;
-typedef IloArray<BoolVarMatrix> BoolVarArrayMatrix;
-typedef IloArray<IloNumArray> NumMatrix;
-typedef IloArray<IloIntArray> IntMatrix;
 
 using namespace std;
 
