@@ -35,10 +35,17 @@ void plot_instance_solution(SQM_instance *I,int *Sol,string output) {
   gnuplot_unsets(gnuPipe);
 
   fprintf(gnuPipe,"plot ");
+  fprintf(gnuPipe,"'%s' using 1:2 w p pt 10 title 'Facility'",facility_output);
+  fprintf(gnuPipe,", '%s' using 1:2 w p pt 7 lc rgb 'blue' title 'Demand'",demand_output);
+  fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ps variable lc rgb 'dark-grey' title 'Opened'",centers_output);
+  fprintf(gnuPipe,"\n");
+
+  /*
   fprintf(gnuPipe,"'%s' using 1:2 with points title 'Demand'",demand_output);
   fprintf(gnuPipe,", '%s' using 1:2 with points title 'Facility'",facility_output);
   fprintf(gnuPipe,", '%s' using 1:2:($3*0.1) with circles title 'Opened'",centers_output);
   fprintf(gnuPipe,"\n");
+  */
   pclose(gnuPipe);
   remove(demand_output);
   remove(facility_output);
@@ -127,15 +134,18 @@ void plot_solution_allocation(SQM_instance* I,int p,response_unit *X,double **f,
 void gnuplot_sets(FILE *gnuPipe) {
   fprintf(gnuPipe,"set term svg\n");
   /*fprintf(gnuPipe,"set key outside\n");*/
+  fprintf(gnuPipe,"set grid ytics lt 0 lw 1 lc rgb '#bbbbbb'\n");
+  fprintf(gnuPipe,"set grid xtics lt 0 lw 1 lc rgb '#bbbbbb'\n");
+  fprintf(gnuPipe,"set grid\n");
 }
 
 void gnuplot_unsets(FILE *gnuPipe) {
   fprintf(gnuPipe,"unset key\n");
   fprintf(gnuPipe,"unset border\n");
   fprintf(gnuPipe,"unset yzeroaxis\n");
-  fprintf(gnuPipe,"unset xtics\n");
+  /*fprintf(gnuPipe,"unset xtics\n");
   fprintf(gnuPipe,"unset ytics\n");
-  fprintf(gnuPipe,"unset ztics\n");
+  fprintf(gnuPipe,"unset ztics\n");*/
 }
 
 void gnuplot_write_points_file(char *output,point *Set,int k) {
