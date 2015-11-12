@@ -98,7 +98,7 @@ void plot_solution_allocation(SQM_instance* I,int p,response_unit *X,double **f,
   for (int i = 1;i < 10;i++)
     fprintf(gnuPipe,"set for [i=%d:%d] style arrow i nohead lt %d lc 3 lw sqrt(i-%d)/3\n",11*(i-1)+1,11*i,10-i,11*(i-1));
 
-  fprintf(gnuPipe,"set output '%s_%s.svg'\n",output.c_str(),suffix.c_str());
+  fprintf(gnuPipe,"set output '%s_%s.jpeg'\n",output.c_str(),suffix.c_str());
   fprintf(gnuPipe,"plot ");
   fprintf(gnuPipe,"'%s' using 1:2 w p lt 2 pt 10 title 'Facility'",facility_output);
   for (int i = 0;i < p;i++) {
@@ -112,7 +112,7 @@ void plot_solution_allocation(SQM_instance* I,int p,response_unit *X,double **f,
   /*
   for (int i = 0;i < p;i++) {
     sprintf(edges_output,"Tmp_edges_center_%d_%d.dat",i+1,edge_key);
-    fprintf(gnuPipe,"set output '%s_center_%02d_%s.svg'\n",output.c_str(),i+1,suffix.c_str()); 
+    fprintf(gnuPipe,"set output '%s_center_%02d_%s.jpeg'\n",output.c_str(),i+1,suffix.c_str()); 
     fprintf(gnuPipe,"plot ");
     fprintf(gnuPipe,"'%s' using 1:2:($3-$1):($4-$2):5 with vectors arrowstyle variable",edges_output);
     fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ps variable lc rgb 'dark-grey' title 'Opened'",centers_output);
@@ -132,7 +132,7 @@ void plot_solution_allocation(SQM_instance* I,int p,response_unit *X,double **f,
 }
 
 void gnuplot_sets(FILE *gnuPipe) {
-  fprintf(gnuPipe,"set term svg\n");
+  fprintf(gnuPipe,"set term jpeg\n");
   /*fprintf(gnuPipe,"set key outside\n");*/
   fprintf(gnuPipe,"set grid ytics lt 0 lw 1 lc rgb '#bbbbbb'\n");
   fprintf(gnuPipe,"set grid xtics lt 0 lw 1 lc rgb '#bbbbbb'\n");
@@ -156,4 +156,20 @@ void gnuplot_write_points_file(char *output,point *Set,int k) {
 	       << Set[i].y << endl;
   }
   outputfile.close();
+}
+
+void gnuplot_GRASP(char *filename) {
+  FILE *gnuPipe = popen("gnuplot","w");
+  gnuplot_sets(gnuPipe);
+  fprintf(gnuPipe,"set output '%s.jpeg'\n",filename);
+  gnuplot_unsets(gnuPipe); 
+  fprintf(gnuPipe,"set key outside\n");
+  fprintf(gnuPipe,"set xlabel 'alpha'\n");
+  fprintf(gnuPipe,"set ylabel 'Objective'\n");
+  
+  fprintf(gnuPipe,"plot ");
+  fprintf(gnuPipe,"'GRASP.dat' using 1:2 w lp title 'Best'");
+  fprintf(gnuPipe,", 'GRASP.dat' using 1:3 w lp title 'Average'");
+  fprintf(gnuPipe,", 'GRASP.dat' using 1:4 w lp title 'Worst'");
+  pclose(gnuPipe);
 }
