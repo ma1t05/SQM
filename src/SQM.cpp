@@ -1,8 +1,9 @@
 
 #include <ctime>
+#include <sstream>
 #include "SQM.h"
-#include "SQM_model.h"
-#include "Goldberg.h"
+/*#include "SQM_model.h"
+  #include "Goldberg.h"*/
 #include "SQM_heuristic.h"
 #include "config.h"
 #include "gnuplot.h"

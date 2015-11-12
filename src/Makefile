@@ -30,7 +30,8 @@ CPLEXLIBDIR   = $(CPLEXDIR)/lib/$(SYSTEM)/$(LIBFORMAT)
 CONCERTLIBDIR = $(CONCERTDIR)/lib/$(SYSTEM)/$(LIBFORMAT)
 
 CCLNDIRS  = -L$(CPLEXLIBDIR) -L$(CONCERTLIBDIR)
-CCLNFLAGS = -lconcert -lilocplex -lcplex -m32 -lm -lpthread -lgmp
+#CCLNFLAGS = -lconcert -lilocplex -lcplex -m32 -lm -lpthread -lgmp
+CCLNFLAGS = -m32 -lm -lpthread -lgmp
 
 CONCERTINCDIR = $(CONCERTDIR)/include
 CPLEXINCDIR   = $(CPLEXDIR)/include
