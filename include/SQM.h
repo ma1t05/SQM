@@ -36,6 +36,7 @@ typedef struct response_unit response_unit;
 
 extern std::ofstream LogFile;
 extern std::ofstream results;
+extern std::ofstream dat;
 
 #endif
 

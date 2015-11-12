@@ -1,7 +1,10 @@
 
+#include <cstdlib>
 #include <ctime>
+#include <iostream>
 #include <sstream>
 #include "SQM.h"
+#include "instance-creator.h"
 /*#include "SQM_model.h"
   #include "Goldberg.h"*/
 #include "SQM_heuristic.h"
@@ -13,11 +16,11 @@
 
 std::ofstream LogFile;
 std::ofstream results;
+std::ofstream dat;
 
 bool file_exists (const string&);
 SQM_instance* Load_instance(string filename,int M_clients,int N_sites);
 void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu);
-void Call_SQM_model(SQM_instance* I,int p,int l,double f,double mu,double v,string filename);
 void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f);
 void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 
@@ -134,58 +137,29 @@ void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu) {
   delete [] X;
 }
 
-void Call_SQM_model(SQM_instance* I,int p,int l,double f,double mu,double v,string filename) {
-  int *Sol;
-
-  results.open("results.csv",std::ofstream::app);
-  results << I->M
-	  << "," << I->N
-	  << "," << p 
-	  << "," << l
-	  << "," << mu
-	  << "," << f 
-	  << "," << v;
-
-  results << "," << filename << "_demand.ins," << filename << "_facility.ins";
-  
-  Sol = SQM_model(I,p,l,mu,f,v);
-  char sub[16];
-  sprintf(sub,"_%02d_%02d",p,l);
-  plot_instance_solution(I,Sol,filename+sub);
-  delete[] Sol;
-
-  if (l == p) {
-    results << I->M
-	    << "," << I->N
-	    << "," << p 
-	    << "," << l
-	    << "," << mu
-	    << "," << f 
-	    << "," << v;
-    results << "," << filename << "_demand.ins," << filename << "_facility.ins";
-    Goldberg(I,p,mu,f);
-  }
-  results.close();
-}
-
 void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
   clock_t beginning,now;
   double beta = 1.5;
   double T_r1,T_r2,t_r,BRT;
-  double gap = 0.0,best_gap = -1.0,worst_gap = 1.0,avg_gap = 0.0;
+  double gap = 0.0,best_rt = 100.0,worst_rt = 0.0,avg_rt = 0.0;
   int N = 100;
   response_unit *Best,*Best_RS,*Best_GRASP,*BEST_GRASP;
   response_unit *X,*G;
+
+  double demand;
+  demand = 0.0;
+  for (int k = 0;k < I->M;k++) demand += (I->V)[k].demand;
+  cout << "      Total Demand : " << demand << endl;
 
   /* Evaluate GRASP */
   BEST_GRASP = NULL;
   results.open("GRASP_results.csv",std::ofstream::app);
   for (double alpha = 0.0;alpha < 0.99;alpha += 0.05) {
     results << I->M << "," << I->N << "," << p << ","
-	    << Mu_NT << "," << lambda << "," << alpha << ",";
+	    << Mu_NT << "," << lambda << "," << alpha << "," << N << ",";
     beginning = clock();
     Best_GRASP = NULL;
-    best_gap = -1.0,worst_gap = 1.0,avg_gap = 0.0;
+    best_rt = 100.0,worst_rt = 0.0,avg_rt = 0.0;
     for (int r = 0;r < N;r++) {
       G = GRASP(I,p,lambda,Mu_NT,v,alpha); /* */
       T_r1 = MST_response_time(I,p,G,lambda,Mu_NT);
@@ -193,10 +167,9 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
       SQM_heuristic(I,p,lambda,Mu_NT,G);
       T_r2 = MST_response_time(I,p,G,lambda,Mu_NT);
 
-      gap = (T_r1 - T_r2) / T_r1;
-      avg_gap += gap;
-      if (best_gap < gap) best_gap = gap;
-      if (worst_gap > gap) worst_gap = gap;
+      avg_rt += T_r2;
+      if (best_rt > T_r2) best_rt = T_r2;
+      if (worst_rt < T_r2) worst_rt = T_r2;
 
       if (Best_GRASP == NULL || T_r2 < t_r) {
 	if (Best_GRASP != NULL) delete [] Best_GRASP;
@@ -206,14 +179,13 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
       else delete [] G;
     }
     now = clock();
-    results << t_r << "," << 100 * best_gap << "," << 100 * avg_gap / N << ","
-	    << 100 * worst_gap << "," << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
+    results << best_rt << "," << avg_rt / N << "," << worst_rt << "," 
+	    << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
     cout << "\t *** \t GRASP results alpha = " << alpha << "\t ***" << endl;
-    cout << "Best Response time : " << t_r << endl;
-    cout << "          Best gap : " << 100 * best_gap << endl
-	 << "       Average gap : " << 100 * avg_gap / N << endl
-	 << "         Worst gap : " << 100 * worst_gap << endl
-	 << "              time : " << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
+    cout << "   Best Response time : " << best_rt << endl
+	 << "Average Response time : " << avg_rt / N << endl
+	 << "  Worst Response time : " << worst_rt << endl
+	 << "           time (sec) : " << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
     if (BEST_GRASP == NULL || t_r < BRT) {
       if (BEST_GRASP != NULL) delete [] BEST_GRASP;
       BEST_GRASP = Best_GRASP;
@@ -221,7 +193,6 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
     }
     else delete [] Best_GRASP;
   }
-  results.close();
   
   /* Plot Best GRASP Solution */
   logInfo(cout << "Plot Best GRASP Solution" << endl);
@@ -236,6 +207,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   logInfo(cout << "Start SMQ random" << endl);
   beginning = clock();
   Best_RS = NULL;
+  best_rt = 100.0,worst_rt = 0.0,avg_rt = 0.0;
   for (int r = 0;r < N;r++) {
     X = guess_a_location_03(p,I->N,I->W);
     for (int i = 0;i < p;i++) {
@@ -254,10 +226,9 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
     SQM_heuristic(I,p,lambda,Mu_NT,X);
     T_r2 = MST_response_time(I,p,X,lambda,Mu_NT);
 
-    gap = (T_r1 - T_r2) / T_r1;
-    avg_gap  += gap;
-    if (best_gap < gap) best_gap = gap;
-    if (worst_gap > gap) worst_gap = gap;
+    avg_rt  += T_r2;
+    if (best_rt > T_r2) best_rt = T_r2;
+    if (worst_rt < T_r2) worst_rt = T_r2;
 
     if (Best_RS == NULL || T_r2 < t_r) {
       if (Best_RS != NULL) delete [] Best_RS;
@@ -267,12 +238,16 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
     else delete [] X;
   }
   now = clock();
+  results << I->M << "," << I->N << "," << p << ","
+	  << Mu_NT << "," << lambda << ",1.0," << N << ","
+	  << best_rt << "," << avg_rt / N << "," << worst_rt << "," 
+	  << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
+  results.close();
   cout << "\t *** \tRandom results\t ***" << endl;
-  cout << "Best Response time : " << t_r << endl;
-  cout << "          Best gap : " << 100 * best_gap << endl
-       << "       Average gap : " << 100 * avg_gap / N << endl
-       << "         Worst gap : " << 100 * worst_gap << endl
-       << "              time : " << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
+  cout << "   Best Response time : " << best_rt << endl
+       << "Average Response time : " << avg_rt / N << endl
+       << "  Worst Response time : " << worst_rt << endl
+       << "           time (sec) : " << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
 
   /* Plot Random Best Solution */
   for (int k = 0;k < I->N;k++) Sol[k] = 0;
@@ -287,13 +262,6 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   for (int k = 0;k < I->N;k++) Sol[k] = 0;
   for (int i = 0;i < p;i++) Sol[Best[i].location]++;
   plot_instance_solution(I,Sol,"SQM_Best_Sol");
-
-  /*
-  double demand;
-  demand = 0.0;
-  for (int k = 0;k < I->M;k++) demand += (I->V)[k].demand;
-  cout << "      Total Demand : " << demand << endl;
-  */
 
   delete [] Sol;
   delete [] Best_RS;
