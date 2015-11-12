@@ -145,6 +145,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   int N = 100;
   response_unit *Best,*Best_RS,*Best_GRASP,*BEST_GRASP;
   response_unit *X,*G;
+  char GRASP_output[32];
 
   double demand;
   demand = 0.0;
@@ -154,6 +155,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   /* Evaluate GRASP */
   BEST_GRASP = NULL;
   results.open("GRASP_results.csv",std::ofstream::app);
+  dat.open("GRASP.dat",std::ofstream::out);
   for (double alpha = 0.0;alpha < 0.99;alpha += 0.05) {
     results << I->M << "," << I->N << "," << p << ","
 	    << Mu_NT << "," << lambda << "," << alpha << "," << N << ",";
@@ -179,6 +181,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
       else delete [] G;
     }
     now = clock();
+    dat << alpha << " " << best_rt << " " << avg_rt/N << " " << worst_rt << endl;
     results << best_rt << "," << avg_rt / N << "," << worst_rt << "," 
 	    << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
     cout << "\t *** \t GRASP results alpha = " << alpha << "\t ***" << endl;
@@ -195,13 +198,13 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   }
   
   /* Plot Best GRASP Solution */
-  logInfo(cout << "Plot Best GRASP Solution" << endl);
+  logDebug(cout << "Plot Best GRASP Solution" << endl);
   for (int i = 0;i < p;i++) cout << BEST_GRASP[i].location << " ";
   cout << endl;
   int *Sol = new int [I->N];
   for (int k = 0;k < I->N;k++) Sol[k] = 0;
   for (int i = 0;i < p;i++) Sol[BEST_GRASP[i].location]++;
-  logInfo(cout << "Calling plot method" << endl);
+  logDebug(cout << "Calling plot method" << endl);
   plot_instance_solution(I,Sol,"SQM_Best_GRASP_Sol");
 
   logInfo(cout << "Start SMQ random" << endl);
@@ -238,6 +241,8 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
     else delete [] X;
   }
   now = clock();
+  dat << "1.0 " << best_rt << " " << avg_rt/N << " " << worst_rt << endl;
+  dat.close();
   results << I->M << "," << I->N << "," << p << ","
 	  << Mu_NT << "," << lambda << ",1.0," << N << ","
 	  << best_rt << "," << avg_rt / N << "," << worst_rt << "," 
@@ -254,45 +259,6 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   for (int i = 0;i < p;i++) Sol[Best_RS[i].location]++;
   plot_instance_solution(I,Sol,"SQM_Best_Random_Sol");
 
-<<<<<<< HEAD
-  /* Evaluate GRASP */
-  beginning = clock();
-  Best_GRASP = NULL;
-  best_gap = -1.0,worst_gap = 1.0,avg_gap = 0.0;
-  for (int r = 0;r < N;r++) {
-    G = GRASP(I,p,lambda,Mu_NT,v,0.9); /* */
-    T_r1 = MST_response_time(I,p,G,lambda,Mu_NT);
-    /* Log */ Log_Start_SQMH(I->M,I->N,p,Mu_NT,lambda); /* */
-    SQM_heuristic(I,p,lambda,Mu_NT,G);
-    T_r2 = MST_response_time(I,p,G,lambda,Mu_NT);
-
-    gap = (T_r1 - T_r2) / T_r1;
-    avg_gap += gap;
-    if (best_gap < gap) best_gap = gap;
-    if (worst_gap > gap) worst_gap = gap;
-
-    if (Best_GRASP == NULL || T_r2 < t_r) {
-      if (Best_GRASP != NULL) delete [] Best_GRASP;
-      Best_GRASP = G;
-      t_r = T_r2;
-    }
-    else delete [] G;
-  }
-  now = clock();
-  cout << "\t *** \t GRASP results\t ***" << endl;
-  cout << "Best Response time : " << t_r << endl;
-  cout << "          Best gap : " << 100 * best_gap << endl
-       << "       Average gap : " << 100 * avg_gap / N << endl
-       << "         Worst gap : " << 100 * worst_gap << endl
-       << "              time : " << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
-
-  /* Plot Best GRASP Solution */
-  for (int k = 0;k < I->N;k++) Sol[k] = 0;
-  for (int i = 0;i < p;i++) Sol[Best_GRASP[i].location]++;
-  plot_instance_solution(I,Sol,"SQM_Best_GRASP_Sol");
-
-=======
->>>>>>> d6a7d9cf84c79f9249a17eea235cfdea2964d50a
   T_r1 = MST_response_time(I,p,Best_RS,lambda,Mu_NT);
   T_r2 = MST_response_time(I,p,BEST_GRASP,lambda,Mu_NT);
   Best = (T_r1 < T_r2 ? Best_RS : BEST_GRASP);
@@ -301,7 +267,8 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   for (int k = 0;k < I->N;k++) Sol[k] = 0;
   for (int i = 0;i < p;i++) Sol[Best[i].location]++;
   plot_instance_solution(I,Sol,"SQM_Best_Sol");
-
+  sprintf(GRASP_output,"./plots/GRASP_%d_%d_%d_%d",I->M,I->N,p,rand());
+  gnuplot_GRASP(GRASP_output);
   delete [] Sol;
   delete [] Best_RS;
   delete [] BEST_GRASP;
