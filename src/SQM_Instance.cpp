@@ -1,78 +1,88 @@
-
+ 
 #include <fstream>
 #include <cstdlib>
 #include "instance-creator.h"
 
 float unif(float,float);
 
-SQM_instance* IC_create_instance(int m,int n) {
-  SQM_instance *I;
-  I = new SQM_instance;
-  I->M = m;
-  I->N = n;
-  I->V = new point[m];
-  I->W = new point[n];
+SQM_instance(string);
+SQM_instance(string,string);
+
+SQM_instance::SQM_instance (int m/* demand points */,int n/* sites */) {
+  /* Create random demand points */
+  M = m;
+  V = new point[m];
   for (int i = 0;i < m;i++) {
-    (I->V)[i].x = unif(MIN_X,MAX_X);
-    (I->V)[i].y = unif(MIN_Y,MAX_Y);
-    (I->V)[i].demand = unif(32,1024);
+    V[i].x = unif(MIN_X,MAX_X);
+    V[i].y = unif(MIN_Y,MAX_Y);
+    V[i].demand = unif(32,1024);
   }
+
+  /* Create random potential facility sites */
+  N = n;
+  W = new point[n];
   for (int i = 0;i < n;i++) {
-    (I->W)[i].x = unif(MIN_X,MAX_X);
-    (I->W)[i].y = unif(MIN_Y,MAX_Y);
-    (I->W)[i].demand = 0.0;
+    W[i].x = unif(MIN_X,MAX_X);
+    W[i].y = unif(MIN_Y,MAX_Y);
+    W[i].demand = 0.0;
   }
-  return I;
+  set_distances();
+  set_preferred_servers();
 }
 
-SQM_instance* IC_read_instance (string Demand_nodes,string facility_nodes) {
-  int n,m;
-  fstream demandfile,facilityfile;
-  SQM_instance *I;
-  I = new SQM_instance;
-  demandfile.open(Demand_nodes.c_str(),fstream::in);
-  demandfile >> m;
-  I->M = m;
-  I->V = new point[m];
-  for (int i = 0;i < m;i++) {
-    demandfile >> (I->V)[i].x >> (I->V)[i].y >> (I->V)[i].demand;
-  }
-  demandfile.close();
-  
-  facilityfile.open(facility_nodes.c_str(),fstream::in);
-  facilityfile >> n;
-  I->N = n;
-  I->W = new point[n];
-  for (int j = 0;j < n;j++) {
-    facilityfile >> (I->W)[j].x >> (I->W)[j].y;
-  }
-  facilityfile.close();
-  return I;
-}
-
-SQM_instance* IC_load_instance (string Demand_nodes) {
-  int m;
+SQM_instance::SQM_instance (string nodes) {
   double S;
   fstream demandfile;
-  SQM_instance *I;
-  I = new SQM_instance;
+
   demandfile.open(Demand_nodes.c_str(),fstream::in);
-  demandfile >> m >> S;
-  I->M = m;
-  I->V = new point[m];
-  for (int i = 0;i < m;i++) {
-    demandfile >> (I->V)[i].x >> (I->V)[i].y >> (I->V)[i].demand;
+  demandfile >> M >> S;
+
+  /* Read demand points */
+  V = new point[m];
+  for (int i = 0;i < m;i++)
+    demandfile >> V[i].x >> V[i].y >> V[i].demand;
+  demandfile.close();
+  
+  /* Copy demand points to potential facility points */
+  N = M;
+  W = new point[N];
+  for (int j = 0;j < N;j++) {
+    W[j].x = V[j].x;
+    W[j].y = V[j].y;
+  }
+
+  set_distances();
+  set_preferred_servers();
+}
+
+SQM_instance::SQM_instance (string Demand_nodes,string facility_nodes) {
+  fstream demandfile,facilityfile;
+
+  /* Read demand points */
+  demandfile.open(Demand_nodes.c_str(),fstream::in);
+  demandfile >> M;
+  V = new point[M];
+  for (int i = 0;i < M;i++) {
+    demandfile >> V[i].x >> V[i].y >> V[i].demand;
   }
   demandfile.close();
   
-  I->N = m;
-  I->W = new point[m];
-  for (int j = 0;j < m;j++) {
-    (I->W)[j].x = (I->V)[j].x;
-    (I->W)[j].y = (I->V)[j].y;
+  /* Read potenctial location points */
+  facilityfile.open(facility_nodes.c_str(),fstream::in);
+  facilityfile >> N;
+  W = new point[N];
+  for (int j = 0;j < N;j++) {
+    facilityfile >> W[j].x >> W[j].y;
   }
+  facilityfile.close();
 
-  return I;
+  set_distances();
+  set_preferred_servers();
+}
+
+SQM_instance::~SQM_instance () {
+  delete [] V;
+  delete [] W;
 }
 
 void IC_write_instance(SQM_instance* I,string demand_output,string facility_output) {
@@ -81,9 +91,9 @@ void IC_write_instance(SQM_instance* I,string demand_output,string facility_outp
   demandfile.open(demand_output.c_str(),fstream::out);
   demandfile << I->M << endl;
   for (int i = 0;i < I->M;i++) {
-    demandfile << (I->V)[i].x << " " 
-	       << (I->V)[i].y << " "
-	       << (I->V)[i].demand 
+    demandfile << V[i].x << " " 
+	       << V[i].y << " "
+	       << V[i].demand 
 	       << endl;
   }
   demandfile.close();
@@ -91,8 +101,8 @@ void IC_write_instance(SQM_instance* I,string demand_output,string facility_outp
   facilityfile.open(facility_output.c_str(),fstream::out);
   facilityfile << I->N << endl;
   for (int i = 0;i < I->N;i++) {
-    facilityfile << (I->W)[i].x << " " 
-		 << (I->W)[i].y
+    facilityfile << W[i].x << " " 
+		 << W[i].y
 		 << endl;
   }
   facilityfile.close();
@@ -103,9 +113,6 @@ float unif(float a,float b) {
 }
 
 void IC_delete_instance(SQM_instance* I) {
-  delete [] I->V;
-  delete [] I->W;
-  delete I;
 }
 
 double** SQM_dist_matrix(SQM_instance *I) {

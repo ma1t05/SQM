@@ -43,9 +43,6 @@ class server {
   double beta;
 };
 
-SQM_instance(int /* demand points */,int /* sites */);
-SQM_instance(string);
-SQM_instance(string,string);
 void IC_plot_instance(SQM_instance*,int*,string);
 
 double** SQM_dist_matrix(SQM_instance*);
