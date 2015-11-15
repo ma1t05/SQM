@@ -5,9 +5,6 @@
 
 float unif(float,float);
 
-SQM_instance(string);
-SQM_instance(string,string);
-
 SQM_instance::SQM_instance (int m/* demand points */,int n/* sites */) {
   /* Create random demand points */
   M = m;
@@ -27,7 +24,6 @@ SQM_instance::SQM_instance (int m/* demand points */,int n/* sites */) {
     W[i].demand = 0.0;
   }
   set_distances();
-  set_preferred_servers();
 }
 
 SQM_instance::SQM_instance (string nodes) {
@@ -42,7 +38,7 @@ SQM_instance::SQM_instance (string nodes) {
   for (int i = 0;i < m;i++)
     demandfile >> V[i].x >> V[i].y >> V[i].demand;
   demandfile.close();
-  
+
   /* Copy demand points to potential facility points */
   N = M;
   W = new point[N];
@@ -52,7 +48,6 @@ SQM_instance::SQM_instance (string nodes) {
   }
 
   set_distances();
-  set_preferred_servers();
 }
 
 SQM_instance::SQM_instance (string Demand_nodes,string facility_nodes) {
@@ -77,56 +72,83 @@ SQM_instance::SQM_instance (string Demand_nodes,string facility_nodes) {
   facilityfile.close();
 
   set_distances();
-  set_preferred_servers();
 }
 
 SQM_instance::~SQM_instance () {
+  for (int j = 0;j < M;j++) delete [] Dist[j];
+  delete [] Dist;
   delete [] V;
   delete [] W;
 }
 
-void IC_write_instance(SQM_instance* I,string demand_output,string facility_output) {
+void SQM_instance::write (string demand_output,string facility_output) {
   fstream demandfile,facilityfile;
   
   demandfile.open(demand_output.c_str(),fstream::out);
-  demandfile << I->M << endl;
-  for (int i = 0;i < I->M;i++) {
+  demandfile << M << endl;
+  for (int i = 0;i < M;i++) 
     demandfile << V[i].x << " " 
 	       << V[i].y << " "
 	       << V[i].demand 
 	       << endl;
-  }
   demandfile.close();
-
+       
   facilityfile.open(facility_output.c_str(),fstream::out);
-  facilityfile << I->N << endl;
-  for (int i = 0;i < I->N;i++) {
+  facilityfile << N << endl;
+  for (int i = 0;i < N;i++)
     facilityfile << W[i].x << " " 
 		 << W[i].y
 		 << endl;
-  }
   facilityfile.close();
+}
+
+void SQM_instance::set_distances () {
+  Dist = new  double*[M];
+  for (int j = 0;j < M;j++)
+    Dist[j] = new double [N];
+
+  for (int j = 0;j < M;j++) {
+    for (int i = 0;i < N;i++) {
+      Dist[j][i] = dist(&(V[j]),&(W[i]));
+    }
+  }
+}
+
+// void SQM_instance::set_preferred_servers () {
+//   double *d;
+//   a = new int*[M];
+//   for (int j = 0;j < M;j++)
+//     a[j] = new int[N];
+//   d = new double [N];
+//   for (int j = 0;j < M;j++) {
+//     for (int i = 0;i < N;i++)
+//       d[i] = Dist[j][i];
+//     sort_dist(p,d,a[j]);
+    
+//   }
+//   delete [] d;
+// }
+
+int SQM_instance::demand_points () {
+  return M;
+}
+
+int SQM_instance::potential_sites () {
+  return N;
+}
+
+point* SQM_instance::site (int i) {
+  return &(W[i]);
+}
+
+point* SQM_instance::demand (int j) {
+  return &(V[j]);
+}
+
+double SQM_instance::distance (int i,int j) {
+  return Dist[j][i];
 }
 
 float unif(float a,float b) {
   return a + (b - a) * rand() / RAND_MAX;
-}
-
-void IC_delete_instance(SQM_instance* I) {
-}
-
-double** SQM_dist_matrix(SQM_instance *I) {
-  int n = I->N,m = I->M;
-  double **Dist;
-
-  Dist = new  double*[m];
-  for (int j = 0;j < m;j++)
-    Dist[j] = new double [n];
-
-  for (int j = 0;j < m;j++) {
-    for (int i = 0;i < n;i++) {
-      Dist[j][i] = dist(&(I->V[j]),&(I->W[i]));
-    }
-  }
-  return Dist;
 }

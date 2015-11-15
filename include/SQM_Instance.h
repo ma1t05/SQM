@@ -1,6 +1,6 @@
 
-#ifndef _INSTANCE_CREATOR_H
-#define _INSTANCE_CREATOR_H 1
+#ifndef _SQM_INSTANCE_H
+#define _SQM_INSTANCE_H 1
 
 #include <ctime>
 #include "SQM.h"
@@ -19,7 +19,6 @@ private:
   int **a; /* List of lists of preferred sites */
   double **Dist; /* Matrix of distances beetwen demand and sites */
   void set_distances();
-  void set_preferred_servers();
 public:
   SQM_instance(int m,int n);
   SQM_instance(string);
@@ -30,7 +29,7 @@ public:
   int potential_sites();
   point* site(int i);
   point* demand(int j);
-  int site_order(int i /* site */,int j /* demand */);
+  /*int site_order(int i,int j);*/
   double distance(int i /* site */,int j /* demand */);
 }
 
@@ -44,8 +43,6 @@ class server {
 };
 
 void IC_plot_instance(SQM_instance*,int*,string);
-
-double** SQM_dist_matrix(SQM_instance*);
 
 #endif
 
