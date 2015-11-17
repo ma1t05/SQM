@@ -1,16 +1,16 @@
 
+#include "SQM_Instance.h"
 #include "SQM_GRASP.h"
 #include "mp_jarvis.h"
 #include "MST.h"
-#include "instance-creator.h"
 #include "log.h"
 
 #define min(A,B) ((A)>(B)?(A):(B))
 
 bool GRASP_closest_to_b(SQM_instance *I,int node,int center_a,int center_b);
-int GRASP_nearest_server(SQM_instance *I,int j,int p,response_unit *X);
+int GRASP_nearest_server(SQM_solution *Sol,int j);
 
-response_unit* GRASP
+SQM_solution* GRASP
 (SQM_instance *I,
  int p, // Number of adjusters
  double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
@@ -24,7 +24,7 @@ response_unit* GRASP
   int *rcl;
   double *T_r;
   double beta = 1.5;
-  response_unit *X;
+  SQM_solution *X;
 
   logDebug(cout << endl << endl << "*****Start GRASP*****" << endl << endl);
   if (p < 1) return NULL;

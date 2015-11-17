@@ -13,13 +13,13 @@ void SQM_improve_locations(response_unit*,int,int,int,double**,num**);
 void SQM_return_previous_solution(response_unit*,int);
 
 void SQM_heuristic
-(SQM_instance *I,
- int p, // Number of adjusters
+(SQM_solution *Sol,
  double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
- double Mu_NT, // mean of non-travel time component of the service time
- response_unit *X
+ double Mu_NT // mean of non-travel time component of the service time
  ) {
   
+  SQM_instance *I = Sol->I;
+  int p = Sol->p; // Number of adjusters
   /* Variable definitions */
   int m = I->M; /* Number of demand points */
   int n = I->N; /* Number of potencial sites to locate a server*/
@@ -86,7 +86,7 @@ void SQM_heuristic
 
 
   for (int i = 0;i < p;i++)
-    LogFile << X[i].location << " ";
+    LogFile << Sol->get_server_location(i) << " ";
   LogFile << endl;
 
   do {
@@ -94,14 +94,14 @@ void SQM_heuristic
     /* Update matrix of pfreferred servers */
     for (int k = 0;k < m;k++) {
       for (int i = 0;i < p;i++)
-	d[i] = Dist[k][X[i].location];
+	d[i] = Dist[k][Sol->get_server_location(i)];
       sort_dist(p,d,a[k]);
     }
 
     /* Print Current solution */
     /*
     for (int i = 0;i < p;i++)
-      cout << X[i].location << " ";
+      cout << Sol->get_server_location(i) << " ";
     cout << endl;
     */
 
@@ -121,7 +121,7 @@ void SQM_heuristic
       /* Update matrix of response times */
       for (int i = 0;i < p;i++) {
 	for (int k = 0;k < m;k++) {
-	  mpf_set_d(Tao[i][k],(X[i].beta / X[i].v) * Dist[k][X[i].location]);
+	  mpf_set_d(Tao[i][k],(X[i].beta / X[i].v) * Dist[k][Sol->get_server_location(i)]);
 	  mpf_div_ui(Tao[i][k],Tao[i][k],MINS_PER_BLOCK*BLOCKS_PER_HORIZON);
 	  mpf_add(Tao[i][k],Tao[i][k],MST[i]);
 	}
@@ -159,7 +159,7 @@ void SQM_heuristic
     /* Print current solution */
     if (LogDebug) {
       for (int i = 0;i < p;i++)
-	cout << X[i].location << (X[i].past_location != X[i].location ? "*\t" : "\t");
+	cout << Sol->get_server_location(i) << (X[i].past_location != Sol->get_server_location(i) ? "*\t" : "\t");
       cout << endl;
     }
     /* mpf_abs(tmp,tmp); */ // This is a bad 
@@ -218,7 +218,7 @@ void SQM_heuristic
   if (LogDebug) {
     for (int k = 0;k < n;k++)
       for (int i = 0;i < p;i++)
-	if (X[i].location == k) cout << k << " ";
+	if (Sol->get_server_location(i) == k) cout << k << " ";
     cout << endl;
     cout << "Finish Berman Heuristic" << endl;
   }
@@ -228,7 +228,7 @@ response_unit* guess_a_location_01(int p,int n, point *W){
   response_unit *X;
   X = new response_unit[p];
   for (int i = 0;i < p;i++) {
-    X[i].location = i;
+    Sol->get_server_location(i) = i;
     X[i].past_location = i;
   }
   return X;
@@ -238,7 +238,7 @@ response_unit* guess_a_location_02(int p,int n, point *W){
   response_unit *X;
   X = new response_unit[p];
   for (int i = 0;i < p;i++) {
-    X[i].location = unif(n);
+    Sol->get_server_location(i) = unif(n);
   }
   return X;
 }
@@ -307,8 +307,8 @@ void SQM_improve_locations(response_unit *X,int m,int n,int p,double **Dist,num 
     // Block B
     /* Solve te 1-median location model with h_i^j */
     new_location = Solve_1_median_location_model(m,n,Dist,h_i);
-    X[i].past_location = X[i].location;
-    X[i].location = new_location;
+    X[i].past_location = Sol->get_server_location(i);
+    Sol->get_server_location(i) = new_location;
   }
   mpf_clear(tmp);
   mpf_clear(h);
@@ -316,8 +316,8 @@ void SQM_improve_locations(response_unit *X,int m,int n,int p,double **Dist,num 
 
   /* Print current solution to LogFile */
   for (int i = 0;i < p;i++) {
-    LogFile << X[i].location;
-    if (X[i].past_location != X[i].location) {
+    LogFile << Sol->get_server_location(i);
+    if (X[i].past_location != Sol->get_server_location(i)) {
       LogFile << "*";
     }
     LogFile << "\t";
@@ -327,5 +327,5 @@ void SQM_improve_locations(response_unit *X,int m,int n,int p,double **Dist,num 
 
 void SQM_return_previous_solution(response_unit *X,int p) {
   for (int i = 0;i < p;i++)
-    X[i].location = X[i].past_location;
+    Sol->get_server_location(i) = X[i].past_location;
 }

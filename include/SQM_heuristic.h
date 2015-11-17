@@ -2,11 +2,9 @@
 #ifndef _SQM_HEURISTIC_H
 #define _SQM_HEURISTIC_H
 
-#include <gmp.h>
 #include "SQM.h"
 
-typedef mpf_t num;
-void SQM_heuristic(SQM_instance*,int,double,double,response_unit*);
+void SQM_heuristic(SQM_solution*,double,double);
 double SQM_response_time
 (SQM_solution*,
  double lambda, /* mean arrival rate */
