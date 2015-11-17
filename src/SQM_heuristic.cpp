@@ -236,6 +236,7 @@ response_unit* guess_a_location_01(int p,int n, point *W){
 
 response_unit* guess_a_location_02(int p,int n, point *W){
   response_unit *X;
+  X = new response_unit[p];
   for (int i = 0;i < p;i++) {
     X[i].location = unif(n);
   }

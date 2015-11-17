@@ -4,7 +4,8 @@
 #include <iostream>
 #include <sstream>
 #include "SQM.h"
-#include "instance-creator.h"
+#include "SQM_Instance.h"
+#include "SQM_Solution.h"
 /*#include "SQM_model.h"
   #include "Goldberg.h"*/
 #include "SQM_heuristic.h"
@@ -60,9 +61,9 @@ int main(int argc,char *argv[]) {
   Call_SQM_random(I,p,f,mu,v);
   /* Log Log_Start_SQMH(M_clients,N_sites,p,mu,f); /* */
   // Call_SQM_heuristic(I,p,f,mu);
-  IC_delete_instance(I);
+  delete I;
   /* Log */ LogFile.close();
-  cout << endl << "Saved in LogFile: " << LogName.str() << endl;
+  logInfo(cout << endl << "Saved in LogFile: " << LogName.str() << endl);
 }
 
 void read_config_file() {
@@ -102,16 +103,16 @@ SQM_instance* Load_instance(string filename,int M_clients,int N_sites) {
       return NULL;
     }
     cout << "Read file: " << filename << endl;
-    I = IC_load_instance(filename);
+    I = new SQM_instance(filename);
     return I;
   }
   if (file_exists(filename+"_demand.ins") &&
       file_exists(filename+"_facility.ins")) {
-    I = IC_read_instance (filename+"_demand.ins",filename+"_facility.ins");
+    I = new SQM_instance(filename+"_demand.ins",filename+"_facility.ins");
   }
   else {
-    I = IC_create_instance(M_clients,N_sites);
-    IC_write_instance(I,filename+"_demand.ins",filename+"_facility.ins");
+    I = new SQM_instance(M_clients,N_sites);
+    I->write(filename+"_demand.ins",filename+"_facility.ins");
   }
   return I;
 }
@@ -128,13 +129,13 @@ void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f) {
 }
 
 void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu) {
-  response_unit *X;
+  SQM_solution *Sol;
   cout << "Calling SQM_Heuristic" << endl;
-  X = guess_a_location_03(p,I->N,I->W);
-  SQM_heuristic(I,p,f,mu,X);
-  for (int i = 0;i < p;i++) LogFile << X[i].location << " ";
+  Sol = new SQM_solution (I,p);
+  SQM_heuristic(I,p,f,mu,Sol);
+  for (int i = 0;i < p;i++) LogFile << Sol->get_server_location(i) << " ";
   LogFile << endl;
-  delete [] X;
+  delete Sol;
 }
 
 void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
