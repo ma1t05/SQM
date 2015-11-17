@@ -3,6 +3,9 @@
 #define _SQM_INSTANCE_H 1
 
 #include "point.h"
+#include <string>
+
+using namespace std;
 
 #define MIN_X 0.0
 #define MAX_X 1024.0
@@ -30,7 +33,7 @@ public:
   point* demand(int j);
   /*int site_order(int i,int j);*/
   double distance(int i /* site */,int j /* demand */);
-}
+};
 
 #endif
 

@@ -2,7 +2,7 @@
 #ifndef _SQM_SOLUTION_H
 #define _SQM_SOLUTION_H 1
 
-#include "SQM_Solution"
+#include "SQM_Solution.h"
 
 /* Note response_unit was changed to server */
 class server {
@@ -10,7 +10,7 @@ class server {
   int past_location;
   double v;
   double beta;
-}
+};
 
 class SQM_solution {
  private:
@@ -23,7 +23,7 @@ class SQM_solution {
   ~SQM_solution();
   void set_server_location(int i,int j);
   int get_server_location(int i);
-}
+};
 
 #endif
 
