@@ -2,8 +2,7 @@
 #ifndef _SQM_INSTANCE_H
 #define _SQM_INSTANCE_H 1
 
-#include <ctime>
-#include "SQM.h"
+#include "point.h"
 
 #define MIN_X 0.0
 #define MAX_X 1024.0
@@ -32,17 +31,6 @@ public:
   /*int site_order(int i,int j);*/
   double distance(int i /* site */,int j /* demand */);
 }
-
-
-/* Note response_unit was changed to server */
-class server {
-  int location;
-  int past_location;
-  double v;
-  double beta;
-};
-
-void IC_plot_instance(SQM_instance*,int*,string);
 
 #endif
 
