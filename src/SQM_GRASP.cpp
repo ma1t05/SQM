@@ -69,8 +69,10 @@ double GRASP_func_NN
  ) {
   logDebug(cout << "Start GRASP_func_NN" << endl);
   /* Variables definition */
+  SQM_instance *I = Sol->get_instance();
   int n = I->demand_points();
   int m = I->potential_sites();
+  int p = Sol->get_servers();
   int nearest,k;
   double *rho;
   double Obj;
@@ -78,9 +80,9 @@ double GRASP_func_NN
 
   Obj = 0.0;
   for (int j = 0;j < m;j++) {
-    k = GRASP_nearest_server(I,j,p,X); /* Obtain the nearest server */
-    nearest = X[k].location;
-    Obj += I->V[j].demand * dist(&(I->V[j]),&(I->W[nearest])) / X[k].v;
+    k = GRASP_nearest_server(Sol,p); /* Obtain the nearest server */
+    nearest = Sol->get_server_location(k);
+    Obj += I->demand(j)->demand * dist(I->demand(j),I->site(nearest)) / I->speed;
   }
   Obj /= MINS_PER_BLOCK * BLOCKS_PER_HORIZON;
 
@@ -89,30 +91,30 @@ double GRASP_func_NN
 }
 
 bool GRASP_closest_to_b(SQM_instance *I,int node,int center_a,int center_b) {
-  return (dist(&(I->V[node]),&(I->W[center_a])) > dist(&(I->V[node]),&(I->W[center_b])));
+  return (dist(I->demand(node),I->site(center_a)) > dist(I->demand(node),I->site(center_b)));
 }
 
-int GRASP_nearest_server(SQM_instance *I,int j,int p,response_unit *X) {
+int GRASP_nearest_server(SQM_solution *Sol,int j) {
+  SQM_instance *I = Sol->get_instance();
+  int p = Sol->get_servers();
   int k = 0;
-  for (int i = 1;i < p;i++) {
-    if (GRASP_closest_to_b(I,j,X[k].location,X[i].location)) {
+  for (int i = 1;i < p;i++)
+    if (GRASP_closest_to_b(I,j,Sol->get_server_location(k),Sol->get_server_location(i)))
       k = i;
-    }
-  }
   return k;
 }
 
 double GRASP_func_kNN
-(SQM_instance *I,
- int p,
- response_unit *X,
+(SQM_solution *Sol,
  double lambda,
  double Mu_NT,
  int K
  ) {
   logDebug(cout << "Start GRASP_func_kNN" << endl);
   /* Variable definitions */
-  int m = I->M; /* Number of demand points */
+  SQM_instance *I = Sol->get_instance();
+  int p = Sol->get_servers();
+  int m = I->demand_points(); /* Number of demand points */
   double RT = 0.0; /* Response Time */
   int **a;
   double **Dist;
@@ -123,20 +125,19 @@ double GRASP_func_kNN
   a = new int*[m];
   for (int k = 0;k < m;k++)
     a[k] = new int[p];
-  Dist = SQM_dist_matrix(I);
 
   double *d = new double[p];
   for (int k = 0;k < m;k++) {
     for (int i = 0;i < p;i++)
-      d[i] = Dist[k][X[i].location];
+
     sort_dist(p,d,a[k]);
   }
   delete [] d;
 
   Lambda = new double[m];
   demand = 0.0;
-  for (int k = 0;k < m;k++) demand += I->V[k].demand;
-  for (int k = 0;k < m;k++) Lambda[k] = I->V[k].demand * lambda / demand;
+  for (int k = 0;k < m;k++) demand += I->demand(k)->demand;
+  for (int k = 0;k < m;k++) Lambda[k] = I->demand(k)->demand * lambda / demand;
 
   logDebug(cout << "Comienza calculo de rho_i" << endl);
   /* Calculate the first approach for rho */
@@ -147,8 +148,8 @@ double GRASP_func_kNN
     distance = 0.0;
     for (int k = 0;k < m;k++)
       if (a[k][0] == i) {
-	rho[i] += Lambda[k] * (1/Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/ (MINS_PER_BLOCK * BLOCKS_PER_HORIZON));
-	distance += Dist[k][X[i].location];
+	rho[i] += Lambda[k] * (1/Mu_NT + Sol->get_server_speed(i) * I->distance(Sol->get_server_location(i),k) / (MINS_PER_BLOCK * BLOCKS_PER_HORIZON));
+	distance +=  I->distance(Sol->get_server_location(i),k);
       }
     RT += rho[i] * distance / (X[i].v * MINS_PER_BLOCK * BLOCKS_PER_HORIZON);
   }
@@ -165,8 +166,8 @@ double GRASP_func_kNN
 	if (a[k][t] == i) {
 	  rho_a_ml = 1;
 	  for (int l = 0;l < t;l++) rho_a_ml *= rho[a[k][l]];
-	  new_rho[i] += (1 - rho[i]) * rho_a_ml * Lambda[k] * (1/Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location] / (MINS_PER_BLOCK * BLOCKS_PER_HORIZON));
-	  distance += Dist[k][X[i].location];
+	  new_rho[i] += (1 - rho[i]) * rho_a_ml * Lambda[k] * (1/Mu_NT + (X[i].beta / X[i].v) * I->distance(Sol->get_server_location(i),k) / (MINS_PER_BLOCK * BLOCKS_PER_HORIZON));
+	  distance += I->distance(Sol->get_server_location(i),k);
 	}
       RT += new_rho[i] * distance / (X[i].v * MINS_PER_BLOCK * BLOCKS_PER_HORIZON);
       rho[i] += new_rho[i];
@@ -178,8 +179,6 @@ double GRASP_func_kNN
 
   delete [] new_rho;    
   delete [] Lambda;
-  for (int j=0;j < m;j++) delete [] Dist[j];
-  delete [] Dist;
   for (int k = 0;k < m;k++) delete [] a[k];
   delete [] a;
   logDebug(cout << "Finish GRASP_func_kNN" << endl);
