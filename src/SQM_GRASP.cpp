@@ -18,61 +18,59 @@ SQM_solution* GRASP
  double v, // Speed
  double alpha // Random factor {1: random, 0: greedy}
  ) {
-  int n = I->N,m = I->M;
+  int n = I->potential_sites(),m = I->demand_points();
   int r;
   int element;
   int *rcl;
   double *T_r;
   double beta = 1.5;
-  SQM_solution *X;
+  server *serv;
+  SQM_solution *Sol;
 
   logDebug(cout << endl << endl << "*****Start GRASP*****" << endl << endl);
   if (p < 1) return NULL;
-  X = new response_unit[p];
-  for (int i = 0;i < p;i++) {
-    X[i].v = v;
-    X[i].beta = beta;
-  }
+  Sol = new SQM_solution(I);
+  Sol->set_speed(v,beta);
 
   logDebug(cout << "/* Locate the first server */" << endl);
-  X[0].location = unif(n);
+  Sol->set_server_location(0,unif(n));
   r = 1;
   T_r = new double [n];
   rcl = new int [n];
   while (r < p) 
     {
       logDebug(cout << "[" << r << "]/* Evaluate posible locations*/" << "\t");
+      Sol->add_server();
       for (int i = 0;i < n;i++) {
-	X[r].location = i;
+	Sol->set_server_location(r,i);
 	/* T_r[i] = MST_response_time(I,r+1,X,lambda,Mu_NT);*/
 	/* T_r[i] = GRASP_func_NN(I,r+1,X,lambda,Mu_NT);*/
-	T_r[i] = GRASP_func_kNN(I,r+1,X,lambda,Mu_NT,min(r+1,3));
+	T_r[i] = GRASP_func_kNN(Sol,lambda,Mu_NT,min(r+1,3));
       }
 
       logDebug(cout << "/* Sort Restricted Candidates List */" << "\t");
       sort_dist(n,T_r,rcl);
       logDebug(cout << "/* Choose random element from the rcl */" << "\r");
       element = unif(ceil(alpha * n));
-      X[r++].location = rcl[element];
+      Sol->set_server_location(r++,rcl[element]);
     }
   logDebug(cout << endl);
 
   delete [] rcl;
   delete [] T_r;
   logDebug(cout << "Finish GRASP" << endl);
-  return X;
+  return Sol;
 }
 
 double GRASP_func_NN
-(SQM_instance *I,
- int p,
- response_unit *X,
+(SQM_solution *Sol,
  double lambda,
  double Mu_NT
  ) {
   logDebug(cout << "Start GRASP_func_NN" << endl);
   /* Variables definition */
-  int n = I->N,m = I->M;
+  int n = I->demand_points();
+  int m = I->potential_sites();
   int nearest,k;
   double *rho;
   double Obj;

@@ -16,6 +16,9 @@ class SQM_instance {
 private:
   int M; /* Number of demand points */
   int N; /* Number of potencial sites to locate a server */
+  double lambda; /* total arrival rate */
+  double speed; /* travel speed */
+  double mu; /* Rate of service per server */
   point *V; /* Set of demand points */
   point *W; /* Set of potencial locations sites */
   int **a; /* List of lists of preferred sites */
