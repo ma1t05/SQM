@@ -82,7 +82,7 @@ double GRASP_func_NN
   for (int j = 0;j < m;j++) {
     k = GRASP_nearest_server(Sol,p); /* Obtain the nearest server */
     nearest = Sol->get_server_location(k);
-    Obj += I->demand(j)->demand * dist(I->demand(j),I->site(nearest)) / I->speed;
+    Obj += I->demand(j)->demand * dist(I->demand(j),I->site(nearest)) / Sol->get_server_speed(k);
   }
   Obj /= MINS_PER_BLOCK * BLOCKS_PER_HORIZON;
 
@@ -148,10 +148,10 @@ double GRASP_func_kNN
     distance = 0.0;
     for (int k = 0;k < m;k++)
       if (a[k][0] == i) {
-	rho[i] += Lambda[k] * (1/Mu_NT + Sol->get_server_speed(i) * I->distance(Sol->get_server_location(i),k) / (MINS_PER_BLOCK * BLOCKS_PER_HORIZON));
+	rho[i] += Lambda[k] * (1/Mu_NT + Sol->get_server_rate(i) * I->distance(Sol->get_server_location(i),k) / (MINS_PER_BLOCK * BLOCKS_PER_HORIZON));
 	distance +=  I->distance(Sol->get_server_location(i),k);
       }
-    RT += rho[i] * distance / (X[i].v * MINS_PER_BLOCK * BLOCKS_PER_HORIZON);
+    RT += rho[i] * distance / (Sol->get_server_speed(i) * MINS_PER_BLOCK * BLOCKS_PER_HORIZON);
   }
   
   logDebug(cout << "Comienza calculo de rho_i para resto de ordenes" << endl);
@@ -166,10 +166,10 @@ double GRASP_func_kNN
 	if (a[k][t] == i) {
 	  rho_a_ml = 1;
 	  for (int l = 0;l < t;l++) rho_a_ml *= rho[a[k][l]];
-	  new_rho[i] += (1 - rho[i]) * rho_a_ml * Lambda[k] * (1/Mu_NT + (X[i].beta / X[i].v) * I->distance(Sol->get_server_location(i),k) / (MINS_PER_BLOCK * BLOCKS_PER_HORIZON));
+	  new_rho[i] += (1 - rho[i]) * rho_a_ml * Lambda[k] * (1/Mu_NT + Sol->get_server_rate(i) * I->distance(Sol->get_server_location(i),k) / (MINS_PER_BLOCK * BLOCKS_PER_HORIZON));
 	  distance += I->distance(Sol->get_server_location(i),k);
 	}
-      RT += new_rho[i] * distance / (X[i].v * MINS_PER_BLOCK * BLOCKS_PER_HORIZON);
+      RT += new_rho[i] * distance / (Sol->get_server_speed(i) * MINS_PER_BLOCK * BLOCKS_PER_HORIZON);
       rho[i] += new_rho[i];
       if (rho[i] > 1)
 	logError(cout << "¡rho_" << i+1 << " > 1! in order " << t << endl);

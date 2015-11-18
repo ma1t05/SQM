@@ -132,7 +132,7 @@ void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu) {
   SQM_solution *Sol;
   cout << "Calling SQM_Heuristic" << endl;
   Sol = new SQM_solution (I,p);
-  SQM_heuristic(I,p,f,mu,Sol);
+  SQM_heuristic(Sol,f,mu);
   for (int i = 0;i < p;i++) LogFile << Sol->get_server_location(i) << " ";
   LogFile << endl;
   delete Sol;
@@ -144,8 +144,8 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   double T_r1,T_r2,t_r,BRT;
   double gap = 0.0,best_rt = 100.0,worst_rt = 0.0,avg_rt = 0.0;
   int N = 100;
-  response_unit *Best,*Best_RS,*Best_GRASP,*BEST_GRASP;
-  response_unit *X,*G;
+  SQM_solution *Best,*Best_RS,*Best_GRASP,*BEST_GRASP;
+  SQM_solution *X,*G;
   char GRASP_output[32];
 
   double demand;

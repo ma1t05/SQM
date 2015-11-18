@@ -21,6 +21,10 @@ void server::set_speed(double speed,double b) {
 }
 
 double server::get_speed () {
+  return v;
+}
+
+double server::get_rate () {
   return beta / v;
 }
 
@@ -94,6 +98,10 @@ void SQM_solution:set_speed(double v,double beta) {
 
 double SM_solution::get_server_speed(int i) {
   return Servers[i].get_speed();
+}
+
+double SM_solution::get_server_rate(int i) {
+  return Servers[i].get_rate();
 }
 
 SQM_instance* SQM_solution::get_instance () {
