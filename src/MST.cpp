@@ -1,12 +1,9 @@
 
 #include "MST.h"
-#include "instance-creator.h"
 #include "mp_jarvis.h"
 
 double MST_response_time
-(SQM_instance *I,
- int p, // Number of adjusters
- response_unit* X,
+(SQM_solution *X,
  double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
  double Mu_NT // mean of non-travel time component of the service time
  ) {
@@ -24,9 +21,10 @@ double MST_response_time
   mpf_t delta_mu;
   mpf_t *Lambda;
   int **a;
-  int m = I->M; /* Number of demand points */
-  int n = I->N; /* Number of potencial sites to locate a server*/
-  point *V = I->V,*W = I->W;
+  SQM_instance *I = X->get_instance();
+  int m = I->demand_points(); /* Number of demand points */
+  int n = I->potential_sites(); /* Number of potencial sites to locate a server*/
+  point *V = I->demand(0),*W = I->site(0);
  
   /* Populate matrix of distances */
   Dist = SQM_dist_matrix(I);

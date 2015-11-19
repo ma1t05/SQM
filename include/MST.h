@@ -2,7 +2,7 @@
 #ifndef _MST_H
 #define _MST_H 1
 
-#include "SQM.h"
+#include "SQM_Solution.h"
 #include <gmp.h>
 
 double MST_response_time

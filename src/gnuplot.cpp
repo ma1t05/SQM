@@ -1,6 +1,7 @@
 
 #include <fstream>
 #include <cstdlib>
+#include <cmath>
 #include "gnuplot.h"
 
 using namespace std;
@@ -10,23 +11,24 @@ void gnuplot_unsets(FILE*);
 void gnuplot_write_points_file(char*,point*,int);
 
 void plot_instance_solution(SQM_instance *I,int *Sol,string output) {
-  int n = I->N,m = I->M;
+  int n = I->demand_points(),m = I->potential_sites();
   char demand_output[32],facility_output[32],centers_output[32];
   fstream centersfile;
   
   sprintf(demand_output,"Tmp_demand_%d.dat",rand());
-  gnuplot_write_points_file(demand_output,I->V,m);
+  gnuplot_write_points_file(demand_output,I->demand(0),m);
 
   sprintf(facility_output,"Tmp_facility_%d.dat",rand());
-  gnuplot_write_points_file(facility_output,I->W,m);
+  gnuplot_write_points_file(facility_output,I->site(0),m);
 
   sprintf(centers_output,"Tmp_centers_%d.dat",rand());
   centersfile.open(centers_output,fstream::out);
   for (int j = 0;j < n;j++) {
-    if (Sol[j] > 0)
-      centersfile << (I->W)[j].x << " "
-		  << (I->W)[j].y << " "
+    if (Sol[j] > 0) {
+      centersfile << I->site(j)->x << " "
+		  << I->site(j)->y << " "
 		  << Sol[j] << endl;
+    }
   }
 
   FILE *gnuPipe = popen("gnuplot","w");
@@ -52,28 +54,31 @@ void plot_instance_solution(SQM_instance *I,int *Sol,string output) {
   remove(centers_output);
 }
 
-void plot_solution_allocation(SQM_instance* I,int p,response_unit *X,double **f,string output,string suffix) {
+void plot_solution_allocation(SQM_solution *X,double **f,string output,string suffix) {
+  SQM_instance *I = X->get_instance();
+  int n = I->potential_sites(),m = I->demand_points();
+  int p = X->get_servers ();
   int j,r;
   int edge_key;
   fstream centersfile,edges_file;
   char demand_output[32],facility_output[32],centers_output[32],edges_output[32];
   
   sprintf(demand_output,"Tmp_demand_%d.dat",rand());
-  gnuplot_write_points_file(demand_output,I->V,I->M);
+  gnuplot_write_points_file(demand_output,I->demand(0),m);
 
   sprintf(facility_output,"Tmp_facility_%d.dat",rand());
-  gnuplot_write_points_file(facility_output,I->W,I->N);
+  gnuplot_write_points_file(facility_output,I->site(0),n);
 
   sprintf(centers_output,"Tmp_centers_%d.dat",rand());
   centersfile.open(centers_output,fstream::out);
-  for (int j = 0;j < I->N;j++) {
+  for (int j = 0;j < n;j++) {
     r = 0;
     for (int i = 0;i < p;i++) 
-      if (j == X[i].location)
+      if (X->get_server_location(i) == j)
 	r++;
     if (r > 0)
-      centersfile << (I->W)[j].x << " "
-		  << (I->W)[j].y << " "
+      centersfile << I->site(j)->x << " "
+		  << I->site(j)->y << " "
 		  << r << endl;
   }
   centersfile.close();
@@ -82,11 +87,11 @@ void plot_solution_allocation(SQM_instance* I,int p,response_unit *X,double **f,
   for (int i = 0;i < p;i++) {
     sprintf(edges_output,"Tmp_edges_center_%d_%d.dat",i+1,edge_key);
     edges_file.open(edges_output,fstream::out);
-    j = X[i].location;
-    for (int k = 0;k < I->M;k++) {
+    j = X->get_server_location(i);
+    for (int k = 0;k < m;k++) {
       if (100 * f[i][j] > 1)
-	edges_file << (I->W)[j].x << " " << (I->W)[j].y << " "
-		   << (I->V)[k].x << " " << (I->V)[k].y << " "
+	edges_file << I->site(j)->x << " " << I->site(j)->y << " "
+		   << I->demand(k)->x << " " << I->demand(k)->y << " "
 		   << ceil(sqrt(f[i][k]) * 100) << endl;
     }
     edges_file.close();
