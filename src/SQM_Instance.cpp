@@ -152,3 +152,10 @@ double SQM_instance::distance (int i,int j) {
 float unif(float a,float b) {
   return a + (b - a) * rand() / RAND_MAX;
 }
+
+double SQM_instance::total_demand () {
+  double demand;
+  demand = 0.0;
+  for (int k = 0;k < m;k++) demand += (I->V)[k].demand;
+  return demand;
+}

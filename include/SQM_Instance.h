@@ -36,6 +36,7 @@ public:
   point* demand(int j);
   /*int site_order(int i,int j);*/
   double distance(int i /* site */,int j /* demand */);
+  double total_demand ();
 };
 
 #endif
