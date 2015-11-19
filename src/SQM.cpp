@@ -139,6 +139,8 @@ void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu) {
 }
 
 void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
+  int m = I->demand_points();
+  int n = I->potential_sites();
   clock_t beginning,now;
   double beta = 1.5;
   double T_r1,T_r2,t_r,BRT;
@@ -148,27 +150,24 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   SQM_solution *X,*G;
   char GRASP_output[32];
 
-  double demand;
-  demand = 0.0;
-  for (int k = 0;k < I->M;k++) demand += (I->V)[k].demand;
-  cout << "      Total Demand : " << demand << endl;
+  cout << "      Total Demand : " << I->total_demand() << endl;
 
   /* Evaluate GRASP */
   BEST_GRASP = NULL;
   results.open("GRASP_results.csv",std::ofstream::app);
   dat.open("GRASP.dat",std::ofstream::out);
   for (double alpha = 0.0;alpha < 0.99;alpha += 0.05) {
-    results << I->M << "," << I->N << "," << p << ","
+    results << m << "," << n << "," << p << ","
 	    << Mu_NT << "," << lambda << "," << alpha << "," << N << ",";
     beginning = clock();
     Best_GRASP = NULL;
     best_rt = 100.0,worst_rt = 0.0,avg_rt = 0.0;
     for (int r = 0;r < N;r++) {
       G = GRASP(I,p,lambda,Mu_NT,v,alpha); /* */
-      T_r1 = MST_response_time(I,p,G,lambda,Mu_NT);
-      /* Log */ Log_Start_SQMH(I->M,I->N,p,Mu_NT,lambda); /* */
-      SQM_heuristic(I,p,lambda,Mu_NT,G);
-      T_r2 = MST_response_time(I,p,G,lambda,Mu_NT);
+      T_r1 = MST_response_time(G,lambda,Mu_NT);
+      /* Log */ Log_Start_SQMH(m,n,p,Mu_NT,lambda); /* */
+      SQM_heuristic(G,lambda,Mu_NT);
+      T_r2 = MST_response_time(G,lambda,Mu_NT);
 
       avg_rt += T_r2;
       if (best_rt > T_r2) best_rt = T_r2;
@@ -200,11 +199,11 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   
   /* Plot Best GRASP Solution */
   logDebug(cout << "Plot Best GRASP Solution" << endl);
-  for (int i = 0;i < p;i++) cout << BEST_GRASP[i].location << " ";
+  for (int i = 0;i < p;i++) cout << BEST_GRASP->get_server_location(i) << " ";
   cout << endl;
-  int *Sol = new int [I->N];
-  for (int k = 0;k < I->N;k++) Sol[k] = 0;
-  for (int i = 0;i < p;i++) Sol[BEST_GRASP[i].location]++;
+  int *Sol = new int [n];
+  for (int k = 0;k < n;k++) Sol[k] = 0;
+  for (int i = 0;i < p;i++) Sol[BEST_GRASP->get_server_location(i)]++;
   logDebug(cout << "Calling plot method" << endl);
   plot_instance_solution(I,Sol,"SQM_Best_GRASP_Sol");
 
@@ -213,22 +212,19 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   Best_RS = NULL;
   best_rt = 100.0,worst_rt = 0.0,avg_rt = 0.0;
   for (int r = 0;r < N;r++) {
-    X = guess_a_location_03(p,I->N,I->W);
-    for (int i = 0;i < p;i++) {
-      X[i].v = v;
-      X[i].beta = beta;
-    }
-    T_r1 = MST_response_time(I,p,X,lambda,Mu_NT);
+    X = new SQM_solution(I,p);
+    X->set_speed(v,beta);
+    T_r1 = MST_response_time(X,lambda,Mu_NT);
     if (LogDebug) {
-      for (int k = 0;k < I->N;k++)
+      for (int k = 0;k < n;k++)
 	for (int i = 0;i < p;i++)
-	  if (X[i].location == k) cout << k << " ";
+	  if (X->get_server_location(i) == k) cout << k << " ";
       cout << endl;
       cout << "Response time : " << T_r1 << endl;
     }
-    /* Log */ Log_Start_SQMH(I->M,I->N,p,Mu_NT,lambda); /* */
-    SQM_heuristic(I,p,lambda,Mu_NT,X);
-    T_r2 = MST_response_time(I,p,X,lambda,Mu_NT);
+    /* Log */ Log_Start_SQMH(m,n,p,Mu_NT,lambda); /* */
+    SQM_heuristic(X,lambda,Mu_NT);
+    T_r2 = MST_response_time(X,lambda,Mu_NT);
 
     avg_rt  += T_r2;
     if (best_rt > T_r2) best_rt = T_r2;
@@ -244,7 +240,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   now = clock();
   dat << "1.0 " << best_rt << " " << avg_rt/N << " " << worst_rt << endl;
   dat.close();
-  results << I->M << "," << I->N << "," << p << ","
+  results << m << "," << n << "," << p << ","
 	  << Mu_NT << "," << lambda << ",1.0," << N << ","
 	  << best_rt << "," << avg_rt / N << "," << worst_rt << "," 
 	  << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
@@ -256,19 +252,19 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
        << "           time (sec) : " << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
 
   /* Plot Random Best Solution */
-  for (int k = 0;k < I->N;k++) Sol[k] = 0;
-  for (int i = 0;i < p;i++) Sol[Best_RS[i].location]++;
+  for (int k = 0;k < n;k++) Sol[k] = 0;
+  for (int i = 0;i < p;i++) Sol[Best_RS->get_server_location(i)]++;
   plot_instance_solution(I,Sol,"SQM_Best_Random_Sol");
 
-  T_r1 = MST_response_time(I,p,Best_RS,lambda,Mu_NT);
-  T_r2 = MST_response_time(I,p,BEST_GRASP,lambda,Mu_NT);
+  T_r1 = MST_response_time(Best_RS,lambda,Mu_NT);
+  T_r2 = MST_response_time(BEST_GRASP,lambda,Mu_NT);
   Best = (T_r1 < T_r2 ? Best_RS : BEST_GRASP);
 
   /* Plot Best Solution */
-  for (int k = 0;k < I->N;k++) Sol[k] = 0;
-  for (int i = 0;i < p;i++) Sol[Best[i].location]++;
+  for (int k = 0;k < n;k++) Sol[k] = 0;
+  for (int i = 0;i < p;i++) Sol[Best->get_server_location(i)]++;
   plot_instance_solution(I,Sol,"SQM_Best_Sol");
-  sprintf(GRASP_output,"./plots/GRASP_%d_%d_%d_%d",I->M,I->N,p,rand());
+  sprintf(GRASP_output,"./plots/GRASP_%d_%d_%d_%d",m,n,p,rand());
   gnuplot_GRASP(GRASP_output);
   delete [] Sol;
   delete [] Best_RS;
