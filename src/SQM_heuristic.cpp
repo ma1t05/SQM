@@ -36,7 +36,7 @@ void SQM_heuristic
   /* */
   mpf_t *Lambda;
  
-  logDebug(cout << "Start Berman Heuristic" << "\r");
+  logDebug(cout << "Start Berman Heuristic" << endl);
   /* Populate matrix of distances */
   F = new double*[p];
   for (int i = 0;i < p;i++)
@@ -52,6 +52,7 @@ void SQM_heuristic
   for (int i = 0;i < p;i++)
     f[i] = new mpf_t[m];
 
+  logDebug(cout << "Init mpf_t numbers" << endl);
   mpf_init(tmp);
   mpf_init(delta_mu);
   for (int i = 0;i < p;i++)
@@ -82,7 +83,7 @@ void SQM_heuristic
 
   do {
 
-    /* Update matrix of pfreferred servers */
+    logDebug(cout << "/* Update matrix of pfreferred servers */" << endl);
     Sol->update_preferred_servers();
 
     /* Print Current solution */
@@ -94,7 +95,7 @@ void SQM_heuristic
 
     mpf_set(T_r,t_r);
 
-    /* SERVICE MEAN TIME CALIBRATION */
+    logDebug(cout << "/* SERVICE MEAN TIME CALIBRATION */" << endl);
 
     /* **Step 0**
        Initialize Mean Service Time */
@@ -105,7 +106,7 @@ void SQM_heuristic
       for (int i = 0;i < p;i++)
 	mpf_set(MST[i],mst[i]);
 
-      /* Update matrix of response times */
+      logDebug(cout << "/* Update matrix of response times */" << endl);
       for (int i = 0;i < p;i++) {
 	for (int k = 0;k < m;k++) {
 	  mpf_set_d(Tao[i][k],Sol->get_server_rate(i) * I->distance(Sol->get_server_location(i),k));
@@ -114,15 +115,13 @@ void SQM_heuristic
 	}
       }
 
-      /* **Step 1**:
-	Run the Hypercube Model */
+      logDebug(cout << "/* **Step 1**:	Run the Hypercube Model */" << endl);
       jarvis_hypercube_approximation(m,p,Lambda,Tao,Sol->preferred_servers(),f);
 
-      /* Step 2 
-	 Update mean service time */
+      logDebug(cout << "/* Step 2 	 Update mean service time */" << endl);
       MST_update_mst(mst,Sol,Mu_NT,f);
       
-      /* Step 3 */
+      logDebug(cout << "/* Step 3 */" << endl);
       mpf_set_ui(delta_mu,0);
       for (int i = 0;i < p;i++) {
 	mpf_sub(tmp,mst[i],MST[i]);
@@ -134,11 +133,11 @@ void SQM_heuristic
       logDebug(cout << "Delta in mst: " << mpf_get_d(delta_mu) << endl);
     } while (mpf_cmp_d(delta_mu,epsilon) > 0);
     
-    /* *Expected Response Time* */
+    logDebug(cout << "/* *Expected Response Time* */" << endl);
     mpf_set_ui(t_r,0);
-    /* + expected travel time component */
+    logDebug(cout << "/* + expected travel time component */" << endl);
     MST_expected_travel_time(t_r,Sol,f);
-    /* + mean queue delay component */
+    logDebug(cout << "/* + mean queue delay component */" << endl);
     MST_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
 
     mpf_sub(tmp,T_r,t_r);
@@ -152,7 +151,7 @@ void SQM_heuristic
     /* mpf_abs(tmp,tmp); */ // This is a bad 
 
     if (mpf_cmp_d(tmp,epsilon) > 0) {
-      /* Plot Iteration */
+      logDebug(cout << "/* Plot Iteration */" << endl);
       if (LogDebug) {
 	for (int i = 0;i < p;i++)
 	  for (int k = 0;k < m;k++)
@@ -162,6 +161,7 @@ void SQM_heuristic
 	Key << it;
 	plot_solution_allocation(Sol,F,string(plot_output),Key.str());
       }
+      logDebug(cout << "Improve locations" << endl);
       SQM_improve_locations(Sol,f);
     }
     else if (mpf_cmp_ui(tmp,0) < 0)
@@ -234,6 +234,16 @@ void SQM_improve_locations(SQM_solution *X,mpf_t **f) {
   mpf_init(h);
   mpf_init(tmp);
   h_i = new double[m];
+  Dist = new double*[m];
+  for (int k = 0;k < m;k++)
+    Dist[k] = new double [n];
+ 
+  for (int i = 0;i < p;i++) {
+    int location = X->get_server_location(i);
+    for (int k = 0;k < m;k++) 
+      Dist[k][i] = I->distance(location,k);
+  }
+
   for (int i = 0;i < p;i++) {
     // Block A
     logDebug(cout << "\t\tBlock A " << i << endl);
@@ -249,12 +259,15 @@ void SQM_improve_locations(SQM_solution *X,mpf_t **f) {
 
     // Block B
     /* Solve te 1-median location model with h_i^j */
+    /* Here is the error Dist = NULL */
     new_location = Solve_1_median_location_model(m,n,Dist,h_i);
     X->set_server_location(i,new_location);
   }
   mpf_clear(tmp);
   mpf_clear(h);
   delete [] h_i;
+  for (int k = 0;k < m;k++) delete [] Dist[k];  
+  delete [] Dist;
 
   /* Print current solution to LogFile */
   for (int i = 0;i < p;i++) {

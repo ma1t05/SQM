@@ -2,6 +2,7 @@
 #include "SQM.h"
 #include "MST.h"
 #include "mp_jarvis.h"
+#include "log.h"
 
 double MST_response_time
 (SQM_solution *X,
@@ -234,7 +235,7 @@ void MST_mean_queue_delay(mpf_t t_r,int m,int p,mpf_t *Lambda,mpf_t *MST,mpf_t *
   mpf_t P_B0,rho_i;
   mpf_t tmp;
 
-  /* cout << "mean queue delay START" << endl; */
+  logDebug(cout << "mean queue delay START" << endl);
 
   mpf_init(tmp);
   mpf_init_set_ui(mu,0);
@@ -267,5 +268,5 @@ void MST_mean_queue_delay(mpf_t t_r,int m,int p,mpf_t *Lambda,mpf_t *MST,mpf_t *
   mpf_clear(P_B0);
   mpf_clear(mu);
   mpf_clear(tmp);
-  /* cout << "mean queue delay FINISH" << endl; */
+  logDebug(cout << "mean queue delay FINISH" << endl);
 }

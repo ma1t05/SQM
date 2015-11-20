@@ -149,6 +149,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   SQM_solution *Best,*Best_RS,*Best_GRASP,*BEST_GRASP;
   SQM_solution *X,*G;
   char GRASP_output[32];
+  int *Sol = new int [n];
 
   cout << "      Total Demand : " << I->total_demand() << endl;
 
@@ -168,17 +169,16 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
       /* Log */ Log_Start_SQMH(m,n,p,Mu_NT,lambda); /* */
       SQM_heuristic(G,lambda,Mu_NT);
       T_r2 = MST_response_time(G,lambda,Mu_NT);
-
       avg_rt += T_r2;
       if (best_rt > T_r2) best_rt = T_r2;
       if (worst_rt < T_r2) worst_rt = T_r2;
 
       if (Best_GRASP == NULL || T_r2 < t_r) {
-	if (Best_GRASP != NULL) delete [] Best_GRASP;
+	if (Best_GRASP != NULL) delete Best_GRASP;
 	Best_GRASP = G;
 	t_r = T_r2;
       }
-      else delete [] G;
+      else delete G;
     }
     now = clock();
     dat << alpha << " " << best_rt << " " << avg_rt/N << " " << worst_rt << endl;
@@ -190,18 +190,17 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
 	 << "  Worst Response time : " << worst_rt << endl
 	 << "           time (sec) : " << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
     if (BEST_GRASP == NULL || t_r < BRT) {
-      if (BEST_GRASP != NULL) delete [] BEST_GRASP;
+      if (BEST_GRASP != NULL) delete BEST_GRASP;
       BEST_GRASP = Best_GRASP;
       BRT = t_r;
     }
-    else delete [] Best_GRASP;
+    else delete Best_GRASP;
   }
   
   /* Plot Best GRASP Solution */
   logDebug(cout << "Plot Best GRASP Solution" << endl);
   for (int i = 0;i < p;i++) cout << BEST_GRASP->get_server_location(i) << " ";
   cout << endl;
-  int *Sol = new int [n];
   for (int k = 0;k < n;k++) Sol[k] = 0;
   for (int i = 0;i < p;i++) Sol[BEST_GRASP->get_server_location(i)]++;
   logDebug(cout << "Calling plot method" << endl);
@@ -215,7 +214,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
     X = new SQM_solution(I,p);
     X->set_speed(v,beta);
     T_r1 = MST_response_time(X,lambda,Mu_NT);
-    if (LogDebug) {
+    if (LogInfo) {
       for (int k = 0;k < n;k++)
 	for (int i = 0;i < p;i++)
 	  if (X->get_server_location(i) == k) cout << k << " ";
@@ -231,11 +230,11 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
     if (worst_rt < T_r2) worst_rt = T_r2;
 
     if (Best_RS == NULL || T_r2 < t_r) {
-      if (Best_RS != NULL) delete [] Best_RS;
+      if (Best_RS != NULL) delete Best_RS;
       Best_RS = X;
       t_r = T_r2;
     }
-    else delete [] X;
+    else delete X;
   }
   now = clock();
   dat << "1.0 " << best_rt << " " << avg_rt/N << " " << worst_rt << endl;
@@ -266,7 +265,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   plot_instance_solution(I,Sol,"SQM_Best_Sol");
   sprintf(GRASP_output,"./plots/GRASP_%d_%d_%d_%d",m,n,p,rand());
   gnuplot_GRASP(GRASP_output);
-  delete [] Sol;
-  delete [] Best_RS;
-  delete [] BEST_GRASP;
+  delete Sol;
+  delete Best_RS;
+  delete BEST_GRASP;
 }
