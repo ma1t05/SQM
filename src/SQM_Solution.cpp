@@ -1,4 +1,4 @@
-x
+
 #include "SQM_Solution.h"
 
 server::server () {
@@ -43,11 +43,13 @@ void server::set_location (int i) {
 
 SQM_solution::SQM_solution (SQM_instance *I) {
   Inst = I;
-  Servers = NULL;
   p = 0;
+  Servers = NULL;
+  a = NULL;
 }
 
 SQM_solution::SQM_solution (SQM_instance *I,int servers) {
+  int n = I->potential_sites();
   bool *option;
   int location,locations = 0;
   int l = 0;
@@ -73,34 +75,36 @@ SQM_solution::SQM_solution (SQM_instance *I,int servers) {
 }
 
 SQM_solution::~SQM_solution () {
-  delete [] X;
-  for (int k = 0;k < m;k++) delete [] a[k];
-  delete [] a;
-}
-
-void SQM_solution::set_server_location(int i,int j) {
-  if ((i > 0) && (i < p)) {
-    Server[i].past_location = Server[i].location;
-    Server[i].location = j;
+  if (Servers != NULL)
+    delete [] Servers;
+  if (a != NULL) {
+    int M = Inst->demand_points();
+    for (int k = 0;k < M;k++) delete [] a[k];
+    delete [] a;
   }
 }
 
-int SQM_solution::get_server_location(int i) {
+void SQM_solution::set_server_location (int i,int j) {
   if ((i > 0) && (i < p))
-    return Server[i].location;
+    Servers[i].set_location(j);
+}
+
+int SQM_solution::get_server_location (int i) {
+  if ((i > 0) && (i < p))
+    return Servers[i].get_location();
   return -1;
 }
 
-void SQM_solution:set_speed(double v,double beta) {
+void SQM_solution::set_speed (double v,double beta) {
   for (int i = 0;i < p;i++)
     Servers[i].set_speed(v,beta);
 }
 
-double SM_solution::get_server_speed(int i) {
+double SQM_solution::get_server_speed (int i) {
   return Servers[i].get_speed();
 }
 
-double SM_solution::get_server_rate(int i) {
+double SQM_solution::get_server_rate (int i) {
   return Servers[i].get_rate();
 }
 
@@ -110,4 +114,26 @@ SQM_instance* SQM_solution::get_instance () {
 
 int SQM_solution::get_servers () {
   return p;
+}
+
+void SQM_solution::update_preferred_servers () {
+  if (p == 0) return;
+  double *d;
+  int m = Inst->demand_points();
+  if (a == NULL) {
+    a = new int*[m];
+    for (int k = 0;k < m;k++)
+      a[k] = new int[p];
+  }
+  d = new double[p];
+  for (int k = 0;k < m;k++) {
+    for (int i = 0;i < p;i++)
+      d[i] = Inst->distance(Servers[i].get_location(),k);
+    sort_dist(p,d,a[k]);
+  }
+  delete [] d;
+}
+
+int** SQM_solution::preferred_servers () {
+  return a;
 }

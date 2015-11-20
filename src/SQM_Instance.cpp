@@ -1,7 +1,7 @@
  
 #include <fstream>
 #include <cstdlib>
-#include "instance-creator.h"
+#include "SQM_Instance.h"
 
 float unif(float,float);
 
@@ -30,12 +30,12 @@ SQM_instance::SQM_instance (string nodes) {
   double S;
   fstream demandfile;
 
-  demandfile.open(Demand_nodes.c_str(),fstream::in);
+  demandfile.open(nodes.c_str(),fstream::in);
   demandfile >> M >> S;
 
   /* Read demand points */
-  V = new point[m];
-  for (int i = 0;i < m;i++)
+  V = new point[M];
+  for (int i = 0;i < M;i++)
     demandfile >> V[i].x >> V[i].y >> V[i].demand;
   demandfile.close();
 
@@ -156,6 +156,6 @@ float unif(float a,float b) {
 double SQM_instance::total_demand () {
   double demand;
   demand = 0.0;
-  for (int k = 0;k < m;k++) demand += (I->V)[k].demand;
+  for (int k = 0;k < M;k++) demand += V[k].demand;
   return demand;
 }

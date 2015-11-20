@@ -36,11 +36,13 @@ class SQM_solution {
   void set_speed (double v,double beta);
   void set_server_location (int i,int j);
   void add_server ();
-  SQM_instance* get_instance ();
+  void update_preferred_servers ();
   int get_servers ();
   int get_server_location (int i);
   double get_server_speed (int i);
   double get_server_rate (int i);
+  SQM_instance* get_instance ();
+  int ** preferred_servers ();
 };
 
 #endif

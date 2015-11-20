@@ -1,6 +1,6 @@
 
 #include "SQM_heuristic.h"
-#include "instance-creator.h"
+#include "SQM_Solution.h"
 #include "mp_jarvis.h"
 #include "MST.h"
 #include "gnuplot.h"

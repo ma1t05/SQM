@@ -1,4 +1,5 @@
 
+#include "SQM.h"
 #include "MST.h"
 #include "mp_jarvis.h"
 
@@ -12,7 +13,6 @@ double MST_response_time
   double T_r;
   mpf_t *MST,*mst; // mean service time
   mpf_t t_r; // expected response time
-  double **Dist; // Matrix of distances
   mpf_t **f,**Tao;
   double *d;
   double mu;
@@ -23,24 +23,13 @@ double MST_response_time
   int **a;
   SQM_instance *I = X->get_instance();
   int m = I->demand_points(); /* Number of demand points */
-  int n = I->potential_sites(); /* Number of potencial sites to locate a server*/
+  int n = I->potential_sites(); /* Number of potencial sites to locate a server*/ 
+  int p = X->get_servers ();
   point *V = I->demand(0),*W = I->site(0);
  
-  /* Populate matrix of distances */
-  Dist = SQM_dist_matrix(I);
-
   /* Populate matrix of pfreferred servers */
-  a = new int*[m]; 
-  for (int k = 0;k < m;k++)
-    a[k] = new int[p];
-
-  d = new double[p];
-  for (int k = 0;k < m;k++) {
-    for (int i = 0;i < p;i++)
-      d[i] = Dist[k][X[i].location];
-    sort_dist(p,d,a[k]);
-  }
-  delete [] d;
+  X->update_preferred_servers();
+  a = X->preferred_servers();
 
   /* Allocate memory for arrays and matrix */
   MST = new mpf_t[p];
@@ -71,10 +60,9 @@ double MST_response_time
       mpf_init(f[i][k]);
   }
 
-  double demand = 0.0;
-  for (int k = 0;k < m;k++) demand += I->V[k].demand;
+  double demand = I->total_demand();
   for (int k = 0;k < m;k++)
-    mpf_set_d(Lambda[k],I->V[k].demand * lambda / demand);
+    mpf_set_d(Lambda[k],I->demand(k)->demand * lambda / demand);
 
   /* SERVICE MEAN TIME CALIBRATION */
   /* Debug cout << "Solution:"; 
@@ -94,7 +82,7 @@ double MST_response_time
     /* Update matrix of response times */
     for (int i = 0;i < p;i++) {
       for (int k = 0;k < m;k++) {
-	mpf_set_d(Tao[i][k],(X[i].beta / X[i].v) * Dist[k][X[i].location]);
+	mpf_set_d(Tao[i][k],X->get_server_rate(i) * I->distance(X->get_server_location(i),k));
 	mpf_div_ui(Tao[i][k],Tao[i][k],MINS_PER_BLOCK*BLOCKS_PER_HORIZON);
 	mpf_add(Tao[i][k],Tao[i][k],MST[i]);
       }
@@ -128,7 +116,7 @@ double MST_response_time
 
     /* Step 2
        Update mean service time */
-    MST_update_mst(mst,m,p,Mu_NT,Dist,X,f);
+    MST_update_mst(mst,X,Mu_NT,f);
 
     /* Step 3 */
     mpf_set_ui(delta_mu,0);
@@ -145,7 +133,7 @@ double MST_response_time
   /* *Expected Response Time* */
   mpf_init(t_r);
   /* + expected travel time component */
-  MST_expected_travel_time(t_r,m,p,Dist,X,f);
+  MST_expected_travel_time(t_r,X,f);
   /* + mean queue delay component */
   MST_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
   /* Conver mpf to double */
@@ -179,15 +167,14 @@ double MST_response_time
   delete [] Lambda;
   delete [] mst;
   delete [] MST;
-  for (int k = 0;k < n;k++) delete a[k];
-  delete [] a;
-  for (int j=0;j < m;j++) delete [] Dist[j];
-  delete [] Dist;
   //cout << "Finish Response time" << endl << endl;
   return T_r;
 }
 
-void MST_update_mst(mpf_t *mst,int m,int p,double Mu_NT,double **Dist,response_unit* X,mpf_t **f) {
+void MST_update_mst(mpf_t *mst,SQM_solution *X,double Mu_NT,mpf_t **f) {
+  SQM_instance *I = X->get_instance ();
+  int m = I->demand_points();
+  int p = X->get_servers();
   mpf_t h,tmp;
   mpf_init(h);
   mpf_init(tmp);
@@ -196,7 +183,7 @@ void MST_update_mst(mpf_t *mst,int m,int p,double Mu_NT,double **Dist,response_u
 
     mpf_set_ui(mst[i],0);
     for (int k = 0;k < m;k++) {
-      mpf_set_d(tmp,1 / Mu_NT + (X[i].beta / X[i].v) * Dist[k][X[i].location]/(MINS_PER_BLOCK*BLOCKS_PER_HORIZON));
+      mpf_set_d(tmp,1 / Mu_NT + X->get_server_rate(i) * I->distance(X->get_server_location(i),k)/(MINS_PER_BLOCK*BLOCKS_PER_HORIZON));
       mpf_mul(tmp,tmp,f[i][k]);
       mpf_add(mst[i],mst[i],tmp);
     }
@@ -222,17 +209,17 @@ void MST_update_mst(mpf_t *mst,int m,int p,double Mu_NT,double **Dist,response_u
 /* *Expected Travel Time Component* */
 void MST_expected_travel_time
 (mpf_t t_r, /* stores the response time */
- int m, /* number of clients */
- int p, /* number of servers */
- double **Dist,
- response_unit* X,
+ SQM_solution* X,
  mpf_t **f
  ){
+  SQM_instance *I = X->get_instance();
+  int m = I->demand_points();
+  int p = X->get_servers();
   mpf_t tmp;
   mpf_init(tmp);
   for (int i = 0;i < p;i++) {
     for (int k = 0;k < m;k++) {
-      mpf_set_d(tmp,Dist[k][X[i].location]/X[i].v);
+      mpf_set_d(tmp,I->distance(X->get_server_location(i),k)/X->get_server_speed(i));
       mpf_div_ui(tmp,tmp,MINS_PER_BLOCK*BLOCKS_PER_HORIZON);
       mpf_mul(tmp,tmp,f[i][k]);
       mpf_add(t_r,t_r,tmp);
