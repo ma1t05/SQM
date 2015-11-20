@@ -126,6 +126,16 @@ int SQM_solution::get_servers () {
   return p;
 }
 
+void SQM_solution::add_server () {
+  server *aux;
+  int k = p;
+  aux = new server [++p];
+  for (int i = 0;i < k;i++)
+    aux[i].set_location(Servers[i].get_location());
+  delete [] Servers;
+  Servers = aux;
+}
+
 void SQM_solution::update_preferred_servers () {
   if (p == 0) return;
   double *d;

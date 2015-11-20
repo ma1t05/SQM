@@ -41,6 +41,7 @@ SQM_solution* GRASP
     {
       logDebug(cout << "[" << r << "]/* Evaluate posible locations*/" << "\t");
       Sol->add_server();
+      Sol->set_speed(v,beta);
       for (int i = 0;i < n;i++) {
 	Sol->set_server_location(r,i);
 	/* T_r[i] = MST_response_time(I,r+1,X,lambda,Mu_NT);*/
