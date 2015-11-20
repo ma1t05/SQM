@@ -39,6 +39,7 @@ class SQM_solution {
   void update_preferred_servers ();
   int get_servers ();
   int get_server_location (int i);
+  int get_server_past_location (int i);
   double get_server_speed (int i);
   double get_server_rate (int i);
   SQM_instance* get_instance ();

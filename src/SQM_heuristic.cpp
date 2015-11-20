@@ -1,6 +1,6 @@
 
+#include "SQM.h"
 #include "SQM_heuristic.h"
-#include "SQM_Solution.h"
 #include "mp_jarvis.h"
 #include "MST.h"
 #include "gnuplot.h"
@@ -9,8 +9,8 @@
 
 /* Populate matrix of distances */
 int Solve_1_median_location_model(int,int,double**,double*);
-void SQM_improve_locations(response_unit*,int,int,int,double**,num**);
-void SQM_return_previous_solution(response_unit*,int);
+void SQM_improve_locations(SQM_solution*,mpf_t**);
+void SQM_return_previous_solution(SQM_solution*);
 
 void SQM_heuristic
 (SQM_solution *Sol,
@@ -18,43 +18,39 @@ void SQM_heuristic
  double Mu_NT // mean of non-travel time component of the service time
  ) {
   
-  SQM_instance *I = Sol->I;
-  int p = Sol->p; // Number of adjusters
+  SQM_instance *I = Sol->get_instance();
+  int p = Sol->get_servers(); // Number of adjusters
   /* Variable definitions */
-  int m = I->M; /* Number of demand points */
-  int n = I->N; /* Number of potencial sites to locate a server*/
+  int m = I->demand_points(); /* Number of demand points */
+  int n = I->potential_sites(); /* Number of potencial sites to locate a server*/
   int it = 0; /* iterator counter */
-  num tmp;
-  num delta_mu;
-  num T_r,t_r; // expected response time
+  mpf_t tmp;
+  mpf_t delta_mu;
+  mpf_t T_r,t_r; // expected response time
   double *d;
-  num *MST,*mst; // mean service time
-  double **Dist; // Matrix of distances
+  mpf_t *MST,*mst; // mean service time
   double **F; // Version double of matrix f
   int key = rand(); // key number to naming plots
   char plot_output[32];
-  num **f,**Tao;
+  mpf_t **f,**Tao;
   /* */
-  num *Lambda;
-  int **a;
-  point *V = I->V,*W = I->W;
+  mpf_t *Lambda;
  
   logDebug(cout << "Start Berman Heuristic" << "\r");
   /* Populate matrix of distances */
-  Dist = SQM_dist_matrix(I);
   F = new double*[p];
   for (int i = 0;i < p;i++)
     F[i] = new double[m];
-  MST = new num[p];
-  mst = new num[p];
+  MST = new mpf_t[p];
+  mst = new mpf_t[p];
   d = new double[p];
-  Lambda = new num[m];
-  Tao = new num*[p];
+  Lambda = new mpf_t[m];
+  Tao = new mpf_t*[p];
   for (int i = 0;i < p;i++)
-    Tao[i] = new num[m];
-  f = new num*[p];
+    Tao[i] = new mpf_t[m];
+  f = new mpf_t*[p];
   for (int i = 0;i < p;i++)
-    f[i] = new num[m];
+    f[i] = new mpf_t[m];
 
   mpf_init(tmp);
   mpf_init(delta_mu);
@@ -75,14 +71,9 @@ void SQM_heuristic
   mpf_init(T_r);
   mpf_init_set_d(t_r,99999.9);
 
-  a = new int*[m];
+  double demand = I->total_demand();
   for (int k = 0;k < m;k++)
-    a[k] = new int[p];
-
-  double demand = 0.0;
-  for (int k = 0;k < m;k++) demand += I->V[k].demand;
-  for (int k = 0;k < m;k++)
-    mpf_set_d(Lambda[k],I->V[k].demand * lambda / demand);
+    mpf_set_d(Lambda[k],I->demand(k)->demand * lambda / demand);
 
 
   for (int i = 0;i < p;i++)
@@ -92,11 +83,7 @@ void SQM_heuristic
   do {
 
     /* Update matrix of pfreferred servers */
-    for (int k = 0;k < m;k++) {
-      for (int i = 0;i < p;i++)
-	d[i] = Dist[k][Sol->get_server_location(i)];
-      sort_dist(p,d,a[k]);
-    }
+    Sol->update_preferred_servers();
 
     /* Print Current solution */
     /*
@@ -121,7 +108,7 @@ void SQM_heuristic
       /* Update matrix of response times */
       for (int i = 0;i < p;i++) {
 	for (int k = 0;k < m;k++) {
-	  mpf_set_d(Tao[i][k],(X[i].beta / X[i].v) * Dist[k][Sol->get_server_location(i)]);
+	  mpf_set_d(Tao[i][k],Sol->get_server_rate(i) * I->distance(Sol->get_server_location(i),k));
 	  mpf_div_ui(Tao[i][k],Tao[i][k],MINS_PER_BLOCK*BLOCKS_PER_HORIZON);
 	  mpf_add(Tao[i][k],Tao[i][k],MST[i]);
 	}
@@ -129,11 +116,11 @@ void SQM_heuristic
 
       /* **Step 1**:
 	Run the Hypercube Model */
-      jarvis_hypercube_approximation(m,p,Lambda,Tao,a,f);
+      jarvis_hypercube_approximation(m,p,Lambda,Tao,Sol->preferred_servers(),f);
 
       /* Step 2 
 	 Update mean service time */
-      MST_update_mst(mst,m,p,Mu_NT,Dist,X,f);
+      MST_update_mst(mst,Sol,Mu_NT,f);
       
       /* Step 3 */
       mpf_set_ui(delta_mu,0);
@@ -150,7 +137,7 @@ void SQM_heuristic
     /* *Expected Response Time* */
     mpf_set_ui(t_r,0);
     /* + expected travel time component */
-    MST_expected_travel_time(t_r,m,p,Dist,X,f);
+    MST_expected_travel_time(t_r,Sol,f);
     /* + mean queue delay component */
     MST_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
 
@@ -159,7 +146,7 @@ void SQM_heuristic
     /* Print current solution */
     if (LogDebug) {
       for (int i = 0;i < p;i++)
-	cout << Sol->get_server_location(i) << (X[i].past_location != Sol->get_server_location(i) ? "*\t" : "\t");
+	cout << Sol->get_server_location(i) << (Sol->get_server_past_location(i) != Sol->get_server_location(i) ? "*\t" : "\t");
       cout << endl;
     }
     /* mpf_abs(tmp,tmp); */ // This is a bad 
@@ -173,19 +160,16 @@ void SQM_heuristic
 	stringstream Key;
 	sprintf(plot_output,"./plots/SQM_Heuristic_%010d",key);
 	Key << it;
-	plot_solution_allocation(I,p,X,F,string(plot_output),Key.str());
+	plot_solution_allocation(Sol,F,string(plot_output),Key.str());
       }
-      SQM_improve_locations(X,m,n,p,Dist,f);
+      SQM_improve_locations(Sol,f);
     }
     else if (mpf_cmp_ui(tmp,0) < 0)
-      SQM_return_previous_solution(X,p);
+      SQM_return_previous_solution(Sol);
 
   } while (mpf_cmp_d(tmp,epsilon) > 0);
   //cout << endl;
   
-  for (int k = 0;k < n;k++) delete a[k];
-  delete [] a;
-
   mpf_clear(T_r);
   mpf_clear(t_r);
   for (int i = 0;i < p;i++) {
@@ -208,8 +192,6 @@ void SQM_heuristic
   delete [] d;
   delete [] mst;
   delete [] MST;
-  for (int j=0;j < m;j++) delete [] Dist[j];
-  delete [] Dist;
   for (int i = 0;i < p;i++) delete [] F[i];
   delete [] F;
   for (int i = 0;i < p;i++) delete [] f[i];
@@ -222,51 +204,6 @@ void SQM_heuristic
     cout << endl;
     cout << "Finish Berman Heuristic" << endl;
   }
-}
-
-response_unit* guess_a_location_01(int p,int n, point *W){
-  response_unit *X;
-  X = new response_unit[p];
-  for (int i = 0;i < p;i++) {
-    Sol->get_server_location(i) = i;
-    X[i].past_location = i;
-  }
-  return X;
-}
-
-response_unit* guess_a_location_02(int p,int n, point *W){
-  response_unit *X;
-  X = new response_unit[p];
-  for (int i = 0;i < p;i++) {
-    Sol->get_server_location(i) = unif(n);
-  }
-  return X;
-}
-
-response_unit* guess_a_location_03(int p,int n, point *W){
-  response_unit *X;
-  bool *option;
-  int location,locations = 0;
-  X = new response_unit[p];
-  option = new bool[n];
-  for (int i = 0;i < n;i++) option[i] = false;
-  do {
-    location = unif(n);
-    logDebug(cout << "location = " << location << endl);
-    if (option[location] == false) {
-      locations++;
-      option[location] = true;
-    }
-  } while (locations < p);
-  for (int i = 0;i < n;i++) {
-    if (option[i]) {
-      X[--p].location = i;
-      X[p].past_location = i;
-    }
-  }
-  logDebug(cout << endl);
-  delete [] option;
-  return X;
 }
 
 int Solve_1_median_location_model(int m,int n,double **Dist,double *h) {
@@ -284,10 +221,16 @@ int Solve_1_median_location_model(int m,int n,double **Dist,double *h) {
   return best_location;
 }
 
-void SQM_improve_locations(response_unit *X,int m,int n,int p,double **Dist,num **f) {
+void SQM_improve_locations(SQM_solution *X,mpf_t **f) {
+  SQM_instance *I = X->get_instance();
+  int m = I->demand_points();
+  int n = I->potential_sites();
+  int p = X->get_servers();
+  double **Dist;
+
   int new_location;
   double *h_i;
-  num h,tmp;
+  mpf_t h,tmp;
   mpf_init(h);
   mpf_init(tmp);
   h_i = new double[m];
@@ -307,8 +250,7 @@ void SQM_improve_locations(response_unit *X,int m,int n,int p,double **Dist,num 
     // Block B
     /* Solve te 1-median location model with h_i^j */
     new_location = Solve_1_median_location_model(m,n,Dist,h_i);
-    X[i].past_location = Sol->get_server_location(i);
-    Sol->get_server_location(i) = new_location;
+    X->set_server_location(i,new_location);
   }
   mpf_clear(tmp);
   mpf_clear(h);
@@ -316,8 +258,8 @@ void SQM_improve_locations(response_unit *X,int m,int n,int p,double **Dist,num 
 
   /* Print current solution to LogFile */
   for (int i = 0;i < p;i++) {
-    LogFile << Sol->get_server_location(i);
-    if (X[i].past_location != Sol->get_server_location(i)) {
+    LogFile << X->get_server_location(i);
+    if (X->get_server_past_location(i) != X->get_server_location(i)) {
       LogFile << "*";
     }
     LogFile << "\t";
@@ -325,7 +267,8 @@ void SQM_improve_locations(response_unit *X,int m,int n,int p,double **Dist,num 
   LogFile << endl;
 }
 
-void SQM_return_previous_solution(response_unit *X,int p) {
+void SQM_return_previous_solution(SQM_solution *X) {
+  int p = X->get_servers();
   for (int i = 0;i < p;i++)
-    Sol->get_server_location(i) = X[i].past_location;
+    X->set_server_location(i,X->get_server_past_location(i));
 }
