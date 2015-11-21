@@ -17,6 +17,7 @@ class server {
   ~server();
   void set_speed (double v,double beta);
   void set_location (int i);
+  void test_location (int i);
   int get_location ();
   int get_past_location ();
   double get_speed ();
@@ -35,6 +36,7 @@ class SQM_solution {
   ~SQM_solution ();
   void set_speed (double v,double beta);
   void set_server_location (int i,int j);
+  void test_server_location (int i,int j);
   void add_server ();
   void update_preferred_servers ();
   int get_servers ();

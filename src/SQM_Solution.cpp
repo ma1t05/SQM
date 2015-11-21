@@ -45,6 +45,10 @@ void server::set_location (int i) {
   location = i;
 }
 
+void server::test_location (int i) {
+  location = i;
+}
+
 SQM_solution::SQM_solution (SQM_instance *I) {
   Inst = I;
   p = 0;
@@ -61,6 +65,7 @@ SQM_solution::SQM_solution (SQM_instance *I,int servers) {
   Inst = I;
   p = servers;
   Servers = new server[p];
+  a = NULL;
 
   option = new bool[n];
   for (int i = 0;i < n;i++) option[i] = false;
@@ -89,18 +94,23 @@ SQM_solution::~SQM_solution () {
 }
 
 void SQM_solution::set_server_location (int i,int j) {
-  if ((i > 0) && (i < p))
+  if ((i >= 0) && (i < p))
     Servers[i].set_location(j);
 }
 
+void SQM_solution::test_server_location (int i,int j) {
+  if ((i >= 0) && (i < p))
+    Servers[i].test_location(j);
+}
+
 int SQM_solution::get_server_location (int i) {
-  if ((i > 0) && (i < p))
+  if ((i >= 0) && (i < p))
     return Servers[i].get_location();
   return -1;
 }
 
 int SQM_solution::get_server_past_location (int i) {
-  if ((i > 0) && (i < p))
+  if ((i >= 0) && (i < p))
     return Servers[i].get_past_location();
   return -1;
 }
@@ -132,7 +142,7 @@ void SQM_solution::add_server () {
   aux = new server [++p];
   for (int i = 0;i < k;i++)
     aux[i].set_location(Servers[i].get_location());
-  delete [] Servers;
+  if (Servers != NULL) delete [] Servers;
   Servers = aux;
 }
 

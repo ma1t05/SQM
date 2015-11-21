@@ -214,7 +214,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
     X = new SQM_solution(I,p);
     X->set_speed(v,beta);
     T_r1 = MST_response_time(X,lambda,Mu_NT);
-    if (LogInfo) {
+    if (LogDebug) {
       for (int k = 0;k < n;k++)
 	for (int i = 0;i < p;i++)
 	  if (X->get_server_location(i) == k) cout << k << " ";

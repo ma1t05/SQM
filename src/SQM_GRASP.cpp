@@ -30,9 +30,10 @@ SQM_solution* GRASP
   logDebug(cout << endl << endl << "*****Start GRASP*****" << endl << endl);
   if (p < 1) return NULL;
   Sol = new SQM_solution(I);
-  Sol->set_speed(v,beta);
 
   logDebug(cout << "/* Locate the first server */" << endl);
+  Sol->add_server();
+  Sol->set_speed(v,beta);
   Sol->set_server_location(0,unif(n));
   r = 1;
   T_r = new double [n];
@@ -43,7 +44,7 @@ SQM_solution* GRASP
       Sol->add_server();
       Sol->set_speed(v,beta);
       for (int i = 0;i < n;i++) {
-	Sol->set_server_location(r,i);
+	Sol->test_server_location(r,i);
 	/* T_r[i] = MST_response_time(I,r+1,X,lambda,Mu_NT);*/
 	/* T_r[i] = GRASP_func_NN(I,r+1,X,lambda,Mu_NT);*/
 	T_r[i] = GRASP_func_kNN(Sol,lambda,Mu_NT,min(r+1,3));

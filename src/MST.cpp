@@ -28,11 +28,11 @@ double MST_response_time
   int p = X->get_servers ();
   point *V = I->demand(0),*W = I->site(0);
  
-  /* Populate matrix of pfreferred servers */
+  logDebug(cout << "/* Populate matrix of pfreferred servers */" << endl);
   X->update_preferred_servers();
   a = X->preferred_servers();
 
-  /* Allocate memory for arrays and matrix */
+  logDebug(cout << "/* Allocate memory for arrays and matrix */" << endl);
   MST = new mpf_t[p];
   mst = new mpf_t[p];
   Lambda = new mpf_t[m];
@@ -43,7 +43,7 @@ double MST_response_time
   for (int i = 0;i < p;i++)
     f[i] = new mpf_t[m];
 
-  /* Allocate memory for mpf numbers */
+  logDebug(cout << "/* Allocate memory for mpf numbers */" << endl);
   mpf_init(tmp);
   mpf_init(delta_mu);
   for (int i = 0;i < p;i++)
@@ -65,7 +65,7 @@ double MST_response_time
   for (int k = 0;k < m;k++)
     mpf_set_d(Lambda[k],I->demand(k)->demand * lambda / demand);
 
-  /* SERVICE MEAN TIME CALIBRATION */
+  logDebug(cout << "/* SERVICE MEAN TIME CALIBRATION */" << endl);
   /* Debug cout << "Solution:"; 
   for (int i = 0;i < p;i++)
     cout << " " << X[i].location;
@@ -80,7 +80,7 @@ double MST_response_time
     for (int i = 0;i < p;i++)
       mpf_set(MST[i],mst[i]);
 
-    /* Update matrix of response times */
+    logDebug(cout << "/* Update matrix of response times */" << endl);
     for (int i = 0;i < p;i++) {
       for (int k = 0;k < m;k++) {
 	mpf_set_d(Tao[i][k],X->get_server_rate(i) * I->distance(X->get_server_location(i),k));
@@ -89,8 +89,7 @@ double MST_response_time
       }
     }
       
-    /* **Step 1**
-	 Run the Hypercube Model */
+    logDebug(cout << "/* **Step 1**	 Run the Hypercube Model */" << endl);
     jarvis_hypercube_approximation(m,p,Lambda,Tao,a,f);
 
     /* 
@@ -115,11 +114,10 @@ double MST_response_time
     mpf_clear(sum);
     */
 
-    /* Step 2
-       Update mean service time */
+    logDebug(cout << "/* Step 2       Update mean service time */" << endl);
     MST_update_mst(mst,X,Mu_NT,f);
 
-    /* Step 3 */
+    logDebug(cout << "/* Step 3 */" << endl);
     mpf_set_ui(delta_mu,0);
     for (int i = 0;i < p;i++) {
       mpf_sub(tmp,mst[i],MST[i]);
@@ -128,7 +126,7 @@ double MST_response_time
 	mpf_set(delta_mu,tmp);
     }
     
-    /* Debug cout << "Delta in mst: " << mpf_get_d(delta_mu) << endl; /* */
+    logDebug(cout << "Delta in mst: " << mpf_get_d(delta_mu) << endl);
   } while (mpf_cmp_d(delta_mu,epsilon) > 0);
 
   /* *Expected Response Time* */
