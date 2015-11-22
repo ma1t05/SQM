@@ -114,21 +114,6 @@ void SQM_instance::set_distances () {
   }
 }
 
-// void SQM_instance::set_preferred_servers () {
-//   double *d;
-//   a = new int*[M];
-//   for (int j = 0;j < M;j++)
-//     a[j] = new int[N];
-//   d = new double [N];
-//   for (int j = 0;j < M;j++) {
-//     for (int i = 0;i < N;i++)
-//       d[i] = Dist[j][i];
-//     sort_dist(p,d,a[j]);
-    
-//   }
-//   delete [] d;
-// }
-
 int SQM_instance::demand_points () {
   return M;
 }
