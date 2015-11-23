@@ -5,7 +5,7 @@
 #include <list>
 #include "SQM_Solution.h"
 
-list<SQM_solution*>* Path_Relinking (SQM_Solution*,SQM_Solution*);
+list<SQM_solution*>* Path_Relinking (SQM_solution*,SQM_solution*);
 
 #endif
 
