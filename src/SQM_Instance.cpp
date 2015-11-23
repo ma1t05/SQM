@@ -2,8 +2,7 @@
 #include <fstream>
 #include <cstdlib>
 #include "SQM_Instance.h"
-
-float unif(float,float);
+#include "random.h"
 
 SQM_instance::SQM_instance (int m/* demand points */,int n/* sites */) {
   /* Create random demand points */
@@ -132,10 +131,6 @@ point* SQM_instance::demand (int j) {
 
 double SQM_instance::distance (int i,int j) {
   return Dist[j][i];
-}
-
-float unif(float a,float b) {
-  return a + (b - a) * rand() / RAND_MAX;
 }
 
 double SQM_instance::total_demand () {

@@ -28,6 +28,10 @@ double server::get_speed () {
   return v;
 }
 
+double server::get_beta () {
+  return beta;
+}
+
 double server::get_rate () {
   return beta / v;
 }
@@ -83,6 +87,20 @@ SQM_solution::SQM_solution (SQM_instance *I,int servers) {
   delete [] option;
 }
 
+SQM_solution::SQM_solution (SQM_solution *Sol) {
+
+  Inst = Sol->get_instance();
+  p = Sol->get_servers();
+  Servers = new server[p];
+  a = NULL;
+
+  for (int i = 0;i < p;i++) {
+    Servers[i].set_location(Sol->get_server_past_location(i));
+    Servers[i].set_location(Sol->get_server_location(i));
+    Servers[i].set_speed(Sol->get_server_speed(i),Sol->get_server_beta(i));
+  }
+}
+
 SQM_solution::~SQM_solution () {
   if (Servers != NULL)
     delete [] Servers;
@@ -91,6 +109,12 @@ SQM_solution::~SQM_solution () {
     for (int k = 0;k < M;k++) delete [] a[k];
     delete [] a;
   }
+}
+
+SQM_solution* SQM_solution::clone() {
+  SQM_solution *clon;
+  clon = new SQM_solution(this);
+  return clon;
 }
 
 void SQM_solution::set_server_location (int i,int j) {
@@ -122,6 +146,10 @@ void SQM_solution::set_speed (double v,double beta) {
 
 double SQM_solution::get_server_speed (int i) {
   return Servers[i].get_speed();
+}
+
+double SQM_solution::get_server_beta (int i) {
+  return Servers[i].get_beta();
 }
 
 double SQM_solution::get_server_rate (int i) {

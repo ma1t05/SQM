@@ -21,6 +21,7 @@ class server {
   int get_location ();
   int get_past_location ();
   double get_speed ();
+  double get_beta ();
   double get_rate ();
 };
 
@@ -33,7 +34,9 @@ class SQM_solution {
  public:
   SQM_solution (SQM_instance *I);
   SQM_solution (SQM_instance *I,int p);
+  SQM_solution (SQM_solution *Sol);
   ~SQM_solution ();
+  SQM_solution* clone();
   void set_speed (double v,double beta);
   void set_server_location (int i,int j);
   void test_server_location (int i,int j);
@@ -43,6 +46,7 @@ class SQM_solution {
   int get_server_location (int i);
   int get_server_past_location (int i);
   double get_server_speed (int i);
+  double get_server_beta (int i);
   double get_server_rate (int i);
   SQM_instance* get_instance ();
   int ** preferred_servers ();
