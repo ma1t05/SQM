@@ -273,9 +273,10 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
 }
 
 SQM_solution* SQM_run_path_relinking(list<SQM_solution*>* Solutions,double lambda,double Mu_NT) {
-  SQM_solution *X,*Y;
-  for (list<SQM_solution*>::iterator it = Solutions->begin();it != Solutions->end();it++) {
-
-
+  list<SQM_solution*>* Path_relinkinh_sols;
+  for (list<SQM_solution*>::iterator X = Solutions->begin();X != Solutions->end();X++) {
+    for (list<SQM_solution*>::iterator Y = X;Y != Solutions->end();Y++) {
+      
+    }
   }
 }
