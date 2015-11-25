@@ -14,6 +14,8 @@
 #include "SQM_GRASP.h"
 #include "MST.h"
 #include "log.h"
+#include <list>
+using namespace std;
 
 std::ofstream LogFile;
 std::ofstream results;
@@ -268,4 +270,12 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   delete Sol;
   delete Best_RS;
   delete BEST_GRASP;
+}
+
+SQM_solution* SQM_run_path_relinking(list<SQM_solution*>* Solutions,double lambda,double Mu_NT) {
+  SQM_solution *X,*Y;
+  for (list<SQM_solution*>::iterator it = Solutions->begin();it != Solutions->end();it++) {
+
+
+  }
 }
