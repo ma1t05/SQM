@@ -411,13 +411,13 @@ template <typename FlowType, typename CostType>
 {
   N = 0;
   arraySize = 16;
-  array = (Item*) malloc(arraySize*sizeof(Item));
+  array = new Item [arraySize];
 }
 
 template <typename FlowType, typename CostType> 
   inline MinCost<FlowType, CostType>::PriorityQueue::~PriorityQueue()
 {
-  free(array);
+  delete [] array;
 }
 
 template <typename FlowType, typename CostType> 
