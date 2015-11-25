@@ -14,6 +14,7 @@
 #include "SQM_GRASP.h"
 #include "MST.h"
 #include "log.h"
+#include "PathRelinking.h"
 #include <list>
 using namespace std;
 
@@ -26,6 +27,7 @@ SQM_instance* Load_instance(string filename,int M_clients,int N_sites);
 void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu);
 void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f);
 void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
+SQM_solution* SQM_run_path_relinking(list<SQM_solution*>* Solutions,double lambda,double Mu_NT);
 
 int main(int argc,char *argv[]) {
   string filename;
@@ -147,11 +149,13 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   double beta = 1.5;
   double T_r1,T_r2,t_r,BRT;
   double gap = 0.0,best_rt = 100.0,worst_rt = 0.0,avg_rt = 0.0;
-  int N = 100;
+  int N = 10;
   SQM_solution *Best,*Best_RS,*Best_GRASP,*BEST_GRASP;
   SQM_solution *X,*G;
   char GRASP_output[32];
   int *Sol = new int [n];
+  list<SQM_solution*> *best_solutions;
+  best_solutions = new list<SQM_solution*>;
 
   cout << "      Total Demand : " << I->total_demand() << endl;
 
@@ -192,11 +196,12 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
 	 << "  Worst Response time : " << worst_rt << endl
 	 << "           time (sec) : " << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
     if (BEST_GRASP == NULL || t_r < BRT) {
-      if (BEST_GRASP != NULL) delete BEST_GRASP;
+      /*if (BEST_GRASP != NULL) delete BEST_GRASP;*/
       BEST_GRASP = Best_GRASP;
       BRT = t_r;
     }
-    else delete Best_GRASP;
+    /*else delete Best_GRASP;*/
+    best_solutions->push_back(Best_GRASP);
   }
   
   /* Plot Best GRASP Solution */
@@ -238,6 +243,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
     }
     else delete X;
   }
+  best_solutions->push_back(Best_RS);
   now = clock();
   dat << "1.0 " << best_rt << " " << avg_rt/N << " " << worst_rt << endl;
   dat.close();
@@ -267,16 +273,69 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   plot_instance_solution(I,Sol,"SQM_Best_Sol");
   sprintf(GRASP_output,"./plots/GRASP_%d_%d_%d_%d",m,n,p,rand());
   gnuplot_GRASP(GRASP_output);
-  delete Sol;
-  delete Best_RS;
-  delete BEST_GRASP;
+
+  Best = SQM_run_path_relinking(best_solutions,lambda,Mu_NT);
+  /* Plot Best Solution */
+  for (int k = 0;k < n;k++) Sol[k] = 0;
+  for (int i = 0;i < p;i++) Sol[Best->get_server_location(i)]++;
+  plot_instance_solution(I,Sol,"SQM_Best_Sol_PR");
+  sprintf(GRASP_output,"./plots/GRASP_%d_%d_%d_%d",m,n,p,rand());
+  gnuplot_GRASP(GRASP_output);
+
+  delete [] Sol;
+  delete Best;
 }
 
 SQM_solution* SQM_run_path_relinking(list<SQM_solution*>* Solutions,double lambda,double Mu_NT) {
-  list<SQM_solution*>* Path_relinkinh_sols;
-  for (list<SQM_solution*>::iterator X = Solutions->begin();X != Solutions->end();X++) {
-    for (list<SQM_solution*>::iterator Y = X;Y != Solutions->end();Y++) {
-      
+  int total_improved_solutions = 0;
+  double Tr_x,Tr_y,Best_TR,TR;
+  list<SQM_solution*>::iterator X,Y,Z;
+  list<SQM_solution*> *path_relinking_sols,*improved_solutions;
+  SQM_solution *Best;
+
+  improved_solutions = new list<SQM_solution*>;
+  for (X = Solutions->begin();X != Solutions->end();X++) {
+    Tr_x = MST_response_time(*X,lambda,Mu_NT);
+    for (Y = X;Y != Solutions->end();Y++) {
+      if (Y != X) {
+	Tr_y = MST_response_time(*Y,lambda,Mu_NT);
+	Best_TR = (Tr_x > Tr_y ? Tr_y : Tr_x);
+	path_relinking_sols = Path_Relinking(*X,*Y);
+	if (path_relinking_sols != NULL) {
+	  for (Z = path_relinking_sols->begin();Y != path_relinking_sols->end();Z++) {
+	    TR = MST_response_time(*Z,lambda,Mu_NT);
+	    if (TR < Best_TR) {
+	      total_improved_solutions++;
+	      improved_solutions->push_back(*Z);
+	    }
+	    else delete *Z;
+	  }
+	  delete path_relinking_sols;
+	}
+      }
     }
   }
+
+  cout << "\t***\tPath Relinking\t***" << endl;
+  cout << "Total improved solutions : " << total_improved_solutions << endl;
+
+  /* Clears Solutions */
+  for (X = Solutions->begin();X != Solutions->end();X++) 
+    if (Best == NULL || Best_TR < (TR = MST_response_time(*X,lambda,Mu_NT))) {
+      if (Best != NULL) delete Best;
+      Best = *X;
+      Best_TR = TR;
+    }
+    else delete *X;
+  delete Solutions;
+  for (X = improved_solutions->begin();X != improved_solutions->end();X++) 
+    if (Best == NULL || Best_TR < (TR = MST_response_time(*X,lambda,Mu_NT))) {
+      if (Best != NULL) delete Best;
+      Best = *X;
+      Best_TR = TR;
+    }
+    delete *X;
+  delete improved_solutions;
+
+  return Best;
 }

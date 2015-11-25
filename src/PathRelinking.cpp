@@ -50,6 +50,9 @@ list<SQM_solution*>* Path_Relinking (SQM_solution *X,SQM_solution *Y) {
 }
 
 bool compatible_solutions(SQM_solution *X,SQM_solution *Y) {
+  if (X->get_servers() != Y->get_servers())
+    cout << "/* No Same number of servers */" << endl;
+
   return ((X->get_instance() != Y->get_instance()) || /* Same instance */
 	  (X->get_servers() != Y->get_servers()) /* Same number of servers */
 	  );
