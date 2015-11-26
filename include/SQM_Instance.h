@@ -21,14 +21,14 @@ private:
   int **a; /* List of lists of preferred sites */
   double **Dist; /* Matrix of distances beetwen demand and sites */
   void set_distances();
+  double lambda; /* total arrival rate */
+  double speed; /* travel speed */
+  double mu; /* Rate of service per server */
 public:
   SQM_instance(int m,int n);
   SQM_instance(string);
   SQM_instance(string,string);
   ~SQM_instance();
-  double lambda; /* total arrival rate */
-  double speed; /* travel speed */
-  double mu; /* Rate of service per server */
   void write(string,string);
   int demand_points();
   int potential_sites();

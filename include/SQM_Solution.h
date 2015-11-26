@@ -31,6 +31,7 @@ class SQM_solution {
   int p;
   server *Servers;
   int **a;
+  double response_time;
  public:
   SQM_solution (SQM_instance *I);
   SQM_solution (SQM_instance *I,int p);
@@ -45,12 +46,16 @@ class SQM_solution {
   int get_servers ();
   int get_server_location (int i);
   int get_server_past_location (int i);
+  SQM_instance* get_instance ();
   double get_server_speed (int i);
   double get_server_beta (int i);
   double get_server_rate (int i);
-  SQM_instance* get_instance ();
+  double get_response_time ();
   int ** preferred_servers ();
+  bool operator<(SQM_solution&);
+  bool operator>(SQM_solution&);
 };
+
 
 #endif
 

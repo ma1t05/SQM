@@ -192,10 +192,24 @@ void SQM_solution::update_preferred_servers () {
   delete [] d;
 }
 
+double SQM_solution::get_response_time() {
+  if (response_time == -1) {
+    /* pending: call mst */
+  }
+  return response_time;
+}
+
 int** SQM_solution::preferred_servers () {
   return a;
 }
 
+bool SQM_solution::operator>(SQM_solution& X) {
+  return get_response_time() > X.get_response_time();
+}
+
+bool SQM_solution::operator<(SQM_solution& X) {
+  return X > (*this);
+}
 // response_unit* guess_a_location_01(int p,int n, point *W){
 //   response_unit *X;
 //   X = new response_unit[p];
