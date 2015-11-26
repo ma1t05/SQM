@@ -27,7 +27,7 @@ list<SQM_solution*>* Path_Relinking (SQM_solution *X,SQM_solution *Y) {
   /* Determine order of change */
   logDebug(cout << "Determine order of change" << endl);
   int p = X->get_servers();
-  int *order = PR_determine_order_(X,pm,Y);
+  int *order = PR_determine_order_nf(X,pm,Y);
 
   logDebug(cout << "Create solutions" << endl);
   list<SQM_solution*> *Solutions;
