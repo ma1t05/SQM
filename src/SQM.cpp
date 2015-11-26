@@ -61,7 +61,8 @@ int main(int argc,char *argv[]) {
 
   I = Load_instance(filename,M_clients,N_sites);
   // Call_SQM_model(I,p,l,f,mu,v,filename);
-  Call_SQM_GRASP(I,p,f,mu,v);
+  // Call_SQM_GRASP(I,p,f,mu,v);
+  Call_SQM_random(I,p,f,mu,v);
   /* Log Log_Start_SQMH(M_clients,N_sites,p,mu,f); /* */
   // Call_SQM_heuristic(I,p,f,mu);
   delete I;
@@ -153,9 +154,9 @@ void Call_SQM_GRASP(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
   char GRASP_output[32];
 
   /* Evaluate GRASP */
-  results.open("GRASP_results.csv",std::ofstream::app);
   for (double alpha = 0.0;alpha < 0.99;alpha += 0.05) {
-    dat.open("GRASP.dat",std::ofstream::out);
+    sprintf(GRASP_output,"./plots/GRASP_iterations_%d_%d_%d_%0.2f.dat",m,n,p,alpha);
+    dat.open(GRASP_output,std::ofstream::out);
     best_rt = 100.0,worst_rt = 0.0,avg_rt = 0.0;
     for (int r = 0;r < N;r++) {
       G = GRASP(I,p,lambda,Mu_NT,v,alpha); /* */
@@ -168,8 +169,6 @@ void Call_SQM_GRASP(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
       delete G;
     }
     dat.close();
-    sprintf(GRASP_output,"./plots/GRASP_%d_%d_%d_%0.2f_%d",m,n,p,alpha,rand());
-    gnuplot_GRASP(GRASP_output);
   }
 
   
@@ -182,7 +181,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   double beta = 1.5;
   double T_r1,T_r2,t_r,BRT;
   double gap = 0.0,best_rt = 100.0,worst_rt = 0.0,avg_rt = 0.0;
-  int N = 10;
+  int N = 100;
   SQM_solution *Best,*Best_RS,*Best_GRASP,*BEST_GRASP;
   SQM_solution *X,*G;
   char GRASP_output[32];
