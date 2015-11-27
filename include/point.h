@@ -11,20 +11,9 @@ struct point {
   /* array that indicates whether the point j is in range S */
 };
 
-struct instance {
-  int n;
-  /* numbers of nodes */
-  float S;
-  /* maximum distance */
-  struct point *points;
-  /* set of nodes */
-};
-
 typedef struct point point;
-typedef struct instance instance;
 
 float dist(point*,point*);
-instance* read_points(const char*);
 int unif(int);
 int comp(const void*,const void*);
 void sort_dist (int,double*,int*);
