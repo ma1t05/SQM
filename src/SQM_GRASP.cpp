@@ -30,6 +30,7 @@ SQM_solution* GRASP
   logDebug(cout << endl << endl << "*****Start GRASP*****" << endl << endl);
   if (p < 1) return NULL;
   Sol = new SQM_solution(I);
+  Sol->set_params(lambda,Mu_NT);
 
   logDebug(cout << "/* Locate the first server */" << endl);
   Sol->add_server();
