@@ -32,12 +32,15 @@ class SQM_solution {
   server *Servers;
   int **a;
   double response_time;
+  double lambda;
+  double Mu_NT;
  public:
   SQM_solution (SQM_instance *I);
   SQM_solution (SQM_instance *I,int p);
   SQM_solution (SQM_solution *Sol);
   ~SQM_solution ();
   SQM_solution* clone();
+  void set_params(double lambda,double Mu_NT);
   void set_speed (double v,double beta);
   void set_server_location (int i,int j);
   void test_server_location (int i,int j);
