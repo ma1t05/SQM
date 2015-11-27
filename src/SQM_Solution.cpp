@@ -1,5 +1,6 @@
 
 #include "SQM_Solution.h"
+#include "MST.h"
 
 server::server () {
   location = 0;
@@ -58,6 +59,7 @@ SQM_solution::SQM_solution (SQM_instance *I) {
   p = 0;
   Servers = NULL;
   a = NULL;
+  response_time = -1;
 }
 
 SQM_solution::SQM_solution (SQM_instance *I,int servers) {
@@ -70,6 +72,7 @@ SQM_solution::SQM_solution (SQM_instance *I,int servers) {
   p = servers;
   Servers = new server[p];
   a = NULL;
+  response_time = -1;
 
   option = new bool[n];
   for (int i = 0;i < n;i++) option[i] = false;
@@ -93,6 +96,7 @@ SQM_solution::SQM_solution (SQM_solution *Sol) {
   p = Sol->get_servers();
   Servers = new server[p];
   a = NULL;
+  response_time = -1;
 
   for (int i = 0;i < p;i++) {
     Servers[i].set_location(Sol->get_server_past_location(i));
@@ -114,17 +118,27 @@ SQM_solution::~SQM_solution () {
 SQM_solution* SQM_solution::clone() {
   SQM_solution *clon;
   clon = new SQM_solution(this);
+  clon->set_params(lambda,Mu_NT);
   return clon;
 }
 
+void SQM_solution::set_params(double Lambda,double Mu) {
+  lambda = Lambda;
+  Mu_NT = Mu;
+}
+
 void SQM_solution::set_server_location (int i,int j) {
-  if ((i >= 0) && (i < p))
+  if ((i >= 0) && (i < p)) {
     Servers[i].set_location(j);
+    response_time = -1;
+  }
 }
 
 void SQM_solution::test_server_location (int i,int j) {
-  if ((i >= 0) && (i < p))
+  if ((i >= 0) && (i < p)) {
     Servers[i].test_location(j);
+    response_time = -1;
+  }
 }
 
 int SQM_solution::get_server_location (int i) {
@@ -193,9 +207,8 @@ void SQM_solution::update_preferred_servers () {
 }
 
 double SQM_solution::get_response_time() {
-  if (response_time == -1) {
-    /* pending: call mst */
-  }
+  if (response_time == -1)
+    response_time = MST_response_time(this,lambda,Mu_NT);
   return response_time;
 }
 

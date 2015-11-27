@@ -37,3 +37,13 @@ int* Perfect_Matching(int p,double **C) {
 
   return pm;
 }
+
+double Perfect_Matching_cost(int p,double **C) {
+  double cost = 0.0;
+  int *pm = Perfect_Matching(p,C);
+
+  for (int i = 0;i < p;i++)
+    cost += C[i][pm[i]];
+
+  return cost;
+}

@@ -39,6 +39,9 @@ public:
   double total_demand ();
 };
 
+SQM_instance* SQM_load_instance(string,int,int);
+bool file_exists (const string&);
+
 #endif
 
 /* eof */
