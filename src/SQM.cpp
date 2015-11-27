@@ -20,8 +20,6 @@ std::ofstream LogFile;
 std::ofstream results;
 std::ofstream dat;
 
-bool file_exists (const string&);
-SQM_instance* Load_instance(string filename,int M_clients,int N_sites);
 void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu);
 void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f);
 void Call_SQM_GRASP(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
@@ -59,7 +57,7 @@ int main(int argc,char *argv[]) {
   LogName << "SQM_" << M_clients << "_" << N_sites << "_" << p << ".log";
   LogFile.open(LogName.str().c_str(),std::ofstream::app);
 
-  I = Load_instance(filename,M_clients,N_sites);
+  I = SQM_load_instance(filename,M_clients,N_sites);
   // Call_SQM_model(I,p,l,f,mu,v,filename);
   // Call_SQM_GRASP(I,p,f,mu,v);
   Call_SQM_random(I,p,f,mu,v);
@@ -75,50 +73,6 @@ void read_config_file() {
   
   config.open("SQM.conf",fstream::in);
   
-}
-
-bool file_exists (const string& name) {
-  if (FILE *file = fopen(name.c_str(), "r")) {
-    fclose(file);
-    return true;
-  }
-  return false;
-}
-
-SQM_instance* Load_instance(string filename,int M_clients,int N_sites) {
-  SQM_instance *I;
-  string Path = "../git/PMCLAP/Instancias/Q_MCLP_";
-  /*I = read_points(demad_file.c_str());*/
-  if ((M_clients == N_sites) && (filename == "Q_MCLP")) {
-    switch (M_clients) {
-    case 30 : 
-      filename = Path+"30.txt";
-      break;
-    case 324 : 
-      filename = Path+"324.txt";
-      break;
-    case 818 : 
-      filename = Path+"818.txt";
-      break;
-    case 3283 : 
-      filename = Path+"3283.txt";
-      break;
-    defautl:
-      return NULL;
-    }
-    cout << "Read file: " << filename << endl;
-    I = new SQM_instance(filename);
-    return I;
-  }
-  if (file_exists(filename+"_demand.ins") &&
-      file_exists(filename+"_facility.ins")) {
-    I = new SQM_instance(filename+"_demand.ins",filename+"_facility.ins");
-  }
-  else {
-    I = new SQM_instance(M_clients,N_sites);
-    I->write(filename+"_demand.ins",filename+"_facility.ins");
-  }
-  return I;
 }
 
 void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f) {
