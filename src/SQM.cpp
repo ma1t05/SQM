@@ -22,6 +22,7 @@ void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f);
 void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu);
 void Call_SQM_GRASP(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
+void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 
 int main(int argc,char *argv[]) {
   string filename;
@@ -57,7 +58,8 @@ int main(int argc,char *argv[]) {
   I = SQM_load_instance(filename,M_clients,N_sites);
   // Call_SQM_model(I,p,l,f,mu,v,filename);
   // Call_SQM_GRASP(I,p,f,mu,v);
-  Call_SQM_random(I,p,f,mu,v);
+  // Call_SQM_random(I,p,f,mu,v);
+  Call_SQM_Path_Relinking(I,p,f,mu,v);
   /* Log Log_Start_SQMH(M_clients,N_sites,p,mu,f); /* */
   // Call_SQM_heuristic(I,p,f,mu);
   delete I;
@@ -85,11 +87,13 @@ void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f) {
 
 void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu) {
   SQM_solution *Sol;
-  cout << "Calling SQM_Heuristic" << endl;
+  logInfo(cout << "Calling SQM_Heuristic" << endl);
   Sol = new SQM_solution (I,p);
   SQM_heuristic(Sol,f,mu);
-  for (int i = 0;i < p;i++) LogFile << Sol->get_server_location(i) << " ";
-  LogFile << endl;
+  if (LogInfo) {
+    for (int i = 0;i < p;i++) LogFile << Sol->get_server_location(i) << " ";
+    LogFile << endl;
+  }
   delete Sol;
 }
 
@@ -110,7 +114,7 @@ void Call_SQM_GRASP(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
     dat.open(GRASP_output,std::ofstream::out);
     best_rt = 100.0,worst_rt = 0.0,avg_rt = 0.0;
     for (int r = 0;r < N;r++) {
-      G = GRASP(I,p,lambda,Mu_NT,v,alpha); /* */
+      G = GRASP(I,p,lambda,Mu_NT,v,beta,alpha); /* */
       T_r1 = G->get_response_time();
       avg_rt += T_r1;
       if (best_rt > T_r1) best_rt = T_r1;
@@ -153,7 +157,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
     Best_GRASP = NULL;
     best_rt = 100.0,worst_rt = 0.0,avg_rt = 0.0;
     for (int r = 0;r < N;r++) {
-      G = GRASP(I,p,lambda,Mu_NT,v,alpha); /* */
+      G = GRASP(I,p,lambda,Mu_NT,v,beta,alpha); /* */
       T_r1 = G->get_response_time();
       /* Log */ Log_Start_SQMH(m,n,p,Mu_NT,lambda); /* */
       SQM_heuristic(G,lambda,Mu_NT);
@@ -268,4 +272,49 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
 
   delete [] Sol;
   delete Best;
+}
+
+void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
+  int N = 500,num_elite = 10;
+  double beta = 1.5;
+  double rt,worst_rt;
+  SQM_solution *X;
+  list<SQM_solution*> *elite_solutions;
+
+  worst_rt = 100.0;
+  elite_solutions = new list<SQM_solution*>;
+  for (int r = 0;r < N;r++) {
+    X = new SQM_solution(I,p);
+    X->set_speed(v,beta);
+    X->set_params(lambda,Mu_NT);
+    SQM_heuristic(X,lambda,Mu_NT);
+    rt = X->get_response_time();
+    if (rt < worst_rt) {
+      if (elite_solutions->size() == num_elite) {
+	delete elite_solutions->back();
+	elite_solutions->pop_back();
+	worst_rt = elite_solutions->back()->get_response_time();
+      }
+
+      if (elite_solutions->size() > 0) {
+	for (list<SQM_solution*>::iterator it = elite_solutions->begin();it != elite_solutions->end();it++)
+	  if (**it > *X) {
+	    elite_solutions->insert(it,X);
+	    break;
+	  }
+      }
+      else {
+	elite_solutions->push_back(X);
+	worst_rt = X->get_response_time();
+      }
+    }
+    else delete X;
+  }
+
+  cout << "The best " << num_elite << " response times:" << endl;
+  for (list<SQM_solution*>::iterator it = elite_solutions->begin();it != elite_solutions->end();it++)
+    cout << (*it)->get_response_time() << endl;
+  X = SQM_path_relinking(elite_solutions);
+  cout << "The best response time is " << X->get_response_time() << endl;
+  delete X;
 }
