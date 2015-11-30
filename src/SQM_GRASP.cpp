@@ -16,6 +16,7 @@ SQM_solution* GRASP
  double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
  double Mu_NT, // mean of non-travel time component of the service time
  double v, // Speed
+ double beta, // Beta
  double alpha // Random factor {1: random, 0: greedy}
  ) {
   int n = I->potential_sites(),m = I->demand_points();
@@ -23,7 +24,6 @@ SQM_solution* GRASP
   int element;
   int *rcl;
   double *T_r;
-  double beta = 1.5;
   server *serv;
   SQM_solution *Sol;
 
