@@ -203,13 +203,11 @@ SQM_solution* SQM_path_relinking(list<SQM_solution*>* Solutions) {
 SQM_solution* SQM_best_solution(list<SQM_solution*>* Solutions) {
   SQM_solution *Best;
   list<SQM_solution*>::iterator X;
+
   Best = NULL;
   for (X = Solutions->begin();X != Solutions->end();X++) 
-    if (Best == NULL || *Best > **X) {
-      if (Best != NULL) delete Best;
+    if (Best == NULL || *Best > **X)
       Best = *X;
-    }
-    else delete *X;
-  delete Solutions;
+
   return Best;
 }
