@@ -190,7 +190,7 @@ SQM_solution* SQM_path_relinking(list<SQM_solution*>* Solutions) {
   Best = NULL;
   for (X = improved_solutions->begin();X != improved_solutions->end();X++) {
     N++;
-    if (Best == NULL || Best > *X) {
+    if (Best == NULL || *Best > **X) {
       if (Best != NULL) delete Best;
       Best = *X;
     }
@@ -200,7 +200,7 @@ SQM_solution* SQM_path_relinking(list<SQM_solution*>* Solutions) {
   logDebug(cout << "Improved solutions deleted" << endl);
 
   for (X = Solutions->begin();X != Solutions->end();X++) 
-    if (Best == NULL || Best > *X) {
+    if (Best == NULL || *Best > **X) {
       if (Best != NULL) delete Best;
       Best = *X;
     }
