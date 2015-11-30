@@ -7,6 +7,7 @@
 
 list<SQM_solution*>* Path_Relinking (SQM_solution*,SQM_solution*);
 SQM_solution* SQM_path_relinking(list<SQM_solution*>*);
+SQM_solution* SQM_best_solution(list<SQM_solution*>* Solutions);
 
 #endif
 
