@@ -11,6 +11,7 @@ int* PR_run_perfect_matching(SQM_solution*,SQM_solution*);
 int* PR_determine_order_(SQM_solution*,int*,SQM_solution*);
 int* PR_determine_order_nf(SQM_solution*,int*,SQM_solution*);
 int* PR_determine_order_ff(SQM_solution*,int*,SQM_solution*);
+double** PR_distances_matrix(SQM_solution*,SQM_solution*);
 
 list<SQM_solution*>* Path_Relinking (SQM_solution *X,SQM_solution *Y) {
   logDebug(cout << "START:\t***\tPath_Relinking\t***" << endl);
@@ -73,6 +74,29 @@ bool incompatible_solutions(SQM_solution *X,SQM_solution *Y) {
 /* Create distances matrix and call Perfect_Matching procedure */
 int* PR_run_perfect_matching(SQM_solution *X,SQM_solution *Y) {
   int p = X->get_servers();
+  int *pm;
+  double **distances;
+  distances = PR_distances_matrix(X,Y);
+  pm = Perfect_Matching(p,distances);
+  for (int i = 0;i < p;i++) delete [] distances[i];
+  delete [] distances;
+  return pm;
+}
+
+double PR_perfect_matching_cost(SQM_solution *X,SQM_solution *Y) {
+  int p = X->get_servers();
+  double cost;
+  double **distances;
+  distances = PR_distances_matrix(X,Y);
+  cost = Perfect_Matching_cost(p,distances);
+  for (int i = 0;i < p;i++) delete [] distances[i];
+  delete [] distances;
+  return cost;
+}
+
+/* Create distances matrix  */
+double** PR_distances_matrix(SQM_solution *X,SQM_solution *Y) {
+  int p = X->get_servers();
   int q = Y->get_servers();
   SQM_instance *I = X->get_instance();
   point *site = I->site(0);
@@ -88,10 +112,7 @@ int* PR_run_perfect_matching(SQM_solution *X,SQM_solution *Y) {
       distances[i][l] = dist(&(site[loc_x]),&(site[loc_y]));
     }
   }
-  pm = Perfect_Matching(p,distances);
-  for (int i = 0;i < p;i++) delete [] distances[i];
-  delete [] distances;
-  return pm;
+  return distances;
 }
 
 int* PR_determine_order_(SQM_solution *X,int *pm,SQM_solution *Y) {
@@ -230,4 +251,20 @@ void SQM_delete_sols(list<SQM_solution*>* Solutions) {
   for (X = Solutions->begin();X != Solutions->end();X++) 
     delete *X;
   delete Solutions;
+}
+
+double SQM_min_cost_pm(list<SQM_solution*> *Solutions,SQM_solution *Sol) {
+  list<SQM_solution*>::iterator X;
+  double cost,min_cost;
+
+  min_cost = PR_perfect_matching_cost(Solutions->front(),Sol);
+  X = Solutions->begin();
+  X++;
+  for (;X != Solutions->end();X++) {
+    cost = PR_perfect_matching_cost(*X,Sol);
+    if (min_cost > cost)
+      min_cost = cost;
+  }
+
+  return min_cost;
 }
