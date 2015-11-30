@@ -263,6 +263,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   gnuplot_GRASP(GRASP_output);
 
   Best = SQM_path_relinking(best_solutions);
+  SQM_delete_sols(best_solutions);
   /* Plot Best Solution */
   for (int k = 0;k < n;k++) Sol[k] = 0;
   for (int i = 0;i < p;i++) Sol[Best->get_server_location(i)]++;
@@ -315,6 +316,7 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
   for (list<SQM_solution*>::iterator it = elite_solutions->begin();it != elite_solutions->end();it++)
     cout << (*it)->get_response_time() << endl;
   X = SQM_path_relinking(elite_solutions);
+  SQM_delete_sols(elite_solutions);
   cout << "The best response time is " << X->get_response_time() << endl;
   delete X;
 }

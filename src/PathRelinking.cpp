@@ -186,14 +186,11 @@ SQM_solution* SQM_path_relinking(list<SQM_solution*>* Solutions) {
        << "   Improved solutions : " << total_improved_solutions << endl;
 
 
+  Best_input = SQM_best_solution(Solutions);
   /* Clears Solutions */
-  Best = SQM_best_solution(improved_solutions);
+  Best = SQM_leave_only_the_best(improved_solutions);
   logDebug(cout << "Improved solutions deleted" << endl);
 
-  Best_input = NULL;
-  for (X = Solutions->begin();X != Solutions->end();X++) 
-    if (Best_input == NULL || *Best_input > **X)
-      Best_input = *X;
   logInfo(cout << "Diference between best input and best output : "
 	  << (Best_input->get_response_time() - Best->get_response_time()) / Best_input->get_response_time() << endl);
 
@@ -210,4 +207,26 @@ SQM_solution* SQM_best_solution(list<SQM_solution*>* Solutions) {
       Best = *X;
 
   return Best;
+}
+
+SQM_solution* SQM_leave_only_the_best(list<SQM_solution*>* Solutions) {
+  SQM_solution *Best;
+  list<SQM_solution*>::iterator X;
+
+  Best = NULL;
+  for (X = Solutions->begin();X != Solutions->end();X++) 
+    if (Best == NULL || *Best > **X) {
+      if (Best != NULL) delete Best;
+      Best = *X;
+    }
+    else delete *X;
+  delete Solutions;
+  return Best;
+}
+
+void SQM_delete_sols(list<SQM_solution*>* Solutions) {
+  list<SQM_solution*>::iterator X;
+  for (X = Solutions->begin();X != Solutions->end();X++) 
+    delete *X;
+  delete Solutions;
 }
