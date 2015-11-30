@@ -315,8 +315,18 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
   cout << "The best " << num_elite << " response times:" << endl;
   for (list<SQM_solution*>::iterator it = elite_solutions->begin();it != elite_solutions->end();it++)
     cout << (*it)->get_response_time() << endl;
+
+  for (int r = 0;r < num_elite;r++) {
+    X = new SQM_solution(I,p);
+    X->set_speed(v,beta);
+    X->set_params(lambda,Mu_NT);
+    SQM_heuristic(X,lambda,Mu_NT);
+    elite_solutions->push_back(X);
+  }
+  
   X = SQM_path_relinking(elite_solutions);
+  SQM_heuristic(X,lambda,Mu_NT);
   SQM_delete_sols(elite_solutions);
-  cout << "The best response time is " << X->get_response_time() << endl;
+  cout << "The best response time is\t" << X->get_response_time() << endl;
   delete X;
 }

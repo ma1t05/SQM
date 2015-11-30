@@ -144,7 +144,7 @@ SQM_solution* SQM_path_relinking(list<SQM_solution*>* Solutions) {
   double Tr_x,Tr_y,Best_TR,TR;
   list<SQM_solution*>::iterator X,Y,Z;
   list<SQM_solution*> *path_relinking_sols,*improved_solutions;
-  SQM_solution *Best;
+  SQM_solution *Best,*Best_input;
   clock_t beginning,now;
   double best_rt,avg_rt,worst_rt;
   int N;
@@ -179,11 +179,12 @@ SQM_solution* SQM_path_relinking(list<SQM_solution*>* Solutions) {
   now = clock();
 
   cout << "\t***\tPath Relinking results\t***" << endl;
-  cout << "   Best Response time : " << best_rt << endl
-       << "Average Response time : " << avg_rt / N << endl
-       << "  Worst Response time : " << worst_rt << endl
-       << "           time (sec) : " << (double)(now - beginning)/CLOCKS_PER_SEC << endl
-       << "   Improved solutions : " << total_improved_solutions << endl;
+  cout << "   Best Response time :\t" << best_rt << endl
+       << "Average Response time :\t" << avg_rt / N << endl
+       << "  Worst Response time :\t" << worst_rt << endl
+       << "           time (sec) :\t" << (double)(now - beginning)/CLOCKS_PER_SEC << endl
+       << "   Improved solutions :\t" << total_improved_solutions 
+       << " (" << N << ")" << endl;
 
 
   Best_input = SQM_best_solution(Solutions);
@@ -191,8 +192,8 @@ SQM_solution* SQM_path_relinking(list<SQM_solution*>* Solutions) {
   Best = SQM_leave_only_the_best(improved_solutions);
   logDebug(cout << "Improved solutions deleted" << endl);
 
-  logInfo(cout << "Diference between best input and best output : "
-	  << (Best_input->get_response_time() - Best->get_response_time()) / Best_input->get_response_time() << endl);
+  logInfo(cout << "Diference between best input and best output :\t"
+	  << 100*(Best_input->get_response_time() - Best->get_response_time()) / Best_input->get_response_time() << " %" << endl);
 
   return Best;
 }
