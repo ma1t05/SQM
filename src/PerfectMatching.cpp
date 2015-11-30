@@ -45,5 +45,6 @@ double Perfect_Matching_cost(int p,double **C) {
   for (int i = 0;i < p;i++)
     cost += C[i][pm[i]];
 
+  delete [] pm;
   return cost;
 }
