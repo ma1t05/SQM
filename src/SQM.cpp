@@ -280,10 +280,10 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
   double beta = 1.5;
   double rt,worst_rt;
   SQM_solution *X;
-  list<SQM_solution*> *elite_solutions;
+  list<SQM_solution*> *elite_sols,*various_sols;
 
   worst_rt = 100.0;
-  elite_solutions = new list<SQM_solution*>;
+  elite_sols = new list<SQM_solution*>;
   for (int r = 0;r < N;r++) {
     X = new SQM_solution(I,p);
     X->set_speed(v,beta);
@@ -291,21 +291,21 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
     SQM_heuristic(X,lambda,Mu_NT);
     rt = X->get_response_time();
     if (rt < worst_rt) {
-      if (elite_solutions->size() == num_elite) {
-	delete elite_solutions->back();
-	elite_solutions->pop_back();
-	worst_rt = elite_solutions->back()->get_response_time();
+      if (elite_sols->size() == num_elite) {
+	delete elite_sols->back();
+	elite_sols->pop_back();
+	worst_rt = elite_sols->back()->get_response_time();
       }
 
-      if (elite_solutions->size() > 0) {
-	for (list<SQM_solution*>::iterator it = elite_solutions->begin();it != elite_solutions->end();it++)
+      if (elite_sols->size() > 0) {
+	for (list<SQM_solution*>::iterator it = elite_sols->begin();it != elite_sols->end();it++)
 	  if (**it > *X) {
-	    elite_solutions->insert(it,X);
+	    elite_sols->insert(it,X);
 	    break;
 	  }
       }
       else {
-	elite_solutions->push_back(X);
+	elite_sols->push_back(X);
 	worst_rt = X->get_response_time();
       }
     }
@@ -313,20 +313,32 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
   }
 
   cout << "The best " << num_elite << " response times:" << endl;
-  for (list<SQM_solution*>::iterator it = elite_solutions->begin();it != elite_solutions->end();it++)
+  for (list<SQM_solution*>::iterator it = elite_sols->begin();it != elite_sols->end();it++)
     cout << (*it)->get_response_time() << endl;
 
+  various_sols = new list<SQM_solution*>;
   for (int r = 0;r < num_elite;r++) {
     X = new SQM_solution(I,p);
     X->set_speed(v,beta);
     X->set_params(lambda,Mu_NT);
-    SQM_heuristic(X,lambda,Mu_NT);
-    elite_solutions->push_back(X);
+    X->pm_cost = SQM_min_cost_pm(elite_sols,X);
+    if (various_sols->size() > 0) {
+      for (list<SQM_solution*>::iterator it = various_sols->begin();it != various_sols->end();it++)
+	if ((*it)->pm_cost < X->pm_cost) {
+	  various_sols->insert(it,X);
+	  break;
+	}
+    }
+    else various_sols->push_back(X);
   }
   
-  X = SQM_path_relinking(elite_solutions);
+  for (list<SQM_solution*>::iterator it = various_sols->begin();it != various_sols->end();it++)
+    elite_sols->push_back(*it);
+  delete various_sols;
+
+  X = SQM_path_relinking(elite_sols);
   SQM_heuristic(X,lambda,Mu_NT);
-  SQM_delete_sols(elite_solutions);
+  SQM_delete_sols(elite_sols);
   cout << "The best response time is\t" << X->get_response_time() << endl;
   delete X;
 }

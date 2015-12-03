@@ -253,17 +253,15 @@ void SQM_delete_sols(list<SQM_solution*>* Solutions) {
   delete Solutions;
 }
 
-double SQM_min_cost_pm(list<SQM_solution*> *Solutions,SQM_solution *Sol) {
-  list<SQM_solution*>::iterator X;
+double SQM_min_cost_pm(list<SQM_solution*> *Sols,SQM_solution *Sol) {
   double cost,min_cost;
+  list<SQM_solution*>::iterator it = Sols->begin();
 
-  min_cost = PR_perfect_matching_cost(Solutions->front(),Sol);
-  X = Solutions->begin();
-  X++;
-  for (;X != Solutions->end();X++) {
-    cost = PR_perfect_matching_cost(*X,Sol);
-    if (min_cost > cost)
-      min_cost = cost;
+  min_cost = PR_perfect_matching_cost(*it,Sol);
+  while (it != Sols->end()) {
+    cost = PR_perfect_matching_cost(*it,Sol);
+    if (min_cost > cost) min_cost = cost;
+    it++;
   }
 
   return min_cost;

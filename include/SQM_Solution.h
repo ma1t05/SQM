@@ -40,6 +40,7 @@ class SQM_solution {
   SQM_solution (SQM_solution *Sol);
   ~SQM_solution ();
   SQM_solution* clone();
+  double pm_cost; /* cost of perfect matching */
   void set_params(double lambda,double Mu_NT);
   void set_speed (double v,double beta);
   void set_server_location (int i,int j);
