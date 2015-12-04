@@ -24,6 +24,9 @@ void Call_SQM_GRASP(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 
+int* (*matching_function)(SQM_solution*,SQM_solution*); /* function for match */
+int* (*order_function)(SQM_solution*,int*,SQM_solution*); /* function for proccess */
+
 int main(int argc,char *argv[]) {
   string filename;
   int M_clients,N_sites;
@@ -282,6 +285,8 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
   SQM_solution *X;
   list<SQM_solution*> *elite_sols,*various_sols;
 
+  matching_function = PR_run_perfect_matching; /* perfect matching */
+  order_function = PR_determine_order_nf; /* neares first */
   worst_rt = 100.0;
   elite_sols = new list<SQM_solution*>;
   for (int r = 0;r < N;r++) {
@@ -317,17 +322,25 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
     cout << (*it)->get_response_time() << endl;
 
   various_sols = new list<SQM_solution*>;
-  for (int r = 0;r < num_elite;r++) {
+  for (int r = 0;r < 5*num_elite;r++) {
     X = new SQM_solution(I,p);
     X->set_speed(v,beta);
     X->set_params(lambda,Mu_NT);
     X->pm_cost = SQM_min_cost_pm(elite_sols,X);
     if (various_sols->size() > 0) {
-      for (list<SQM_solution*>::iterator it = various_sols->begin();it != various_sols->end();it++)
+      list<SQM_solution*>::iterator it;
+      for (it = various_sols->begin();it != various_sols->end();it++)
 	if ((*it)->pm_cost < X->pm_cost) {
 	  various_sols->insert(it,X);
 	  break;
 	}
+      if (it == various_sols->end())
+	various_sols->push_back(X);
+
+      if (various_sols->size() > num_elite) {
+	delete various_sols->back();
+	various_sols->pop_back();
+      }
     }
     else various_sols->push_back(X);
   }

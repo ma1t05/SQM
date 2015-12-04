@@ -7,10 +7,6 @@
 using namespace std;
 
 bool incompatible_solutions(SQM_solution*,SQM_solution*);
-int* PR_run_perfect_matching(SQM_solution*,SQM_solution*);
-int* PR_determine_order_(SQM_solution*,int*,SQM_solution*);
-int* PR_determine_order_nf(SQM_solution*,int*,SQM_solution*);
-int* PR_determine_order_ff(SQM_solution*,int*,SQM_solution*);
 double** PR_distances_matrix(SQM_solution*,SQM_solution*);
 
 list<SQM_solution*>* Path_Relinking (SQM_solution *X,SQM_solution *Y) {
@@ -23,12 +19,13 @@ list<SQM_solution*>* Path_Relinking (SQM_solution *X,SQM_solution *Y) {
   /* Run perfect matching */
   logDebug(cout << "Run perfect matching" << endl);
   int *pm;
-  pm = PR_run_perfect_matching(X,Y);
+
+  pm = matching_function(X,Y);
 
   /* Determine order of change */
   logDebug(cout << "Determine order of change" << endl);
   int p = X->get_servers();
-  int *order = PR_determine_order_nf(X,pm,Y);
+  int *order = order_function(X,pm,Y);
 
   logDebug(cout << "Create solutions" << endl);
   list<SQM_solution*> *Solutions;
