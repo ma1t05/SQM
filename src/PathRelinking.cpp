@@ -2,6 +2,7 @@
 #include <iostream>
 #include "PathRelinking.h"
 #include "PerfectMatching.h"
+#include "random.h"
 #include "log.h"
 
 using namespace std;
@@ -19,7 +20,6 @@ list<SQM_solution*>* Path_Relinking (SQM_solution *X,SQM_solution *Y) {
   /* Run perfect matching */
   logDebug(cout << "Run perfect matching" << endl);
   int *pm;
-
   pm = matching_function(X,Y);
 
   /* Determine order of change */
@@ -77,6 +77,27 @@ int* PR_run_perfect_matching(SQM_solution *X,SQM_solution *Y) {
   pm = Perfect_Matching(p,distances);
   for (int i = 0;i < p;i++) delete [] distances[i];
   delete [] distances;
+  return pm;
+}
+
+int* PR_random_matching(SQM_solution *X,SQM_solution *Y) {
+  int p = X->get_servers();
+  int *pm,pos;
+  bool *used;
+
+  pm = new int [p];
+  used = new bool [p];
+  for (int i = 0;i < p;i++) used[i] = false;
+  for (int i = 0;i < p;i++) {
+    pm[i] = -1;
+    do {
+      pos = unif(p);
+      if (used[pos] == false) {
+	pm[i] = pos;
+	used[pos] = true;
+      }
+    } while (pm[i] == -1);
+  }
   return pm;
 }
 
