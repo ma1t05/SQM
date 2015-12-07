@@ -2,9 +2,11 @@
 #include "SQM_Solution.h"
 #include "MST.h"
 
+#define UNASIGNED_LOCATION -1
+
 server::server () {
   location = 0;
-  past_location = 0;
+  past_location = UNASIGNED_LOCATION;
   v = 1.0;
   beta = 2.0;
 }
@@ -51,6 +53,7 @@ void server::set_location (int i) {
 }
 
 void server::test_location (int i) {
+  if (past_location == UNASIGNED_LOCATION) past_location = i;
   location = i;
 }
 
