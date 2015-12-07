@@ -14,7 +14,6 @@ struct point {
 typedef struct point point;
 
 float dist(point*,point*);
-int unif(int);
 int comp(const void*,const void*);
 void sort_dist (int,double*,int*);
 

@@ -12,10 +12,6 @@ float dist(point *i,point *j){
   return sqrt((i->x - j->x)*(i->x - j->x) + (i->y - j->y) * (i->y - j->y));
 }
 
-int unif(int a) {
-  return floor(double(a) * rand() / RAND_MAX);
-}
-
 int comp(const void *a,const void *b) {
   std::pair<double,int> *x,*y;
   x = (std::pair<double,int>*)a;

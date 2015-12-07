@@ -5,6 +5,7 @@
 #include <cstdlib>
 
 float unif(float,float);
+int unif(int);
 
 #endif
 
