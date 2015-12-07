@@ -286,7 +286,7 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
   list<SQM_solution*> *elite_sols,*various_sols;
 
   matching_function = PR_run_perfect_matching; /* perfect matching */
-  order_function = PR_determine_order_nf; /* neares first */
+  order_function = PR_determine_order_ff; /* fares first */
   worst_rt = 100.0;
   elite_sols = new list<SQM_solution*>;
   for (int r = 0;r < N;r++) {
@@ -352,6 +352,6 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
   X = SQM_path_relinking(elite_sols);
   SQM_heuristic(X,lambda,Mu_NT);
   SQM_delete_sols(elite_sols);
-  cout << "The best response time is\t" << X->get_response_time() << endl;
+  cout << "The best Path-Relinking response time is\t" << X->get_response_time() << endl;
   delete X;
 }
