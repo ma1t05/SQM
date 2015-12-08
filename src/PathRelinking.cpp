@@ -2,6 +2,7 @@
 #include <iostream>
 #include "PathRelinking.h"
 #include "PerfectMatching.h"
+#include "SQM_heuristic.h"
 #include "random.h"
 #include "log.h"
 
@@ -206,26 +207,27 @@ SQM_solution* SQM_path_relinking(list<SQM_solution*>* Solutions) {
   improved_solutions = new list<SQM_solution*>;
   best_rt = 100.0,worst_rt = 0.0,avg_rt = 0.0, N = 0;
   for (X = Solutions->begin();X != Solutions->end();X++) {
-    Tr_x = (*X)->get_response_time();
-    for (Y = X;Y != Solutions->end();Y++) {
-      if (Y != X) {
-	Tr_y = (*Y)->get_response_time();
-	Best_TR = (Tr_x > Tr_y ? Tr_y : Tr_x);
-	path_relinking_sols = Path_Relinking(*X,*Y);
-	if (path_relinking_sols != NULL) {
-	  for (Z = path_relinking_sols->begin();Z != path_relinking_sols->end();Z++) {
-	    TR = (*Z)->get_response_time();
-	    avg_rt += TR; N++;
-	    if (best_rt > TR) best_rt = TR;
-	    if (worst_rt < TR) worst_rt = TR;
-	    if (TR < Best_TR) {
-	      total_improved_solutions++;
-	      improved_solutions->push_back(*Z);
-	    }
-	    else delete *Z;
+    Tr_x = (*X)->get_response_time(); 
+    Y = X;
+    Y++;
+    for (;Y != Solutions->end();Y++) {
+      Tr_y = (*Y)->get_response_time();
+      Best_TR = (Tr_x > Tr_y ? Tr_y : Tr_x);
+      path_relinking_sols = Path_Relinking(*X,*Y);
+      if (path_relinking_sols != NULL) {
+	for (Z = path_relinking_sols->begin();Z != path_relinking_sols->end();Z++) {
+	  SQM_heuristic(*Z);
+	  TR = (*Z)->get_response_time();
+	  avg_rt += TR; N++;
+	  if (best_rt > TR) best_rt = TR;
+	  if (worst_rt < TR) worst_rt = TR;
+	  if (TR < Best_TR) {
+	    total_improved_solutions++;
+	    improved_solutions->push_back(*Z);
 	  }
-	  delete path_relinking_sols;
+	  else delete *Z;
 	}
+	delete path_relinking_sols;
       }
     }
   }
