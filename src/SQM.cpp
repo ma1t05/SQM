@@ -282,12 +282,12 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
   int N = 500,num_elite = 10;
   double beta = 1.5;
   double rt,worst_rt;
+  clock_t beginning,now;
   SQM_solution *X;
   list<SQM_solution*> *elite_sols,*various_sols;
 
-  matching_function = PR_run_perfect_matching; /* perfect matching */
-  order_function = PR_determine_order_ff; /* fares first */
   worst_rt = 100.0;
+  beginning = clock();
   elite_sols = new list<SQM_solution*>;
   for (int r = 0;r < N;r++) {
     X = new SQM_solution(I,p);
@@ -306,6 +306,9 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
 	for (list<SQM_solution*>::iterator it = elite_sols->begin();it != elite_sols->end();it++)
 	  if (**it > *X) {
 	    elite_sols->insert(it,X);
+	    if (elite_sols->front() == *it)
+	      cout << "The current best response time is\t" << X->get_response_time() 
+		   << " at iteration : " << r << " at time " << (double)(clock() - beginning)/CLOCKS_PER_SEC << endl;
 	    break;
 	  }
       }
@@ -316,6 +319,7 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
     }
     else delete X;
   }
+  cout << endl;
 
   cout << "The best " << num_elite << " response times:" << endl;
   for (list<SQM_solution*>::iterator it = elite_sols->begin();it != elite_sols->end();it++)
@@ -345,10 +349,15 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
     else various_sols->push_back(X);
   }
   
-  for (list<SQM_solution*>::iterator it = various_sols->begin();it != various_sols->end();it++)
+  cout << "The various " << num_elite << " response times:" << endl;
+  for (list<SQM_solution*>::iterator it = various_sols->begin();it != various_sols->end();it++) {
+    cout << (*it)->get_response_time() << endl;
     elite_sols->push_back(*it);
+  }
   delete various_sols;
 
+  matching_function = PR_run_perfect_matching; /* perfect matching */
+  order_function = PR_determine_order_ff; /* fares first */
   X = SQM_path_relinking(elite_sols);
   SQM_heuristic(X,lambda,Mu_NT);
   SQM_delete_sols(elite_sols);
