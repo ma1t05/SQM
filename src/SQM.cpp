@@ -307,9 +307,11 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
 	for (list<SQM_solution*>::iterator it = elite_sols->begin();it != elite_sols->end();it++)
 	  if (**it > *X) {
 	    elite_sols->insert(it,X);
-	    if (elite_sols->front() == *it)
+	    if (elite_sols->front() == *it) {
+	      now = clock();
 	      cout << "The current best response time is\t" << X->get_response_time() 
-		   << " at iteration : " << r << " at time " << (double)(clock() - beginning)/CLOCKS_PER_SEC << endl;
+		   << " at iteration : " << r << " at time " << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
+	    }
 	    break;
 	  }
       }
@@ -322,6 +324,8 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
   }
   cout << endl;
 
+  now = clock();
+  cout << "After " << (double)(now - beginning)/CLOCKS_PER_SEC << " seconds" << endl;
   cout << "The best " << num_elite << " response times:" << endl;
   for (list<SQM_solution*>::iterator it = elite_sols->begin();it != elite_sols->end();it++)
     cout << (*it)->get_response_time() << endl;
@@ -357,8 +361,8 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
   }
   delete various_sols;
 
-  matching_function = PR_run_perfect_matching; /* perfect matching */
-  order_function = PR_processing_order_random; /* nearest:nf,farthest:ff,random */
+  matching_function = PR_random_matching; /* {perfect|random}_matching */
+  order_function = PR_processing_order_random; /* {nf|ff|random} */
   X = SQM_path_relinking(elite_sols);
   SQM_heuristic(X);
   SQM_delete_sols(elite_sols);
