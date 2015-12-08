@@ -357,7 +357,7 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
   delete various_sols;
 
   matching_function = PR_run_perfect_matching; /* perfect matching */
-  order_function = PR_determine_order_ff; /* fares first */
+  order_function = PR_processing_order_ff; /* fares first */
   X = SQM_path_relinking(elite_sols);
   SQM_heuristic(X,lambda,Mu_NT);
   SQM_delete_sols(elite_sols);

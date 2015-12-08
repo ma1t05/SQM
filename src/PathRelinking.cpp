@@ -98,6 +98,7 @@ int* PR_random_matching(SQM_solution *X,SQM_solution *Y) {
       }
     } while (pm[i] == -1);
   }
+  delete [] used;
   return pm;
 }
 
@@ -133,15 +134,28 @@ double** PR_distances_matrix(SQM_solution *X,SQM_solution *Y) {
   return distances;
 }
 
-int* PR_determine_order_(SQM_solution *X,int *pm,SQM_solution *Y) {
-  int p = X->get_servers();
+int* PR_processing_order_random(SQM_solution *X,int *pm,SQM_solution *Y) {
+  int p = X->get_servers(),pos;
   int *order = new int [p];
+  bool *used = new bool [p];
+  for (int i = 0;i < p;i++) used[i] = false;
+  for (int i = 0;i < p;i++) {
+    order[i] = -1;
+    do {
+      pos = unif(p);
+      if (used[pos] == false) {
+	order[i] = pos;
+	used[pos] = true;
+      }
+    } while (order[i] == -1);
+  }
   for (int i = 0;i < p;i++) order[i] = i; 
+  delete [] used;
   return order;
 }
 
 /* nearest first */
-int* PR_determine_order_nf(SQM_solution *X,int *pm,SQM_solution *Y) {
+int* PR_processing_order_nf(SQM_solution *X,int *pm,SQM_solution *Y) {
   int *order,loc_x,loc_y;
   int p = X->get_servers();
   double *d;
@@ -160,7 +174,7 @@ int* PR_determine_order_nf(SQM_solution *X,int *pm,SQM_solution *Y) {
 }
 
 /* farthest first */
-int* PR_determine_order_ff(SQM_solution *X,int *pm,SQM_solution *Y) {
+int* PR_processing_order_ff(SQM_solution *X,int *pm,SQM_solution *Y) {
   int *order,loc_x,loc_y;
   int p = X->get_servers();
   double *d;
