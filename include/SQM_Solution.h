@@ -54,6 +54,8 @@ class SQM_solution {
   double get_server_speed (int i);
   double get_server_beta (int i);
   double get_server_rate (int i);
+  double get_arrival_rate ();
+  double get_non_travel_time ();
   double get_response_time ();
   int ** preferred_servers ();
   bool operator<(SQM_solution&);

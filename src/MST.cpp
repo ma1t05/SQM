@@ -4,14 +4,12 @@
 #include "mp_jarvis.h"
 #include "log.h"
 
-double MST_response_time
-(SQM_solution *X,
- double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
- double Mu_NT // mean of non-travel time component of the service time
- ) {
+double MST_response_time (SQM_solution *X) {
   
   /* Variable definitions */
   double T_r;
+  double lambda = X->get_arrival_rate(); // mean rate per unit of time within service calls are generated in Poisson manner
+  double Mu_NT = X->get_non_travel_time(); // mean of non-travel time component of the service time
   mpf_t *MST,*mst; // mean service time
   mpf_t t_r; // expected response time
   mpf_t **f,**Tao;
@@ -115,7 +113,7 @@ double MST_response_time
     */
 
     logDebug(cout << "/* Step 2       Update mean service time */" << endl);
-    MST_update_mst(mst,X,Mu_NT,f);
+    MST_update_mst(mst,X,f);
 
     logDebug(cout << "/* Step 3 */" << endl);
     mpf_set_ui(delta_mu,0);
@@ -170,10 +168,11 @@ double MST_response_time
   return T_r;
 }
 
-void MST_update_mst(mpf_t *mst,SQM_solution *X,double Mu_NT,mpf_t **f) {
+void MST_update_mst(mpf_t *mst,SQM_solution *X,mpf_t **f) {
   SQM_instance *I = X->get_instance ();
   int m = I->demand_points();
   int p = X->get_servers();
+  double Mu_NT = X->get_non_travel_time();
   mpf_t h,tmp;
   mpf_init(h);
   mpf_init(tmp);

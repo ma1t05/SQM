@@ -12,18 +12,15 @@ int Solve_1_median_location_model(int,int,double**,double*);
 void SQM_improve_locations(SQM_solution*,mpf_t**);
 void SQM_return_previous_solution(SQM_solution*);
 
-void SQM_heuristic
-(SQM_solution *Sol,
- double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
- double Mu_NT // mean of non-travel time component of the service time
- ) {
-  
+void SQM_heuristic (SQM_solution *Sol) {
   SQM_instance *I = Sol->get_instance();
   int p = Sol->get_servers(); // Number of adjusters
   /* Variable definitions */
   int m = I->demand_points(); /* Number of demand points */
   int n = I->potential_sites(); /* Number of potencial sites to locate a server*/
   int it = 0; /* iterator counter */
+  double lambda = Sol->get_arrival_rate(); // mean rate per unit of time within service calls are generated in Poisson manner
+  double Mu_NT = Sol->get_non_travel_time (); // mean of non-travel time component of the service time
   mpf_t tmp;
   mpf_t delta_mu;
   mpf_t T_r,t_r; // expected response time
@@ -106,7 +103,7 @@ void SQM_heuristic
       for (int i = 0;i < p;i++)
 	mpf_set(MST[i],mst[i]);
 
-      logDebug(cout << "/* Update matrix of response times */" << endl);
+      logDebug(cout << "/* Update matrix of  times */" << endl);
       for (int i = 0;i < p;i++) {
 	for (int k = 0;k < m;k++) {
 	  mpf_set_d(Tao[i][k],Sol->get_server_rate(i) * I->distance(Sol->get_server_location(i),k));
@@ -119,7 +116,7 @@ void SQM_heuristic
       jarvis_hypercube_approximation(m,p,Lambda,Tao,Sol->preferred_servers(),f);
 
       logDebug(cout << "/* Step 2 	 Update mean service time */" << endl);
-      MST_update_mst(mst,Sol,Mu_NT,f);
+      MST_update_mst(mst,Sol,f);
       
       logDebug(cout << "/* Step 3 */" << endl);
       mpf_set_ui(delta_mu,0);

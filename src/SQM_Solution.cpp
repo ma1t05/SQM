@@ -210,9 +210,17 @@ void SQM_solution::update_preferred_servers () {
   delete [] d;
 }
 
+double SQM_solution::get_arrival_rate () {
+  return lambda;
+}
+
+double SQM_solution::get_non_travel_time () {
+  return Mu_NT;
+}
+
 double SQM_solution::get_response_time() {
   if (response_time == -1)
-    response_time = MST_response_time(this,lambda,Mu_NT);
+    response_time = MST_response_time(this);
   return response_time;
 }
 

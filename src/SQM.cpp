@@ -92,7 +92,8 @@ void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu) {
   SQM_solution *Sol;
   logInfo(cout << "Calling SQM_Heuristic" << endl);
   Sol = new SQM_solution (I,p);
-  SQM_heuristic(Sol,f,mu);
+  Sol->set_params(f,mu);
+  SQM_heuristic(Sol);
   if (LogInfo) {
     for (int i = 0;i < p;i++) LogFile << Sol->get_server_location(i) << " ";
     LogFile << endl;
@@ -163,7 +164,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
       G = GRASP(I,p,lambda,Mu_NT,v,beta,alpha); /* */
       T_r1 = G->get_response_time();
       /* Log */ Log_Start_SQMH(m,n,p,Mu_NT,lambda); /* */
-      SQM_heuristic(G,lambda,Mu_NT);
+      SQM_heuristic(G);
       T_r2 = G->get_response_time();
       avg_rt += T_r2;
       if (best_rt > T_r2) best_rt = T_r2;
@@ -220,7 +221,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
       cout << "Response time : " << T_r1 << endl;
     }
     /* Log */ Log_Start_SQMH(m,n,p,Mu_NT,lambda); /* */
-    SQM_heuristic(X,lambda,Mu_NT);
+    SQM_heuristic(X);
     T_r2 = X->get_response_time();
 
     avg_rt  += T_r2;
@@ -293,7 +294,7 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
     X = new SQM_solution(I,p);
     X->set_speed(v,beta);
     X->set_params(lambda,Mu_NT);
-    SQM_heuristic(X,lambda,Mu_NT);
+    SQM_heuristic(X);
     rt = X->get_response_time();
     if (rt < worst_rt) {
       if (elite_sols->size() == num_elite) {
@@ -357,9 +358,9 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
   delete various_sols;
 
   matching_function = PR_run_perfect_matching; /* perfect matching */
-  order_function = PR_processing_order_ff; /* fares first */
+  order_function = PR_processing_order_random; /* nearest:nf,farthest:ff,random */
   X = SQM_path_relinking(elite_sols);
-  SQM_heuristic(X,lambda,Mu_NT);
+  SQM_heuristic(X);
   SQM_delete_sols(elite_sols);
   cout << "The best Path-Relinking response time is\t" << X->get_response_time() << endl;
   delete X;
