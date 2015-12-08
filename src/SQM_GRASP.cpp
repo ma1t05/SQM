@@ -1,6 +1,6 @@
 
-#include "SQM_Instance.h"
 #include "SQM_GRASP.h"
+#include "random.h"
 #include "mp_jarvis.h"
 #include "MST.h"
 #include "log.h"
