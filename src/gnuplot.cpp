@@ -174,7 +174,8 @@ void gnuplot_GRASP(char *filename) {
   
   fprintf(gnuPipe,"plot ");
   fprintf(gnuPipe,"'GRASP.dat' using 1:2 w lp title 'Best'");
-  fprintf(gnuPipe,", 'GRASP.dat' using 1:3 w lp title 'Average'");
-  fprintf(gnuPipe,", 'GRASP.dat' using 1:4 w lp title 'Worst'");
+  fprintf(gnuPipe,", 'GRASP.dat' using 1:3 w lp title 'Average+'");
+  fprintf(gnuPipe,", 'GRASP.dat' using 1:4 w lp title 'Average'");
+  fprintf(gnuPipe,", 'GRASP.dat' using 1:5 w lp title 'Worst'");
   pclose(gnuPipe);
 }
