@@ -61,8 +61,8 @@ int main(int argc,char *argv[]) {
   I = SQM_load_instance(filename,M_clients,N_sites);
   // Call_SQM_model(I,p,l,f,mu,v,filename);
   // Call_SQM_GRASP(I,p,f,mu,v);
-  Call_SQM_random(I,p,f,mu,v);
-  //Call_SQM_Path_Relinking(I,p,f,mu,v);
+  //Call_SQM_random(I,p,f,mu,v);
+  Call_SQM_Path_Relinking(I,p,f,mu,v);
   /* Log Log_Start_SQMH(M_clients,N_sites,p,mu,f); /* */
   // Call_SQM_heuristic(I,p,f,mu);
   delete I;
@@ -140,7 +140,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
   double beta = 1.5;
   double T_r1,T_r2,t_r,BRT;
   double gap = 0.0,best_rt = 100.0,worst_rt = 0.0,avg_rt = 0.0,avg;
-  int N = 100;
+  int N = 1000;
   SQM_solution *Best,*Best_RS,*Best_GRASP,*BEST_GRASP;
   SQM_solution *X,*G;
   char GRASP_output[32];
@@ -354,8 +354,8 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
   }
   delete various_sols;
 
-  matching_function = PR_random_matching; /* {perfect|random}_matching */
-  order_function = PR_processing_order_random; /* {nf|ff|random} */
+  matching_function = PR_run_perfect_matching; /* {perfect|random}_matching */
+  order_function = PR_processing_order_nf; /* {nf|ff|random} */
   X = SQM_path_relinking(elite_sols);
   SQM_heuristic(X);
   SQM_delete_sols(elite_sols);
