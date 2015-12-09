@@ -41,7 +41,8 @@ EXDIR         = $(CPLEXDIR)/examples
 EXINC         = $(EXDIR)/include
 DATA        = /data
 
-CCFLAGS = $(CCOPT) -I$(CPLEXINCDIR) -I$(CONCERTINCDIR) -I$(INCLUDE)
+#CCFLAGS = $(CCOPT) -I$(CPLEXINCDIR) -I$(CONCERTINCDIR) -I$(INCLUDE)
+CCFLAGS = $(CCOPT) -I$(INCLUDE)
 
 #------------------------------------------------------------
 
