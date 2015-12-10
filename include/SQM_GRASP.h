@@ -15,18 +15,8 @@ SQM_solution* GRASP
  double alpha
  );
 
-double GRASP_func_NN
-(SQM_solution *Sol, // Current solution
- double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
- double Mu_NT // mean of non-travel time component of the service time
- );
-
-double GRASP_func_kNN
-(SQM_solution *Sol, // Current solution
- double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
- double Mu_NT, // mean of non-travel time component of the service time
- int K // Number of servers to consider
- );
+double GRASP_func_NN (SQM_solution *Sol /* Current solution*/);
+double GRASP_func_kNN (SQM_solution *Sol /* Current solution */, int K /* Number of servers to consider */);
 
 #endif
 

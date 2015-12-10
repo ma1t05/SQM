@@ -46,9 +46,9 @@ SQM_solution* GRASP
       Sol->set_speed(v,beta);
       for (int i = 0;i < n;i++) {
 	Sol->test_server_location(r,i);
-	/* T_r[i] = MST_response_time(I,r+1,X,lambda,Mu_NT);*/
-	/* T_r[i] = GRASP_func_NN(I,r+1,X,lambda,Mu_NT);*/
-	T_r[i] = GRASP_func_kNN(Sol,lambda,Mu_NT,min(r+1,3));
+	/* T_r[i] = MST_response_time(Sol);*/
+	/* T_r[i] = GRASP_func_NN(Sol);*/
+	T_r[i] = GRASP_func_kNN(Sol,min(r+1,3));
       }
 
       logDebug(cout << "/* Sort Restricted Candidates List */" << "\t");
@@ -65,11 +65,30 @@ SQM_solution* GRASP
   return Sol;
 }
 
-double GRASP_func_NN
-(SQM_solution *Sol,
- double lambda,
- double Mu_NT
- ) {
+double GRASP_func_pMean (SQM_solution *Sol) {
+  logDebug(cout << "Start GRASP_func_pMean" << endl);
+  /* Variables definition */
+  SQM_instance *I = Sol->get_instance();
+  int n = I->demand_points();
+  int m = I->potential_sites();
+  int p = Sol->get_servers();
+  int nearest,k;
+  double *rho;
+  double Obj;
+  /* */
+
+  Obj = 0.0;
+  for (int j = 0;j < m;j++) {
+    k = GRASP_nearest_server(Sol,p); /* Obtain the nearest server */
+    nearest = Sol->get_server_location(k);
+    Obj += dist(I->demand(j),I->site(nearest)) / Sol->get_server_speed(k);
+  }
+
+  logDebug(cout << "Finish GRASP_func_pMean" << endl);
+  return Obj;
+}
+
+double GRASP_func_NN (SQM_solution *Sol) {
   logDebug(cout << "Start GRASP_func_NN" << endl);
   /* Variables definition */
   SQM_instance *I = Sol->get_instance();
@@ -107,18 +126,15 @@ int GRASP_nearest_server(SQM_solution *Sol,int j) {
   return k;
 }
 
-double GRASP_func_kNN
-(SQM_solution *Sol,
- double lambda,
- double Mu_NT,
- int K
- ) {
+double GRASP_func_kNN (SQM_solution *Sol,int K) {
   logDebug(cout << "Start GRASP_func_kNN" << endl);
   /* Variable definitions */
   SQM_instance *I = Sol->get_instance();
   int p = Sol->get_servers();
   int m = I->demand_points(); /* Number of demand points */
   double RT = 0.0; /* Response Time */
+  double lambda = Sol->get_arrival_rate();
+  double Mu_NT = Sol->get_non_travel_time();
   int **a;
   double **Dist;
   double *Lambda;
@@ -178,8 +194,8 @@ double GRASP_func_kNN
 	logError(cout << "¡rho_" << i+1 << " > 1! in order " << t << endl);
     }
   } while (++t < K &&  t < p);
-  logDebug(cout << "Comienza a liberar memoria" << endl);
 
+  logDebug(cout << "Comienza a liberar memoria" << endl);
   delete [] new_rho;    
   delete [] Lambda;
   for (int k = 0;k < m;k++) delete [] a[k];
