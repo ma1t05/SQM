@@ -273,11 +273,11 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v) 
 }
 
 void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
-  int N = 500,num_elite = 10;
+  int N = 100,num_elite = 10;
   double beta = 1.5;
   double rt,worst_rt;
   clock_t beginning,now;
-  SQM_solution *X;
+  SQM_solution *X,*Best;
   list<SQM_solution*> *elite_sols,*various_sols;
 
   worst_rt = 100.0;
@@ -300,11 +300,6 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
 	for (list<SQM_solution*>::iterator it = elite_sols->begin();it != elite_sols->end();it++)
 	  if (**it > *X) {
 	    elite_sols->insert(it,X);
-	    if (elite_sols->front() == *it) {
-	      now = clock();
-	      cout << "The current best response time is\t" << X->get_response_time() 
-		   << " at iteration : " << r << " at time " << (double)(now - beginning)/CLOCKS_PER_SEC << endl;
-	    }
 	    break;
 	  }
       }
@@ -322,6 +317,7 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
   cout << "The best " << num_elite << " response times:" << endl;
   for (list<SQM_solution*>::iterator it = elite_sols->begin();it != elite_sols->end();it++)
     cout << (*it)->get_response_time() << endl;
+  Best = elite_sols->front();
 
   various_sols = new list<SQM_solution*>;
   for (int r = 0;r < 5*num_elite;r++) {
@@ -354,11 +350,89 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
   }
   delete various_sols;
 
+  double time,gap;
+  results.open("PathRelinking_results.csv",std::ofstream::app);
+  /* Perfect Matching */
   matching_function = PR_run_perfect_matching; /* {perfect|random}_matching */
   order_function = PR_processing_order_nf; /* {nf|ff|random} */
+  beginning = clock();
   X = SQM_path_relinking(elite_sols);
-  SQM_heuristic(X);
-  SQM_delete_sols(elite_sols);
-  cout << "The best Path-Relinking response time is\t" << X->get_response_time() << endl;
+  //SQM_heuristic(X);
+  gap = 100*(Best->get_response_time() - X->get_response_time()) / Best->get_response_time();
   delete X;
+  now = clock();
+  time = (double)(now - beginning)/CLOCKS_PER_SEC;
+  logInfo(cout << "write to results" << "\r");
+  results << X << "perfect,nf," << time << "," << gap 
+	  << "," << X->get_response_time() << endl;
+  logInfo(cout << "wrote to results" << endl);
+
+  beginning = clock();
+  order_function = PR_processing_order_ff; /* {nf|ff|random} */
+  X = SQM_path_relinking(elite_sols);
+  //SQM_heuristic(X);
+  gap = 100*(Best->get_response_time() - X->get_response_time()) / Best->get_response_time();
+  delete X;
+  now = clock();
+  time = (double)(now - beginning)/CLOCKS_PER_SEC;
+  logInfo(cout << "write to results" << "\r");
+  results << X << "perfect,ff," << time << "," << gap 
+	  << "," << X->get_response_time() << endl;
+  logInfo(cout << "wrote to results" << endl);
+
+  beginning = clock();
+  order_function = PR_processing_order_random; /* {nf|ff|random} */
+  X = SQM_path_relinking(elite_sols);
+  //SQM_heuristic(X);
+  gap = 100*(Best->get_response_time() - X->get_response_time()) / Best->get_response_time();
+  delete X;
+  now = clock();
+  time = (double)(now - beginning)/CLOCKS_PER_SEC;
+  logInfo(cout << "write to results" << "\r");
+  results << X << "perfect,random," << time << "," << gap 
+	  << "," << X->get_response_time() << endl;
+  logInfo(cout << "wrote to results" << endl);
+
+  beginning = clock();
+  matching_function = PR_random_matching; /* {perfect|random}_matching */
+  order_function = PR_processing_order_nf; /* {nf|ff|random} */
+  X = SQM_path_relinking(elite_sols);
+  //SQM_heuristic(X);
+  gap = 100*(Best->get_response_time() - X->get_response_time()) / Best->get_response_time();
+  delete X;
+  now = clock();
+  time = (double)(now - beginning)/CLOCKS_PER_SEC;
+  logInfo(cout << "write to results" << "\r");
+  results << X << "random,nf," << time << "," << gap 
+	  << "," << X->get_response_time() << endl;
+  logInfo(cout << "wrote to results" << endl);
+
+  beginning = clock();
+  order_function = PR_processing_order_ff; /* {nf|ff|random} */
+  X = SQM_path_relinking(elite_sols);
+  //SQM_heuristic(X);
+  gap = 100*(Best->get_response_time() - X->get_response_time()) / Best->get_response_time();
+  delete X;
+  now = clock();
+  time = (double)(now - beginning)/CLOCKS_PER_SEC;
+  logInfo(cout << "write to results" << "\r");
+  results << X << "random,ff," << time << "," << gap 
+	  << "," << X->get_response_time() << endl;
+  logInfo(cout << "wrote to results" << endl);
+
+  beginning = clock();
+  order_function = PR_processing_order_random; /* {nf|ff|random} */
+  X = SQM_path_relinking(elite_sols);
+  //SQM_heuristic(X);
+  gap = 100*(Best->get_response_time() - X->get_response_time()) / Best->get_response_time();
+  delete X;
+  now = clock();
+  time = (double)(now - beginning)/CLOCKS_PER_SEC;
+  logInfo(cout << "write to results" << "\r");
+  results << X << "random,random," << time << "," << gap 
+	  << "," << X->get_response_time() << endl;
+  logInfo(cout << "wrote to results" << endl);
+
+  results.close();
+  SQM_delete_sols(elite_sols);
 }
