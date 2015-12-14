@@ -5,6 +5,7 @@
 #include "SQM_heuristic.h"
 #include "random.h"
 #include "log.h"
+#include "SQM.h" /* results */
 
 using namespace std;
 
@@ -240,7 +241,8 @@ SQM_solution* SQM_path_relinking(list<SQM_solution*>* Solutions) {
        << "           time (sec) :\t" << (double)(now - beginning)/CLOCKS_PER_SEC << endl
        << "   Improved solutions :\t" << total_improved_solutions 
        << " (" << N << ")" << endl;
-
+  results << N << "," << total_improved_solutions << "," 
+	  << best_rt << "," << avg_rt << "," << worst_rt << ",";
 
   Best_input = SQM_best_solution(Solutions);
   /* Clears Solutions */
