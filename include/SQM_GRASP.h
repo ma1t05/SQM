@@ -17,6 +17,7 @@ SQM_solution* GRASP
 
 double GRASP_func_NN (SQM_solution *Sol /* Current solution*/);
 double GRASP_func_kNN (SQM_solution *Sol /* Current solution */, int K /* Number of servers to consider */);
+extern int GRASP_kNN_param;
 
 #endif
 
