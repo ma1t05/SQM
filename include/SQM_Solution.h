@@ -18,11 +18,11 @@ class server {
   void set_speed (double v,double beta);
   void set_location (int i);
   void test_location (int i);
-  int get_location ();
-  int get_past_location ();
-  double get_speed ();
-  double get_beta ();
-  double get_rate ();
+  int get_location () const;
+  int get_past_location () const;
+  double get_speed () const;
+  double get_beta () const;
+  double get_rate () const;
 };
 
 class SQM_solution {
@@ -47,21 +47,22 @@ class SQM_solution {
   void test_server_location (int i,int j);
   void add_server ();
   void update_preferred_servers ();
-  int get_servers ();
-  int get_server_location (int i);
-  int get_server_past_location (int i);
-  SQM_instance* get_instance ();
-  double get_server_speed (int i);
-  double get_server_beta (int i);
-  double get_server_rate (int i);
-  double get_arrival_rate ();
-  double get_non_travel_time ();
+  int get_servers () const;
+  int get_server_location (int i) const;
+  int get_server_past_location (int i) const;
+  SQM_instance* get_instance () const;
+  double get_server_speed (int i) const;
+  double get_server_beta (int i) const;
+  double get_server_rate (int i) const;
+  double get_arrival_rate () const;
+  double get_non_travel_time () const;
   double get_response_time ();
-  int ** preferred_servers ();
+  int ** preferred_servers () const;
   bool operator<(SQM_solution&);
   bool operator>(SQM_solution&);
 };
 
+ostream& operator<<(ostream&,SQM_solution*);
 
 #endif
 

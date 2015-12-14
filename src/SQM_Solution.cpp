@@ -2,6 +2,7 @@
 #include "SQM_Solution.h"
 #include "MST.h"
 #include "random.h"
+#include <iostream>
 
 #define UNASIGNED_LOCATION -1
 
@@ -28,23 +29,23 @@ void server::set_speed(double speed,double b) {
   beta = b;
 }
 
-double server::get_speed () {
+double server::get_speed () const {
   return v;
 }
 
-double server::get_beta () {
+double server::get_beta () const {
   return beta;
 }
 
-double server::get_rate () {
+double server::get_rate () const {
   return beta / v;
 }
 
-int server::get_location () {
+int server::get_location () const {
   return location;
 }
 
-int server::get_past_location () {
+int server::get_past_location () const {
   return past_location;
 }
 
@@ -145,13 +146,13 @@ void SQM_solution::test_server_location (int i,int j) {
   }
 }
 
-int SQM_solution::get_server_location (int i) {
+int SQM_solution::get_server_location (int i) const {
   if ((i >= 0) && (i < p))
     return Servers[i].get_location();
   return -1;
 }
 
-int SQM_solution::get_server_past_location (int i) {
+int SQM_solution::get_server_past_location (int i) const {
   if ((i >= 0) && (i < p))
     return Servers[i].get_past_location();
   return -1;
@@ -162,23 +163,23 @@ void SQM_solution::set_speed (double v,double beta) {
     Servers[i].set_speed(v,beta);
 }
 
-double SQM_solution::get_server_speed (int i) {
+double SQM_solution::get_server_speed (int i) const {
   return Servers[i].get_speed();
 }
 
-double SQM_solution::get_server_beta (int i) {
+double SQM_solution::get_server_beta (int i) const {
   return Servers[i].get_beta();
 }
 
-double SQM_solution::get_server_rate (int i) {
+double SQM_solution::get_server_rate (int i) const {
   return Servers[i].get_rate();
 }
 
-SQM_instance* SQM_solution::get_instance () {
+SQM_instance* SQM_solution::get_instance () const {
   return Inst;
 }
 
-int SQM_solution::get_servers () {
+int SQM_solution::get_servers () const {
   return p;
 }
 
@@ -210,11 +211,11 @@ void SQM_solution::update_preferred_servers () {
   delete [] d;
 }
 
-double SQM_solution::get_arrival_rate () {
+double SQM_solution::get_arrival_rate () const {
   return lambda;
 }
 
-double SQM_solution::get_non_travel_time () {
+double SQM_solution::get_non_travel_time () const {
   return Mu_NT;
 }
 
@@ -224,7 +225,7 @@ double SQM_solution::get_response_time() {
   return response_time;
 }
 
-int** SQM_solution::preferred_servers () {
+int** SQM_solution::preferred_servers () const {
   return a;
 }
 
@@ -235,6 +236,21 @@ bool SQM_solution::operator>(SQM_solution& X) {
 bool SQM_solution::operator<(SQM_solution& X) {
   return X > (*this);
 }
+
+ostream& operator<<(ostream& os, SQM_solution *X) {
+  SQM_instance *I = X->get_instance();
+  int m = I->demand_points();
+  int n = I->potential_sites();
+  int servers = X->get_servers();
+  double Mu_NT = X->get_non_travel_time();
+  double lambda = X->get_arrival_rate();
+
+  os << m << "," << n << "," << servers << "," << Mu_NT << "," 
+     << lambda << ",";
+  return os;
+}
+
+
 // response_unit* guess_a_location_01(int p,int n, point *W){
 //   response_unit *X;
 //   X = new response_unit[p];
