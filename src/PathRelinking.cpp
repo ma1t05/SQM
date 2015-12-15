@@ -82,6 +82,17 @@ int* PR_run_perfect_matching(SQM_solution *X,SQM_solution *Y) {
   return pm;
 }
 
+int* PR_workload_matching(SQM_solution *X,SQM_solution *Y) {
+  int p = X->get_servers();
+  int *pm;
+  double **distances;
+  distances = PR_distances_matrix(X,Y);
+  pm = Perfect_Matching(p,distances);
+  for (int i = 0;i < p;i++) delete [] distances[i];
+  delete [] distances;
+  return pm;
+}
+
 int* PR_random_matching(SQM_solution *X,SQM_solution *Y) {
   int p = X->get_servers();
   int *pm,pos;
