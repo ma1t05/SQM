@@ -16,11 +16,11 @@ void Goldberg
   try {
     clock_t clocks = clock();
     int i,j,k,r;
-    IloInt n = I->N,m= I->M;
+    IloInt n = I->potential_sites();
+    IloInt m = I->demand_points();
     IloNum f_i;
     IloNum rho;
     IloNum M = 10000.0;
-    point *client,*potencial_site;
           
     cout << "Comienza definicion del Modelo" << endl;
     IloModel modelo(env);
@@ -80,14 +80,12 @@ void Goldberg
     }
 
     cout << "Restricion de orden de asignaicion" << endl;
-    client = I->V;
-    potencial_site = I->W;
     NumMatrix O(env,m);
     for (i = 0;i < m;i++)
       O[i] = IloNumArray(env,n);
     for (i = 0;i < m;i++) {
       for (j = 0;j < n;j++) {
-	O[i][j] = dist(&(client[i]),&(potencial_site[j]));
+	O[i][j] = I->distance(i,j);
       }
     }
       
@@ -110,7 +108,7 @@ void Goldberg
     // rho from Daskin
     rho = 0.0;
     for (i = 0;i < m;i++)
-      rho += f * client[i].demand;
+      rho += f * I->get_demand(i);
     rho /= (mu * p);
     cout << "rho = " << rho << endl;
     // rho from ReVelle & Hogan
@@ -121,7 +119,7 @@ void Goldberg
       for (k = 0;k < p;k++) {
 	coef = (1 - rho) * pow(rho,k);
 	for (i = 0;i < m;i++) {
-	  f_i = f * client[i].demand;
+	  f_i = f * I->get_demand(i);
 	  workload += f_i * coef * O[i][j]* y[i][j][k];
 	}
       }
@@ -193,9 +191,9 @@ void Goldberg
 
 void gnuplot_goldberg(SQM_instance *I,int p,IloCplex *cplex, IloBoolVarArray *x, BoolVarArrayMatrix *y) {
   int i,j,k;
-  int n = I->N,m = I->M;
-  point *client = I->V;
-  point *potencial_site = I->W;
+  int n = I->potential_sites(),m = I->demand_points();
+  point *client = I->demand(0);
+  point *potential_site = I->site(0);
   char outfilename[32],centersfilename[32],clientsfilename[32];
 
   sprintf(centersfilename,"Tmp_centers_%d.dat",n);
@@ -203,8 +201,8 @@ void gnuplot_goldberg(SQM_instance *I,int p,IloCplex *cplex, IloBoolVarArray *x,
 
   for(j = 0;j < n;j++){
     /*if (cplex->getValue((*x)[j]))*/
-    centros << potencial_site[j].x << " " 
-	    << potencial_site[j].y << " "
+    centros << potential_site[j].x << " " 
+	    << potential_site[j].y << " "
 	    << cplex->getValue((*x)[j]) << endl;
   }
   centros.close();
@@ -226,8 +224,8 @@ void gnuplot_goldberg(SQM_instance *I,int p,IloCplex *cplex, IloBoolVarArray *x,
 	if (cplex->getValue((*y)[i][j][k]) > 0.5)
 	  outfile << client[i].x << " " 
 		  << client[i].y << " " 
-		  << potencial_site[j].x - client[i].x << " " 
-		  << potencial_site[j].y - client[i].y << " "
+		  << potential_site[j].x - client[i].x << " " 
+		  << potential_site[j].y - client[i].y << " "
 		  << j+1 << endl;
       }
     }

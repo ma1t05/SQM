@@ -3,10 +3,11 @@
  * 
  */
 
+#include "SQM.h"
 #include "SQM_model.h"
 
 void SQM_model
-(instance* I, // Set of points
+(SQM_instance* I, // Set of points
  int p, // facilities
  float mu, // rate parameter
  float f, // portion of demand
@@ -15,14 +16,14 @@ void SQM_model
   IloEnv env;
   try {
     int i,j,l,k,r;
-    IloInt m,n = I->n;
+    IloInt m,n = I->potential_sites();
     IloNum f_i;
     IloNum rho;
     IloNum M = 10000.0;
     IloNum beta = 1.5;
     k = 3;
     m = n;
-    point *puntos = I->points;
+    point *puntos = I->demand(0);
     cout << "Comienza definicion del Modelo" << endl;
     IloModel modelo(env);
     
@@ -106,8 +107,8 @@ void SQM_model
     for (i = 0;i < n;i++) {
       O[i][i] = 0;
       for (j = i+1;j < n;j++) {
-	O[i][j] = dist(&(puntos[i]),&(puntos[j]));
-	O[j][i] = dist(&(puntos[i]),&(puntos[j]));
+	O[i][j] = I->distance(i,j);
+	O[j][i] = O[i][j];
       }
     }
       
@@ -192,7 +193,7 @@ void SQM_model
     // rho from Daskin
     rho = 0.0;
     for (i = 0;i < n;i++)
-      rho += f * puntos[i].demand;
+      rho += f * I->get_demand(i);
     rho /= (mu * p);
     LogFile << "rho = " << rho << endl;
     // rho from ReVelle & Hogan
@@ -204,7 +205,7 @@ void SQM_model
     for (l = 0;l < k;l++) {
       coef = (1 - rho) * pow(rho,l);
       for (i = 0;i < n;i++) {
-	f_i = f * puntos[i].demand;
+	f_i = f * I->get_demand(i);
 	for (j = 0;j < m;j++) {
 	  workload += f_i * coef * (O[i][j]*time_per_km + wt)* y[i][j][l];
 	}
@@ -276,9 +277,8 @@ int* SQM_model
     IloNum rho;
     IloNum M = 10000.0;
     IloNum beta = 1.5;
-    m = I->M;
-    n = I->N;
-    point *clients = I->V;
+    m = I->demand_points();
+    n = I->potential_sites();
     cout << "Comienza definicion del Modelo" << endl;
     IloModel modelo(env);
     
@@ -360,11 +360,9 @@ int* SQM_model
     NumMatrix O(env,m);
     for (i = 0;i < m;i++)
       O[i] = IloNumArray(env,n);
-    for (i = 0;i < m;i++) {
-      for (j = 0;j < n;j++) {
-	O[i][j] = dist(&(clients[i]),&((I->W)[j]));
-      }
-    }
+    for (i = 0;i < m;i++)
+      for (j = 0;j < n;j++)
+	O[i][j] = I->distance(i,j);
       
     /*  */
     for (i = 0;i < m;i++) {
@@ -447,7 +445,7 @@ int* SQM_model
     // rho from Daskin
     rho = 0.0;
     for (i = 0;i < m;i++)
-      rho += f * clients[i].demand;
+      rho += f * I->get_demand(i);
     rho /= (mu * p);
     LogFile << "rho = " << rho << endl;
     // rho from ReVelle & Hogan
@@ -460,7 +458,7 @@ int* SQM_model
       for (l = 0;l < k;l++) {
 	coef = (1 - rho) * pow(rho,l);
 	for (i = 0;i < m;i++) {
-	  f_i = f * clients[i].demand;
+	  f_i = f * I->get_demand(i);
 	  workload += f_i * coef * (O[i][j]*time_per_km + wt)* y[i][j][l];
 	}
       }
@@ -537,10 +535,10 @@ int* SQM_model
   return Sol;
 }
 
-void gnuplot_goldberg(instance *I,int p,IloCplex *cplex, IloBoolVarArray *x, BoolVarArrayMatrix *y) {
+void gnuplot_goldberg_(SQM_instance *I,int p,IloCplex *cplex, IloBoolVarArray *x, BoolVarArrayMatrix *y) {
   int i,j,k;
-  int n = I->n;
-  point *puntos = I->points;
+  int n = I->potential_sites();
+  point *puntos = I->demand(0);
 
   char outfilename[32],centersfilename[32];
 

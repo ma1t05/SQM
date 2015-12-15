@@ -5,7 +5,6 @@ LIBFORMAT  = static_pic
 # Cplex & Concert Directorys
 #------------------------------------------------------------
 
-#CPLEX         = ./../../../../../../../../opt/ibm/ILOG/CPLEX_Studio126
 CPLEX         = /opt/ibm/ILOG/CPLEX_Studio126
 CPLEXDIR      = $(CPLEX)/cplex
 CONCERTDIR    = $(CPLEX)/concert
@@ -30,8 +29,8 @@ CPLEXLIBDIR   = $(CPLEXDIR)/lib/$(SYSTEM)/$(LIBFORMAT)
 CONCERTLIBDIR = $(CONCERTDIR)/lib/$(SYSTEM)/$(LIBFORMAT)
 
 CCLNDIRS  = -L$(CPLEXLIBDIR) -L$(CONCERTLIBDIR)
-#CCLNFLAGS = -lconcert -lilocplex -lcplex -m32 -lm -lpthread -lgmp
-CCLNFLAGS = -m32 -lm -lpthread -lgmp
+CCLNFLAGS = -lconcert -lilocplex -lcplex -m32 -lm -lpthread -lgmp
+#CCLNFLAGS = -m32 -lm -lpthread -lgmp
 
 CONCERTINCDIR = $(CONCERTDIR)/include
 CPLEXINCDIR   = $(CPLEXDIR)/include
@@ -41,8 +40,8 @@ EXDIR         = $(CPLEXDIR)/examples
 EXINC         = $(EXDIR)/include
 DATA        = /data
 
-#CCFLAGS = $(CCOPT) -I$(CPLEXINCDIR) -I$(CONCERTINCDIR) -I$(INCLUDE)
-CCFLAGS = $(CCOPT) -I$(INCLUDE)
+CCFLAGS = $(CCOPT) -I$(CPLEXINCDIR) -I$(CONCERTINCDIR) -I$(INCLUDE)
+#CCFLAGS = $(CCOPT) -I$(INCLUDE)
 
 #------------------------------------------------------------
 
