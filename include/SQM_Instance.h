@@ -37,6 +37,7 @@ public:
   /*int site_order(int i,int j);*/
   double distance(int i /* site */,int j /* demand */);
   double total_demand ();
+  double get_demand(int);
 };
 
 SQM_instance* SQM_load_instance(string,int,int);

@@ -140,6 +140,12 @@ double SQM_instance::total_demand () {
   return demand;
 }
 
+double SQM_instance::get_demand (int j) {
+  if (j >= 0 && j < M)
+    return V[j].demand;
+  return -1;
+}
+
 SQM_instance* SQM_load_instance(string filename,int M_clients,int N_sites) {
   SQM_instance *I;
   string Path = "../git/PMCLAP/Instancias/Q_MCLP_";
