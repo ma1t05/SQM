@@ -6,12 +6,19 @@
 #include <gmp.h>
 
 double MST_response_time (SQM_solution* Sol /* Current configuration */);
+void MST_Calibration
+(mpf_t **f,      /* Stores the assignations */
+ mpf_t *mst,     /* Stores the response time */
+ mpf_t **Tao,    /* Stores the service times */
+ mpf_t *Lambda,  /* Stores the arrival rate */
+ SQM_solution *X /* Current configuration */
+ );
 
 void MST_update_mst
 (mpf_t *mst,       /* Stores the response time */
  SQM_solution *Sol,/* Current configuration */
  mpf_t **f         /* Curren matrix of assignations */
-);
+ );
 
 void MST_expected_travel_time
 (mpf_t t_r,        /* stores the response time */
