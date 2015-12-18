@@ -3,6 +3,7 @@
 #include "PathRelinking.h"
 #include "PerfectMatching.h"
 #include "SQM_heuristic.h"
+#include "MST.h"
 #include "random.h"
 #include "log.h"
 #include "SQM.h" /* results */
@@ -85,11 +86,22 @@ int* PR_run_perfect_matching(SQM_solution *X,SQM_solution *Y) {
 int* PR_workload_matching(SQM_solution *X,SQM_solution *Y) {
   int p = X->get_servers();
   int *pm;
-  double **distances;
-  distances = PR_distances_matrix(X,Y);
-  pm = Perfect_Matching(p,distances);
-  for (int i = 0;i < p;i++) delete [] distances[i];
-  delete [] distances;
+  int *a,*b;
+  double *wl_x,*wl_y;
+
+  pm = new int [p];
+  wl_x = MST_workload(X);
+  wl_y = MST_workload(Y);
+  a = new int [p];
+  b = new int [p];
+  sort_dist(p,wl_x,a);
+  sort_dist(p,wl_y,b);
+  for (int i = 0;i < p;i++) 
+    pm[a[i]] = b[i];
+  delete [] b;
+  delete [] a;
+  delete [] wl_y;
+  delete [] wl_x;
   return pm;
 }
 

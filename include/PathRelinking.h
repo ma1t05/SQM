@@ -16,6 +16,7 @@ double SQM_min_cost_pm(list<SQM_solution*>*,SQM_solution*);
 extern int* (*matching_function)(SQM_solution*,SQM_solution*);
 int* PR_run_perfect_matching(SQM_solution*,SQM_solution*);
 int* PR_random_matching(SQM_solution*,SQM_solution*);
+int* PR_workload_matching(SQM_solution*,SQM_solution*);
 
 extern int* (*order_function)(SQM_solution*,int*,SQM_solution*);
 int* PR_processing_order_random(SQM_solution*,int*,SQM_solution*);
