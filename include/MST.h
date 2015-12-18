@@ -6,6 +6,8 @@
 #include <gmp.h>
 
 double MST_response_time (SQM_solution* Sol /* Current configuration */);
+double* MST_workload(SQM_solution *Sol);
+
 void MST_Calibration
 (mpf_t **f,      /* Stores the assignations */
  mpf_t *mst,     /* Stores the response time */
@@ -17,13 +19,13 @@ void MST_Calibration
 void MST_update_mst
 (mpf_t *mst,       /* Stores the response time */
  SQM_solution *Sol,/* Current configuration */
- mpf_t **f         /* Curren matrix of assignations */
+ mpf_t **f         /* Current matrix of assignations */
  );
 
 void MST_expected_travel_time
 (mpf_t t_r,        /* stores the response time */
  SQM_solution *Sol,/* Current configuration */
- mpf_t **f         /* Curren matrix of assignations */
+ mpf_t **f         /* Current matrix of assignations */
  );
 
 void MST_mean_queue_delay

@@ -162,33 +162,35 @@ void MST_mean_queue_delay(mpf_t t_r,int m,int p,mpf_t *Lambda,mpf_t *MST,mpf_t *
 }
 
 double* MST_workload(SQM_solution *Sol) {
-  int m , p = Sol->get_servers();
-  mpf_t t_r;
+  
+  /* Variable definitions */
+  mpf_t tmp,rho_i;
+  mpf_t *mst; // mean service time
+  mpf_t **f,**Tao; 
   mpf_t *Lambda;
-  mpf_t *MST;
-  mpf_t **Tao;
-  mpf_t **f;
-  mpf_t mu;
-  mpf_t P_B0,rho_i;
-  mpf_t tmp;
+  double *rho;
+  double mu;
+  /* */
+  SQM_instance *I = Sol->get_instance();
+  int m = I->demand_points(); /* Number of demand points */
+  int p = Sol->get_servers ();
+ 
+  logDebug(cout << "Start: MST_workload" << endl);
+  logDebug(cout << "MST_workload: Populate matrix of pfreferred servers" << endl);
+  Sol->update_preferred_servers();
 
-  logDebug(cout << "mean queue delay START" << endl);
-
+  rho = new double[p];
+  logDebug(cout << "MST_workload: Allocate memory for mpf numbers" << endl);
+  _MST_mpf_init(&f,p,m);
+  _MST_mpf_init(&mst,p);
+  _MST_mpf_init(&Tao,p,m);
+  _MST_mpf_init(&Lambda,m);
   mpf_init(tmp);
-  mpf_init_set_ui(mu,0);
-  for (int i = 0;i < p;i++) {
-    mpf_ui_div(tmp,1,MST[i]);
-    mpf_add(mu,mu,tmp);
-  }
-  mpf_set_ui(tmp,0);
-  for (int k = 0;k < m;k++)
-    mpf_add(tmp,tmp,Lambda[k]); // lambda
-  mpf_sub(tmp,mu,tmp); // mu - lambda
-  mpf_pow_ui(tmp,tmp,2);// (mu - lambda)^2
-  mpf_div(tmp,mu,tmp); // mu / (mu - lambda)^2
-
   mpf_init(rho_i);
-  mpf_init_set_ui(P_B0,1);
+
+  logDebug(cout <<"MST_workload: Run Service Mean Time Calibration" << endl);
+  MST_Calibration(f,mst,Tao,Lambda,Sol);
+
   for (int i = 0;i < p;i++) {
     mpf_set_ui(rho_i,0);
     for (int k = 0;k < m;k++) {
@@ -196,16 +198,19 @@ double* MST_workload(SQM_solution *Sol) {
       mpf_mul(tmp,tmp,Tao[i][k]);
       mpf_add(rho_i,rho_i,tmp);
     }
-    mpf_ui_sub(tmp,1,rho_i);
-    mpf_mul(P_B0,P_B0,tmp);
+    rho[i] = mpf_get_d(rho_i);
   }
-  mpf_mul(tmp,tmp,P_B0); // P_B0 * mu / (mu - lambda)^2
-  mpf_add(t_r,t_r,tmp);
 
-  mpf_clear(P_B0);
-  mpf_clear(mu);
+  /* Deallocate memory for mpf numbers */
+  mpf_clear(rho_i);
   mpf_clear(tmp);
-  logDebug(cout << "mean queue delay FINISH" << endl);
+  _MST_mpf_clear(&Lambda,m);
+  _MST_mpf_clear(&Tao,p,m);
+  _MST_mpf_clear(&mst,p);
+  _MST_mpf_clear(&f,p,m);
+
+  logDebug(cout << "Finish: MST_workload" << endl);
+  return rho;
 }
 
 void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,SQM_solution *X) {
