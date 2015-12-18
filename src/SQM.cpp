@@ -350,7 +350,7 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
   }
   delete various_sols;
 
-  int Case = 1;
+  int Case = 7;
   double time,gap;
   results.open("PathRelinking_results.csv",std::ofstream::app);
   do {
@@ -388,6 +388,11 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
       order_function = PR_processing_order_random; /* {nf|ff|random} */
       results << "random,random,";      
       break;
+    case 7:
+      matching_function = PR_workload_matching; /* {perfect|random}_matching */
+      order_function = PR_processing_order_random; /* {nf|ff|random} */
+      results << "random,random,";      
+      break;
     default:
       break;
     }
@@ -399,7 +404,7 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
     time = (double)(now - beginning)/CLOCKS_PER_SEC;
     results << time << "," << gap << "," << X->get_response_time() << endl;
     delete X;
-  } while (Case++ < 6);
+  } while (Case++ < 7);
   results.close();
 
   SQM_delete_sols(elite_sols);
