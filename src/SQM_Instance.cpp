@@ -101,6 +101,27 @@ void SQM_instance::write (string demand_output,string facility_output) {
   facilityfile.close();
 }
 
+void SQM_instance::set_sites_distances () {
+  sites_dist = new  double*[N];
+  for (int j = 0;j < N;j++)
+    sites_dist[j] = new double [N];
+
+  for (int i = 0;i < N;i++) {
+    Dist[i][i] = 0;
+    for (int j = i+1;j < N;j++) {
+      sites_dist[i][j] = dist(&(W[j]),&(W[i]));
+      sites_dist[j][i] = sites_dist[i][j];
+    }
+  }
+
+}
+
+void SQM_instance::del_sites_distances () {
+  for (int j = 0;j < N;j++)
+    delete [] sites_dist[j];
+  delete [] sites_dist;
+}
+
 void SQM_instance::set_distances () {
   Dist = new  double*[M];
   for (int j = 0;j < M;j++)
@@ -131,6 +152,10 @@ point* SQM_instance::demand (int j) {
 
 double SQM_instance::distance (int i,int j) {
   return Dist[j][i];
+}
+
+double SQM_instance::sites_distance(int i,int j) {
+  return sites_dist[i][j];
 }
 
 double SQM_instance::total_demand () {

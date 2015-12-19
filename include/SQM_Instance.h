@@ -20,6 +20,7 @@ private:
   point *W; /* Set of potencial locations sites */
   int **a; /* List of lists of preferred sites */
   double **Dist; /* Matrix of distances beetwen demand and sites */
+  double **sites_dist; /* Matrix of distances beetwen sites */
   void set_distances();
   double lambda; /* total arrival rate */
   double speed; /* travel speed */
@@ -30,12 +31,15 @@ public:
   SQM_instance(string,string);
   ~SQM_instance();
   void write(string,string);
+  void set_sites_distances ();
+  void del_sites_distances ();
   int demand_points();
   int potential_sites();
-  point* site(int i);
-  point* demand(int j);
+  point* site(int /* site*/);
+  point* demand(int /* demand */);
   /*int site_order(int i,int j);*/
-  double distance(int i /* site */,int j /* demand */);
+  double distance(int /* site */,int /* demand */);
+  double sites_distance(int /* site */,int /* site */);
   double total_demand ();
   double get_demand(int);
 };
