@@ -1,18 +1,20 @@
 
+#include <list>
 #include <cstdlib>
 #include <ctime>
 #include <iostream>
 #include <sstream>
-/*#include "SQM_model.h"
-  #include "Goldberg.h"*/
+
+using namespace std;
+#include "SQM_model.h"
+#include "Goldberg.h"
 #include "SQM_heuristic.h"
 #include "config.h"
 #include "gnuplot.h"
 #include "SQM_GRASP.h"
-#include "log.h"
 #include "PathRelinking.h"
-#include <list>
-using namespace std;
+#include "Local_Search.h"
+#include "log.h"
 
 std::ofstream LogFile;
 std::ofstream results;
@@ -350,7 +352,7 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
   }
   delete various_sols;
 
-  int Case = 7;
+  int Case = 1;
   double time,gap;
   results.open("PathRelinking_results.csv",std::ofstream::app);
   do {
@@ -388,10 +390,21 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
       order_function = PR_processing_order_random; /* {nf|ff|random} */
       results << "random,random,";      
       break;
+      /* Workload Matching */
     case 7:
       matching_function = PR_workload_matching; /* {perfect|random}_matching */
+      order_function = PR_processing_order_nf; /* {nf|ff|random} */
+      results << "workload,nf,";      
+      break;
+    case 8:
+      matching_function = PR_workload_matching; /* {perfect|random}_matching */
+      order_function = PR_processing_order_ff; /* {nf|ff|random} */
+      results << "workload,ff,";      
+      break;
+    case 9:
+      matching_function = PR_workload_matching; /* {perfect|random}_matching */
       order_function = PR_processing_order_random; /* {nf|ff|random} */
-      results << "random,random,";      
+      results << "workload,random,";      
       break;
     default:
       break;
@@ -403,8 +416,9 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
     now = clock();
     time = (double)(now - beginning)/CLOCKS_PER_SEC;
     results << time << "," << gap << "," << X->get_response_time() << endl;
+    Local_Search(X);
     delete X;
-  } while (Case++ < 7);
+  } while (Case++ < 9);
   results.close();
 
   SQM_delete_sols(elite_sols);
