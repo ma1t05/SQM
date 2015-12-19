@@ -23,6 +23,7 @@ SQM_instance::SQM_instance (int m/* demand points */,int n/* sites */) {
     W[i].demand = 0.0;
   }
   set_distances();
+  set_sites_distances();
 }
 
 SQM_instance::SQM_instance (string nodes) {
@@ -47,6 +48,7 @@ SQM_instance::SQM_instance (string nodes) {
   }
 
   set_distances();
+  set_sites_distances();
 }
 
 SQM_instance::SQM_instance (string Demand_nodes,string facility_nodes) {
@@ -71,9 +73,11 @@ SQM_instance::SQM_instance (string Demand_nodes,string facility_nodes) {
   facilityfile.close();
 
   set_distances();
+  set_sites_distances();
 }
 
 SQM_instance::~SQM_instance () {
+  del_sites_distances();
   for (int j = 0;j < M;j++) delete [] Dist[j];
   delete [] Dist;
   delete [] V;

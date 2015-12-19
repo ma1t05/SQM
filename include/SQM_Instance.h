@@ -22,6 +22,8 @@ private:
   double **Dist; /* Matrix of distances beetwen demand and sites */
   double **sites_dist; /* Matrix of distances beetwen sites */
   void set_distances();
+  void set_sites_distances ();
+  void del_sites_distances ();
   double lambda; /* total arrival rate */
   double speed; /* travel speed */
   double mu; /* Rate of service per server */
@@ -31,8 +33,6 @@ public:
   SQM_instance(string,string);
   ~SQM_instance();
   void write(string,string);
-  void set_sites_distances ();
-  void del_sites_distances ();
   int demand_points();
   int potential_sites();
   point* site(int /* site*/);
