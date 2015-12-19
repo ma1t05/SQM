@@ -4,8 +4,6 @@
 #include "random.h"
 #include <iostream>
 
-#define UNASIGNED_LOCATION -1
-
 server::server () {
   location = 0;
   past_location = UNASIGNED_LOCATION;

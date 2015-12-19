@@ -4,6 +4,8 @@
 
 #include "SQM_Instance.h"
 
+#define UNASIGNED_LOCATION -1
+
 /* Note response_unit was changed to server */
 class server {
  private:
