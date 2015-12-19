@@ -193,6 +193,17 @@ void SQM_solution::add_server () {
   Servers = aux;
 }
 
+void SQM_solution::remove_server (int k) {
+  server *aux;
+  int j = 0;
+  aux = new server [--p];
+  for (int i = 0;i <= p;i++)
+    if (i != k)
+      aux[j++].set_location(Servers[i].get_location());
+  if (Servers != NULL) delete [] Servers;
+  Servers = aux;
+}
+
 void SQM_solution::update_preferred_servers () {
   if (p == 0) return;
   double *d;

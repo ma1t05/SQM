@@ -46,6 +46,7 @@ class SQM_solution {
   void set_server_location (int i,int j);
   void test_server_location (int i,int j);
   void add_server ();
+  void remove_server (int);
   void update_preferred_servers ();
   int get_servers () const;
   int get_server_location (int i) const;
