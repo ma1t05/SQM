@@ -427,15 +427,25 @@ void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,do
 }
 
 void Call_SQM_Local_Search(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
-  int N = 10;
-  SQM_solution *X;
-  double rt;
+  int N = 1;
+  SQM_solution *X,*Y;
+  double rt,h_rt,ls_rt;
 
+  cout << "Start: Local_Search" << endl;
   for (int r = 0;r < N;r++) {
     X = new SQM_solution(I,p);
     X->set_speed(v,BETA);
     X->set_params(lambda,Mu_NT);
-    SQM_heuristic(X);
     rt = X->get_response_time();
+    Y = X->clone();
+    SQM_heuristic(Y);
+    h_rt = Y->get_response_time();
+    Local_Search(X);
+    ls_rt = X->get_response_time();
+    cout << "\t response time: " << rt << endl
+	 << "\t     heuristic: " << h_rt << endl
+	 << "\t  local search: " << ls_rt << endl << endl;
+    delete X;
+    delete Y;
   }
 }
