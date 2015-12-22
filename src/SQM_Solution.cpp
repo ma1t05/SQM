@@ -5,7 +5,7 @@
 #include <iostream>
 
 server::server () {
-  location = 0;
+  location = UNASIGNED_LOCATION;
   past_location = UNASIGNED_LOCATION;
   v = 1.0;
   beta = 2.0;
@@ -185,9 +185,11 @@ void SQM_solution::add_server () {
   server *aux;
   int k = p;
   aux = new server [++p];
-  for (int i = 0;i < k;i++)
-    aux[i].set_location(Servers[i].get_location());
-  if (Servers != NULL) delete [] Servers;
+  if (Servers != NULL) {
+    for (int i = 0;i < k;i++)
+      aux[i].set_location(Servers[i].get_location());
+    delete [] Servers;
+  }
   Servers = aux;
 }
 
@@ -196,9 +198,12 @@ void SQM_solution::remove_server (int k) {
   int j = 0;
   aux = new server [--p];
   for (int i = 0;i <= p;i++)
-    if (i != k)
-      aux[j++].set_location(Servers[i].get_location());
-  if (Servers != NULL) delete [] Servers;
+    if (i != k) {
+      aux[j].set_speed(Servers[i].get_speed(),Servers[i].get_beta());
+      aux[j].set_location(Servers[i].get_location());
+      j++;
+    }
+  delete [] Servers;
   Servers = aux;
 }
 
