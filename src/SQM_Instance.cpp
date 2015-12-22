@@ -111,7 +111,7 @@ void SQM_instance::set_sites_distances () {
     sites_dist[j] = new double [N];
 
   for (int i = 0;i < N;i++) {
-    Dist[i][i] = 0;
+    sites_dist[i][i] = 0;
     for (int j = i+1;j < N;j++) {
       sites_dist[i][j] = dist(&(W[j]),&(W[i]));
       sites_dist[j][i] = sites_dist[i][j];
