@@ -53,7 +53,7 @@ void server::set_location (int i) {
 }
 
 void server::test_location (int i) {
-  if (past_location == UNASIGNED_LOCATION) past_location = i;
+  if (location == UNASIGNED_LOCATION) past_location = i;
   location = i;
 }
 
@@ -191,6 +191,7 @@ void SQM_solution::add_server () {
     delete [] Servers;
   }
   Servers = aux;
+  delete_preferred_servers();
 }
 
 void SQM_solution::remove_server (int k) {
@@ -205,6 +206,7 @@ void SQM_solution::remove_server (int k) {
     }
   delete [] Servers;
   Servers = aux;
+  delete_preferred_servers();
 }
 
 void SQM_solution::update_preferred_servers () {
@@ -223,6 +225,16 @@ void SQM_solution::update_preferred_servers () {
     sort_dist(p,d,a[k]);
   }
   delete [] d;
+}
+
+void SQM_solution::delete_preferred_servers () {
+  int m = Inst->demand_points();
+  if (a != NULL) {
+    for (int k = 0;k < m;k++)
+      delete [] a[k];
+    delete [] a;
+  }
+  a = NULL;
 }
 
 double SQM_solution::get_arrival_rate () const {

@@ -50,6 +50,7 @@ class SQM_solution {
   void add_server ();
   void remove_server (int);
   void update_preferred_servers ();
+  void delete_preferred_servers ();
   int get_servers () const;
   int get_server_location (int i) const;
   int get_server_past_location (int i) const;
