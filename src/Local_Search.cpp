@@ -13,14 +13,15 @@ list<int>* LS_get_adjacent_servers(SQM_solution *X,int j);
 void Local_Search (SQM_solution *X) {
   int p = X->get_servers();
   double rt;
-  cout << "Start Loca_Search" << endl
-       << "with a response time of: " << rt << endl;    
+  cout << "Start: Local_Search" << endl
+       << "\twith a response time of: " << X->get_response_time() << endl;    
   do {
     rt = X->get_response_time ();
     LS_movement_lm(X);
-    cout << "New response time: " << X->get_response_time () << endl;
+    cout << "Local_Search: New response time: " << X->get_response_time () << endl;
   } while (X->get_response_time () < rt);
   X->set_server_location(p-1,X->get_server_past_location(p-1));
+  cout << "Finish: Local_Search" << endl
 }
 
 void LS_movement_lm(SQM_solution *X) {
@@ -30,6 +31,8 @@ void LS_movement_lm(SQM_solution *X) {
   /* Obtain the server with less workload */
   int j = LS_get_server_with_less_workload(X);
   int loc_j  = X->get_server_location(j);
+  double v = X->get_server_speed(j);
+  double beta = X->get_server_beta(j);
   /* Remove them */ 
   X->remove_server(j);
   /* obtain the news workloads */
@@ -37,6 +40,7 @@ void LS_movement_lm(SQM_solution *X) {
   /* Put a server near the server with more workload */
   list<int> *lst = LS_get_adjacent_servers(X,k);
   X->add_server();
+  X->set_speed(v,beta);
   for (list<int>::iterator it = lst->begin();it != lst->end();it++) {
     X->test_server_location(p-1,*it);
     if (best_loc == UNASIGNED_LOCATION || X->get_response_time() < best_rt) {
@@ -76,7 +80,7 @@ int LS_get_server_with_more_workload(SQM_solution *X) {
   wl = MST_workload(X);
   j = 0;
   for (int i = 1;i < p;i++)
-    if (wl[i] < wl[j])
+    if (wl[i] > wl[j])
       j = i;
   delete [] wl;
   return j;
