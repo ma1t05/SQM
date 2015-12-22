@@ -61,6 +61,7 @@ class SQM_solution {
   double get_arrival_rate () const;
   double get_non_travel_time () const;
   double get_response_time ();
+  double distance (int i,int k) const;
   int ** preferred_servers () const;
   bool operator<(SQM_solution&);
   bool operator>(SQM_solution&);

@@ -251,6 +251,10 @@ double SQM_solution::get_response_time() {
   return response_time;
 }
 
+double SQM_solution::distance (int i,int k) const {
+  return Inst->distance(Servers[i].get_location(),k);
+}
+
 int** SQM_solution::preferred_servers () const {
   return a;
 }
