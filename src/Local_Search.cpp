@@ -21,7 +21,7 @@ void Local_Search (SQM_solution *X) {
     cout << "Local_Search: New response time: " << X->get_response_time () << endl;
   } while (X->get_response_time () < rt);
   X->set_server_location(p-1,X->get_server_past_location(p-1));
-  cout << "Finish: Local_Search" << endl
+  cout << "Finish: Local_Search" << endl;
 }
 
 void LS_movement_lm(SQM_solution *X) {
