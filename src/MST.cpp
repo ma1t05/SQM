@@ -128,18 +128,6 @@ void MST_mean_queue_delay(mpf_t t_r,int m,int p,mpf_t *Lambda,mpf_t *MST,mpf_t *
   logDebug(cout << "mean queue delay START" << endl);
 
   mpf_init(tmp);
-  mpf_init_set_ui(mu,0);
-  for (int i = 0;i < p;i++) {
-    mpf_ui_div(tmp,1,MST[i]);
-    mpf_add(mu,mu,tmp);
-  }
-  mpf_set_ui(tmp,0);
-  for (int k = 0;k < m;k++)
-    mpf_add(tmp,tmp,Lambda[k]); // lambda
-  mpf_sub(tmp,mu,tmp); // mu - lambda
-  mpf_pow_ui(tmp,tmp,2);// (mu - lambda)^2
-  mpf_div(tmp,mu,tmp); // mu / (mu - lambda)^2
-
   mpf_init(rho_i);
   mpf_init_set_ui(P_B0,1);
   for (int i = 0;i < p;i++) {
@@ -152,6 +140,19 @@ void MST_mean_queue_delay(mpf_t t_r,int m,int p,mpf_t *Lambda,mpf_t *MST,mpf_t *
     mpf_ui_sub(tmp,1,rho_i);
     mpf_mul(P_B0,P_B0,tmp);
   }
+
+  mpf_init_set_ui(mu,0);
+  for (int i = 0;i < p;i++) {
+    mpf_ui_div(tmp,1,MST[i]);
+    mpf_add(mu,mu,tmp);
+  }
+  mpf_set_ui(tmp,0);
+  for (int k = 0;k < m;k++)
+    mpf_add(tmp,tmp,Lambda[k]); // lambda
+  mpf_sub(tmp,mu,tmp); // mu - lambda
+  mpf_pow_ui(tmp,tmp,2);// (mu - lambda)^2
+  mpf_div(tmp,mu,tmp); // mu / (mu - lambda)^2
+
   mpf_mul(tmp,tmp,P_B0); // P_B0 * mu / (mu - lambda)^2
   mpf_add(t_r,t_r,tmp);
 
