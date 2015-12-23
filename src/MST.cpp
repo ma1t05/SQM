@@ -74,7 +74,7 @@ void MST_update_mst(mpf_t *mst,SQM_solution *X,mpf_t **f) {
 
     mpf_set_ui(mst[i],0);
     for (int k = 0;k < m;k++) {
-      mpf_set_d(tmp,1 / Mu_NT + X->get_server_rate(i) * I->distance(X->get_server_location(i),k)/(MINS_PER_BLOCK*BLOCKS_PER_HORIZON));
+      mpf_set_d(tmp,1 / Mu_NT + X->get_server_rate(i) * X->distance(i,k)/(MINS_PER_BLOCK*BLOCKS_PER_HORIZON));
       mpf_mul(tmp,tmp,f[i][k]);
       mpf_add(mst[i],mst[i],tmp);
     }
@@ -110,7 +110,7 @@ void MST_expected_travel_time
   mpf_init(tmp);
   for (int i = 0;i < p;i++) {
     for (int k = 0;k < m;k++) {
-      mpf_set_d(tmp,I->distance(X->get_server_location(i),k)/X->get_server_speed(i));
+      mpf_set_d(tmp,X->distance(i,k)/X->get_server_speed(i));
       mpf_div_ui(tmp,tmp,MINS_PER_BLOCK*BLOCKS_PER_HORIZON);
       mpf_mul(tmp,tmp,f[i][k]);
       mpf_add(t_r,t_r,tmp);
@@ -247,7 +247,7 @@ void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,SQM_solution
     logDebug(cout << "\t**Step 0** - Update matrix of response times" << endl);
     for (int i = 0;i < p;i++) {
       for (int k = 0;k < m;k++) {
-	mpf_set_d(Tao[i][k],X->get_server_rate(i) * I->distance(X->get_server_location(i),k));
+	mpf_set_d(Tao[i][k],X->get_server_rate(i) * X->distance(i,k));
 	mpf_div_ui(Tao[i][k],Tao[i][k],MINS_PER_BLOCK*BLOCKS_PER_HORIZON);
 	mpf_add(Tao[i][k],Tao[i][k],MST[i]);
       }
