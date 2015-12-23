@@ -1,4 +1,3 @@
-
 #include <fstream>
 #include <cstdlib>
 #include <cmath>
@@ -158,7 +157,8 @@ void gnuplot_write_points_file(char *output,point *Set,int k) {
   outputfile.open(output,fstream::out);
   for (int i = 0;i < k;i++) {
     outputfile << Set[i].x << " " 
-	       << Set[i].y << endl;
+	       << Set[i].y << " "
+	       << i+1 << endl;
   }
   outputfile.close();
 }
@@ -178,4 +178,53 @@ void gnuplot_GRASP(char *filename) {
   fprintf(gnuPipe,", 'GRASP.dat' using 1:4 w lp title 'Average'");
   fprintf(gnuPipe,", 'GRASP.dat' using 1:5 w lp title 'Worst'");
   pclose(gnuPipe);
+}
+
+void gnuplot_solution(SQM_solution *X,int sub) {
+  FILE *gnuPipe;
+  fstream centersfile;
+  char demand_output[32],facility_output[32],centers_output[32],edges_output[32];
+  int key;
+  SQM_instance *I = X->get_instance();
+  int m = I->demand_points();
+  int n = I->potential_sites();
+  int p = X->get_servers();
+  
+  key = rand();
+  sprintf(demand_output,"Tmp_demand_%d.dat",key);
+  gnuplot_write_points_file(demand_output,I->demand(0),m);
+
+  sprintf(facility_output,"Tmp_facility_%d.dat",key);
+  gnuplot_write_points_file(facility_output,I->site(0),n);
+
+  sprintf(centers_output,"Tmp_centers_%d.dat",key);
+  centersfile.open(centers_output,fstream::out);
+  for (int j = 0;j < n;j++) {
+    int r = 0;
+    for (int i = 0;i < p;i++) 
+      if (X->get_server_location(i) == j)
+	r++;
+    if (r > 0)
+      centersfile << I->site(j)->x << " "
+		  << I->site(j)->y << " "
+		  << r << endl;
+  }
+  centersfile.close();
+ 
+  gnuPipe = popen("gnuplot","w");
+  gnuplot_sets(gnuPipe);
+  fprintf(gnuPipe,"set output './plots/Local_Search_step_%2d.jpeg'\n",sub);
+  gnuplot_unsets(gnuPipe);
+
+  fprintf(gnuPipe,"plot ");
+  fprintf(gnuPipe,"'%s' using 1:2 w p lt 2 pt 10 title 'Facility'",facility_output);
+  fprintf(gnuPipe,", '%s' using 1:2:3 w labels point offset character 0,character 1",facility_output);
+  fprintf(gnuPipe,", '%s' using 1:2 w p lt 2 pt 7 lc rgb 'blue' title 'Demand'",demand_output);
+  fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ps variable lc rgb 'dark-grey' title 'Opened'",centers_output);
+  fprintf(gnuPipe,"\n");
+
+  pclose(gnuPipe);
+  remove(demand_output);
+  remove(facility_output);
+  remove(centers_output);
 }
