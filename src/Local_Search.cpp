@@ -4,24 +4,23 @@
 #include "Local_Search.h"
 #include "MST.h"
 
+#define epsilon 0.0001
+
 void LS_movement_lm(SQM_solution *X); /* move less workload server near to more workload */
 void LS_movement_mh(SQM_solution *X); /* move a adyacent server to the server with moreworkload closer to him */
 int LS_get_server_with_less_workload(SQM_solution *X);
 int LS_get_server_with_more_workload(SQM_solution *X);
 list<int>* LS_get_adjacent_servers(SQM_solution *X,int j);
+void LS_print_workloads(SQM_solution*);
 
 void Local_Search (SQM_solution *X) {
   int p = X->get_servers();
   double rt;
-  cout << "Start: Local_Search" << endl
-       << "\twith a response time of: " << X->get_response_time() << endl;    
   do {
     rt = X->get_response_time ();
     LS_movement_lm(X);
-    cout << "Local_Search: New response time: " << X->get_response_time () << endl;
   } while (X->get_response_time () < rt);
   X->set_server_location(p-1,X->get_server_past_location(p-1));
-  cout << "Finish: Local_Search" << endl;
 }
 
 void LS_movement_lm(SQM_solution *X) {
@@ -48,7 +47,7 @@ void LS_movement_lm(SQM_solution *X) {
       best_rt = X->get_response_time();
     }
   }
-  X->set_server_location(p-1,loc_j); /* The past location of the server */
+  X->test_server_location(p-1,loc_j); /* The past location of the server */
   X->set_server_location(p-1,best_loc);
   delete lst;
 }
@@ -105,7 +104,7 @@ list<int>* LS_get_adjacent_servers(SQM_solution *X,int i) {
 
   double radious = I->sites_distance(loc_i,nearest_loc);
   for (int k = 0;k < n;k++)
-    if (I->sites_distance(loc_i,k) < radious)
+    if (I->sites_distance(loc_i,k) < radious + epsilon)
       lst->push_back(k);
   return lst;
 }
