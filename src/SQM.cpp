@@ -21,6 +21,7 @@ std::ofstream results;
 std::ofstream dat;
 
 void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f);
+void Call_SQM_model(SQM_instance*,int,int,double,double,double,string);
 void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu);
 void Call_SQM_GRASP(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
@@ -90,6 +91,40 @@ void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f) {
 	  << mu << " mean service time, "
 	  << f << " arrival rate"
 	  << endl;
+}
+
+void Call_SQM_model(SQM_instance* I,int p,int l,double f,double mu,double v,string filename) {
+  int *Sol;
+
+  results.open("results.csv",std::ofstream::app);
+  results << I->demand_points()
+	  << "," << I->potential_sites()
+	  << "," << p 
+	  << "," << l
+	  << "," << mu
+	  << "," << f 
+	  << "," << v;
+
+  results << "," << filename << "_demand.ins," << filename << "_facility.ins";
+  
+  Sol = SQM_model(I,p,l,mu,f,v);
+  char sub[16];
+  sprintf(sub,"_%02d_%02d",p,l);
+  plot_instance_solution(I,Sol,filename+sub);
+  delete[] Sol;
+
+  if (l == p) {
+    results << I->demand_points()
+	    << "," << I->potential_sites()
+	    << "," << p 
+	    << "," << l
+	    << "," << mu
+	    << "," << f 
+	    << "," << v;
+    results << "," << filename << "_demand.ins," << filename << "_facility.ins";
+    Goldberg(I,p,mu,f);
+  }
+  results.close();
 }
 
 void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu) {
