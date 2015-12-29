@@ -32,7 +32,7 @@ void plot_instance_solution(SQM_instance *I,int *Sol,string output) {
 
   FILE *gnuPipe = popen("gnuplot","w");
   gnuplot_sets(gnuPipe);
-  fprintf(gnuPipe,"set output '%s.svg'\n",output.c_str());
+  fprintf(gnuPipe,"set output '%s.jpeg'\n",output.c_str());
   gnuplot_unsets(gnuPipe);
 
   fprintf(gnuPipe,"plot ");
