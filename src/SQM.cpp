@@ -27,6 +27,7 @@ void Call_SQM_GRASP(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 void Call_SQM_Local_Search(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
+void Test_MST(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 
 int* (*matching_function)(SQM_solution*,SQM_solution*); /* function for match */
 int* (*order_function)(SQM_solution*,int*,SQM_solution*); /* function for proccess */
@@ -67,7 +68,8 @@ int main(int argc,char *argv[]) {
   // Call_SQM_GRASP(I,p,f,mu,v);
   //Call_SQM_random(I,p,f,mu,v);
   //Call_SQM_Path_Relinking(I,p,f,mu,v);
-  Call_SQM_Local_Search(I,p,f,mu,v);
+  //Call_SQM_Local_Search(I,p,f,mu,v);
+  Test_MST(I,p,f,mu,v);
   /* Log Log_Start_SQMH(M_clients,N_sites,p,mu,f); /* */
   // Call_SQM_heuristic(I,p,f,mu);
   delete I;
@@ -483,4 +485,25 @@ void Call_SQM_Local_Search(SQM_instance *I,int p,double lambda,double Mu_NT,doub
     delete X;
     delete Y;
   }
+}
+
+void Test_MST(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
+  int loc;
+  SQM_solution *X;
+  double rt;
+  cout << "Start: Test_MST" << endl;
+  X = new SQM_solution(I,p);
+  X->set_speed(v,BETA);
+  X->set_params(lambda,Mu_NT);
+  for (int i = 0;i < p;i++) {
+    rt = X->get_response_time();
+    cout << rt << endl;
+    loc = X->get_server_location(0);
+    X->remove_server(0);
+    X->add_server();
+    X->set_server_location(p-1,loc);
+    X->set_speed(v,BETA);
+    cout << X->get_response_time() << "\t" << X->get_response_time() - rt << endl;
+  }
+  delete X;
 }
