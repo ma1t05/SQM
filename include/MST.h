@@ -38,6 +38,11 @@ void MST_mean_queue_delay
  mpf_t **f
  );
 
+void _MST_mpf_init(mpf_t**,int);
+void _MST_mpf_init(mpf_t***,int,int);
+void _MST_mpf_clear(mpf_t**,int);
+void _MST_mpf_clear(mpf_t***,int,int);
+
 #endif
 
 /* eof */

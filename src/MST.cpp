@@ -4,11 +4,6 @@
 #include "mp_jarvis.h"
 #include "log.h"
 
-void _MST_mpf_init(mpf_t**,int);
-void _MST_mpf_init(mpf_t***,int,int);
-void _MST_mpf_clear(mpf_t**,int);
-void _MST_mpf_clear(mpf_t***,int,int);
-
 double MST_response_time (SQM_solution *X) {
   
   /* Variable definitions */
