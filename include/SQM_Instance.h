@@ -42,6 +42,7 @@ public:
   double sites_distance(int /* site */,int /* site */);
   double total_demand ();
   double get_demand(int);
+  double** get_distances_matrix();
 };
 
 SQM_instance* SQM_load_instance(string,int,int);

@@ -175,6 +175,10 @@ double SQM_instance::get_demand (int j) {
   return -1;
 }
 
+double** SQM_instance::get_distances_matrix() {
+  return Dist;
+}
+
 SQM_instance* SQM_load_instance(string filename,int M_clients,int N_sites) {
   SQM_instance *I;
   string Path = "../git/PMCLAP/Instancias/Q_MCLP_";
