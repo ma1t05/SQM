@@ -32,37 +32,44 @@ CCLNDIRS  = -L$(CPLEXLIBDIR) -L$(CONCERTLIBDIR)
 CCLNFLAGS = -lconcert -lilocplex -lcplex -m32 -lm -lpthread -lgmp
 #CCLNFLAGS = -m32 -lm -lpthread -lgmp
 
-CONCERTINCDIR = $(CONCERTDIR)/include
-CPLEXINCDIR   = $(CPLEXDIR)/include
-INCLUDE     = include
+CONCERTINCDIR	:= $(CONCERTDIR)/include
+CPLEXINCDIR	:= $(CPLEXDIR)/include
+INCLUDE		:= include
 
-EXDIR         = $(CPLEXDIR)/examples
-EXINC         = $(EXDIR)/include
+CCFLAGS	:= $(CCOPT) -I$(CPLEXINCDIR) -I$(CONCERTINCDIR) -I$(INCLUDE)
+#CCFLAGS:= $(CCOPT) -I$(INCLUDE)
 
-CCFLAGS = $(CCOPT) -I$(CPLEXINCDIR) -I$(CONCERTINCDIR) -I$(INCLUDE)
-#CCFLAGS = $(CCOPT) -I$(INCLUDE)
+# ---------------------------------------------------------------------
+#----------------------------------------------------------------------
 
-#------------------------------------------------------------
+SRCDIR	:= src
+BUILDDIR:= build
+SRCEXT	:= cpp
+SOURCES	:= $(wildcard $(SRCDIR)/*.$(SRCEXT))
+OBJS	:= $(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
+TARGET	:= bin/SQM
 
-SRCDIR = src
-SRCEXT = cpp
-SOURCES = $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
-BUILDDIR= build
-OBJS:=$(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
-TARGET = bin/SQM
+# ---------------------------------------------------------------------
+# ---------------------------------------------------------------------
 
-# ------------------------------------------------------------
-
-$(TARGET): $(OBJS)
+$(TARGET): test/main.cpp $(OBJS)
 	@echo	" Linking..."
-	@echo	"$(CCC) $(CCLNDIRS) $^ -o $@ $(CCLNFLAGS)"; $(CCC) $(CCLNDIRS) $^ -o $@ $(CCLNFLAGS)
+	@echo	"$(CCC) $(CCFLAGS) $(CCLNDIRS) $^ -o $@ $(CCLNFLAGS)"; $(CCC) $(CCFLAGS) $(CCLNDIRS) $^ -o $@ $(CCLNFLAGS)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.cpp $(INCLUDE)/%.h
 	@mkdir	-p $(BUILDDIR)
 	@echo	"$(CCC) $(CCFLAGS) -c -o $@ $(CCLNFLAGS) $<";	$(CCC) $(CCFLAGS) -c $< -o $@ $(CCLNFLAGS)
+
+# Tests
+tester: bin/tester
+
+bin/tester: test/tester.cpp $(OBJS)
+	$(CCC) $(CCFLAGS) $^ -o $@ $(CCLNDIRS) $(CCLNFLAGS)
 
 clean:
 	@echo	" Cleaning..."
 	@echo	" rm -r $(BUILDDIR) $(TARGET)"; rm -r $(BUILDDIR) $(TARGET)
 # ------------------------------------------------------------
 .PHONY: clean
+
+
