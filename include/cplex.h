@@ -6,8 +6,8 @@
 #include "SQM_Instance.h"
 #include <ilcplex/ilocplex.h>
 
-#define EPSILON 0.00001
-#define TIME_MAX 1200.0
+extern double EPSILON;
+extern double TIME_MAX;
 
 ILOSTLBEGIN
 

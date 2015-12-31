@@ -262,7 +262,7 @@ void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,SQM_solution
     }
     
     logDebug(cout << "Delta in mst: " << mpf_get_d(delta_mu) << endl);
-  } while (mpf_cmp_d(delta_mu,epsilon) > 0);
+  } while (mpf_cmp_d(delta_mu,JARVIS_EPSILON) > 0);
 
   _MST_mpf_clear(&MST,p);
   mpf_clear(delta_mu);

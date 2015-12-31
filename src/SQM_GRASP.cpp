@@ -44,7 +44,7 @@ SQM_solution* GRASP
 	Sol->test_server_location(r,i);
 	/* T_r[i] = MST_response_time(Sol);*/
 	/* T_r[i] = GRASP_func_NN(Sol);*/
-	T_r[i] = GRASP_func_kNN(Sol,min(r+1,3));
+	T_r[i] = GRASP_func_kNN(Sol,min(r+1,GRASP_kNN_param));
       }
 
       logDebug(cout << "/* Sort Restricted Candidates List */" << "\t");

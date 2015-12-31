@@ -6,8 +6,8 @@
 #include "mp_jarvis.h"
 #include "log.h"
 
-#define MINS_PER_BLOCK 60
-#define BLOCKS_PER_HORIZON 24
+extern int MINS_PER_BLOCK;
+extern int BLOCKS_PER_HORIZON;
 /* */
 
 double MST_response_time (SQM_solution* Sol /* Current configuration */);

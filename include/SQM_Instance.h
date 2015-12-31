@@ -8,10 +8,10 @@
 
 using namespace std;
 
-#define MIN_X 0.0
-#define MAX_X 1024.0
-#define MIN_Y 0.0
-#define MAX_Y 1024.0
+extern double MIN_RANGE_X;
+extern double MAX_RANGE_X;
+extern double MIN_RANGE_Y;
+extern double MAX_RANGE_Y;
 
 class SQM_instance {
 private:

@@ -10,8 +10,7 @@ using namespace std;
 #include "PathRelinking.h"
 #include "Local_Search.h"
 
-#define BETA 1.5
-
+void read_config_file(string configFile);
 void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f);
 void Call_SQM_model(SQM_instance*,int,int,double,double,double,string);
 void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu,double v);
@@ -28,6 +27,20 @@ std::ofstream dat;
 /* PathRelinking extern variables */
 int* (*matching_function)(SQM_solution*,SQM_solution*); /* function for match */
 int* (*order_function)(SQM_solution*,int*,SQM_solution*); /* function for proccess */
+
+/* Global variables read from config */
+int MINS_PER_BLOCK;
+int BLOCKS_PER_HORIZON;
+double BETA;
+double JARVIS_EPSILON;
+double MIN_RANGE_X;
+double MIN_RANGE_Y;
+double MAX_RANGE_X;
+double MAX_RANGE_Y;
+int GRASP_kNN_param;
+double EPSILON;
+
+double TIME_MAX;
 
 int main(int argc,char *argv[]) {
   string filename;
@@ -54,6 +67,7 @@ int main(int argc,char *argv[]) {
     v = atof(argv[8]);
   }
   
+  read_config_file("SQM.conf");
   srand(time(NULL));
 
   /* Open Log File */
@@ -73,10 +87,28 @@ int main(int argc,char *argv[]) {
   logInfo(cout << endl << "Saved in LogFile: " << LogName.str() << endl);
 }
 
-void read_config_file() {
-  fstream config;
-  
-  config.open("SQM.conf",fstream::in);
+void read_config_file(string configFile) {
+  char *envp = NULL;
+  Config SQM_conf(configFile,&envp);
+  /* Sochastic Queue p-Medina Problem Params */
+  MINS_PER_BLOCK = SQM_conf.pInt("MINS_PER_BLOCK");
+  BLOCKS_PER_HORIZON = SQM_conf.pInt("BLOCKS_PER_HORIZON");
+  BETA = SQM_conf.pInt("BETA");
+
+  /*  Parameter for Jarvis Approximation procedure */
+  JARVIS_EPSILON = SQM_conf.pDouble("JARVIS_EPSILON");
+
+  /* Ranges to create random instances */
+  MIN_RANGE_X = SQM_conf.pDouble("MIN_RANGE_X");
+  MAX_RANGE_X = SQM_conf.pDouble("MAX_RANGE_X");
+  MIN_RANGE_Y = SQM_conf.pDouble("MIN_RANGE_Y");
+  MAX_RANGE_Y = SQM_conf.pDouble("MAX_RANGE_Y");
+
+  GRASP_kNN_param = SQM_conf.pInt("GRASP_kNN_param");
+
+  /* Cplex params */
+  EPSILON = SQM_conf.pDouble("EPSILON");
+  TIME_MAX = SQM_conf.pDouble("TIME_MAX");
   
 }
 

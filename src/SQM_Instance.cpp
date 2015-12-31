@@ -6,8 +6,8 @@ SQM_instance::SQM_instance (int m/* demand points */,int n/* sites */) {
   M = m;
   V = new point[m];
   for (int i = 0;i < m;i++) {
-    V[i].x = unif(MIN_X,MAX_X);
-    V[i].y = unif(MIN_Y,MAX_Y);
+    V[i].x = unif(MIN_RANGE_X,MAX_RANGE_X);
+    V[i].y = unif(MIN_RANGE_Y,MAX_RANGE_Y);
     V[i].demand = unif(32,1024);
   }
 
@@ -15,8 +15,8 @@ SQM_instance::SQM_instance (int m/* demand points */,int n/* sites */) {
   N = n;
   W = new point[n];
   for (int i = 0;i < n;i++) {
-    W[i].x = unif(MIN_X,MAX_X);
-    W[i].y = unif(MIN_Y,MAX_Y);
+    W[i].x = unif(MIN_RANGE_X,MAX_RANGE_X);
+    W[i].y = unif(MIN_RANGE_Y,MAX_RANGE_Y);
     W[i].demand = 0.0;
   }
   set_distances();

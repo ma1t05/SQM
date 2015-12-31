@@ -152,13 +152,13 @@ void jarvis_hypercube_approximation
     
     /*
     cout << "max change = " << mpf_get_d(max_change);
-    if (mpf_cmp_d(max_change,epsilon) < 0)
+    if (mpf_cmp_d(max_change,JARVIS_EPSILON) < 0)
       cout << " **STOP**" << endl;
     else 
       cout << "\r";
     */
 
-    if (mpf_cmp_d(max_change,epsilon) < 0) break; /* STOP */
+    if (mpf_cmp_d(max_change,JARVIS_EPSILON) < 0) break; /* STOP */
 
     for (int i = 0;i < N;i++)
       mpf_set(rho[i],new_rho[i]);

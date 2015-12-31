@@ -8,7 +8,7 @@
 #include <cmath>
 #include <gmp.h>
 
-#define epsilon 0.000001
+extern double JARVIS_EPSILON;
 using namespace std;
 
 void jarvis_hypercube_approximation
