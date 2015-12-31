@@ -34,35 +34,35 @@ CCLNFLAGS = -lconcert -lilocplex -lcplex -m32 -lm -lpthread -lgmp
 
 CONCERTINCDIR = $(CONCERTDIR)/include
 CPLEXINCDIR   = $(CPLEXDIR)/include
-INCLUDE     = ./../include
+INCLUDE     = include
 
 EXDIR         = $(CPLEXDIR)/examples
 EXINC         = $(EXDIR)/include
-DATA        = /data
 
 CCFLAGS = $(CCOPT) -I$(CPLEXINCDIR) -I$(CONCERTINCDIR) -I$(INCLUDE)
 #CCFLAGS = $(CCOPT) -I$(INCLUDE)
 
 #------------------------------------------------------------
 
-OUT=./../../../bin
-OBJS:=$(patsubst %.cpp,$(OUT)/%.o,$(wildcard *.cpp))
-CPP_EX = $(OUT)/SQM
-
-all:
-	make all_cpp
-
-all_cpp: $(CPP_EX)
+SRCDIR = src
+SRCEXT = cpp
+SOURCES = $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
+BUILDDIR= build
+OBJS:=$(patsubst $(SRCDIR)/%,$(BUILDDIR)/%,$(SOURCES:.$(SRCEXT)=.o))
+TARGET = bin/SQM
 
 # ------------------------------------------------------------
 
-$(CPP_EX): $(OBJS)
-	$(CCC) $(CCFLAGS) $(CCLNDIRS) $(OBJS) -o $@ $(CCLNFLAGS)
+$(TARGET): $(OBJS)
+	@echo	" Linking..."
+	@echo	"$(CCC) $(CCLNDIRS) $^ -o $@ $(CCLNFLAGS)"; $(CCC) $(CCLNDIRS) $^ -o $@ $(CCLNFLAGS)
 
-$(OUT)/%.o: %.cpp $(INCLUDE)/%.h
-	$(CCC) $(CCFLAGS) -c $< -o $@ $(CCLNFLAGS)
+$(BUILDDIR)/%.o: $(SRCDIR)/%.cpp $(INCLUDE)/%.h
+	@mkdir	-p $(BUILDDIR)
+	@echo	"$(CCC) $(CCFLAGS) -c -o $@ $(CCLNFLAGS) $<";	$(CCC) $(CCFLAGS) -c $< -o $@ $(CCLNFLAGS)
 
+clean:
+	@echo	" Cleaning..."
+	@echo	" rm -r $(BUILDDIR) $(TARGET)"; rm -r $(BUILDDIR) $(TARGET)
 # ------------------------------------------------------------
 .PHONY: clean
-clean:
-	rm $(OUT)/*.o
