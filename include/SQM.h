@@ -14,6 +14,14 @@ using namespace std;
 
 #define BETA 1.5
 
+void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f);
+void Call_SQM_model(SQM_instance*,int,int,double,double,double,string);
+void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu,double v);
+void Call_SQM_GRASP(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
+void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
+void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
+void Call_SQM_Local_Search(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
+
 #endif
 
 /* eof */
