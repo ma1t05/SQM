@@ -14,6 +14,7 @@ using namespace std;
 #include "SQM_GRASP.h"
 #include "PathRelinking.h"
 #include "Local_Search.h"
+#include "random.h"
 #include "log.h"
 
 std::ofstream LogFile;
@@ -28,6 +29,7 @@ void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 void Call_SQM_Local_Search(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 void Test_MST(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
+void Test_exponential(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 
 int* (*matching_function)(SQM_solution*,SQM_solution*); /* function for match */
 int* (*order_function)(SQM_solution*,int*,SQM_solution*); /* function for proccess */
@@ -66,10 +68,11 @@ int main(int argc,char *argv[]) {
   I = SQM_load_instance(filename,M_clients,N_sites);
   // Call_SQM_model(I,p,l,f,mu,v,filename);
   // Call_SQM_GRASP(I,p,f,mu,v);
-  Call_SQM_random(I,p,f,mu,v);
+  //Call_SQM_random(I,p,f,mu,v);
   //Call_SQM_Path_Relinking(I,p,f,mu,v);
   //Call_SQM_Local_Search(I,p,f,mu,v);
   //Test_MST(I,p,f,mu,v);
+  Test_exponential(I,p,f,mu,v);
   /* Log  Log_Start_SQMH(M_clients,N_sites,p,mu,f); /* */
   //Call_SQM_heuristic(I,p,f,mu,v);
   delete I;
@@ -484,13 +487,24 @@ void Call_SQM_Local_Search(SQM_instance *I,int p,double lambda,double Mu_NT,doub
     X->set_params(lambda,Mu_NT);
     rt = X->get_response_time();
     Y = X->clone();
+    cout << "\t        Method: " << "Response Time\t" << "% Improvement" << endl
+	 << "\t response time: " << rt << endl;
+
     SQM_heuristic(Y);
     h_rt = Y->get_response_time();
+    Local_Search(Y);
+    ls_rt = Y->get_response_time();
+    cout << "\t     heuristic: " << h_rt << "\t" << 100.0*(rt-h_rt)/rt << endl
+	 << "\t +local search: " << ls_rt << "\t+" << 100.0*(h_rt-ls_rt)/rt << endl;
+
     Local_Search(X);
     ls_rt = X->get_response_time();
-    cout << "\t response time: " << rt << endl
-	 << "\t     heuristic: " << h_rt << endl
-	 << "\t  local search: " << ls_rt << endl << endl;
+    SQM_heuristic(X);	
+    h_rt = X->get_response_time();
+    cout << "\t  local search: " << ls_rt << "\t" << 100.0*(rt-ls_rt)/rt << endl 
+	 << "\t    +heuristic: " << h_rt << "\t+" << 100.0*(ls_rt-h_rt)/rt << endl;
+    
+    cout << endl;
     delete X;
     delete Y;
   }
@@ -515,4 +529,30 @@ void Test_MST(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
     cout << X->get_response_time() << "\t" << X->get_response_time() - rt << endl;
   }
   delete X;
+}
+
+void Test_exponential(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
+  int m,*a;
+  double demand;
+  double lambda_j;
+  double *times;
+
+  m = I->demand_points();
+  demand = I->total_demand();
+  times = new double [m];
+  for (int j = 0;j < m;j++) {
+    lambda_j = lambda * I->get_demand(j) / demand;
+    times[j] = exponential(lambda_j);
+  }
+  a = new int [m];
+  sort_dist(m,times,a);
+
+  cout.fill('0'); cout.width(3);
+  cout << "Site\tRate\tTime" << endl;
+  for (int j = 0;j < m;j++) {
+    lambda_j = lambda * I->get_demand(j) / demand;
+    cout << a[j] << "\t" << lambda_j << "\t" << times[j] << endl;
+  }
+  delete [] a;
+  delete [] times;
 }
