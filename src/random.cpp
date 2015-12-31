@@ -10,7 +10,7 @@ int unif(int a) {
 }
 
 double unif() {
-  return rand() / RAND_MAX;
+  return (double) rand() / RAND_MAX;
 }
 
 double exponential(double lambda) {
