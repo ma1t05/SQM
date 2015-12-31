@@ -4,8 +4,6 @@
 #include "Local_Search.h"
 #include "MST.h"
 
-#define epsilon 0.0001
-
 void LS_movement_lm(SQM_solution *X); /* move less workload server near to more workload */
 void LS_movement_mh(SQM_solution *X); /* move a adyacent server to the server with moreworkload closer to him */
 int LS_get_server_with_less_workload(SQM_solution *X);
