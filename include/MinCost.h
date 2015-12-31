@@ -25,6 +25,9 @@
 
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 
 // if GRAPH_ASSERT is defined then all calls to graph construction functions are assert'ed for correctness
 // (e.g. that node_id's are valid id's and edge capacities are non-negative).

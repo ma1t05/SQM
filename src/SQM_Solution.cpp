@@ -1,8 +1,6 @@
 
 #include "SQM_Solution.h"
 #include "MST.h"
-#include "random.h"
-#include <iostream>
 
 server::server () {
   location = UNASIGNED_LOCATION;

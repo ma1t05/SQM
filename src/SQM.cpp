@@ -1,22 +1,7 @@
 
-#include <list>
-#include <cstdlib>
-#include <ctime>
-#include <iostream>
-#include <sstream>
+#include "SQM.h"
 
-using namespace std;
-#include "SQM_model.h"
-#include "Goldberg.h"
-#include "SQM_heuristic.h"
-#include "config.h"
-#include "gnuplot.h"
-#include "SQM_GRASP.h"
-#include "PathRelinking.h"
-#include "Local_Search.h"
-#include "random.h"
-#include "log.h"
-
+/* log.h extern variables */
 std::ofstream LogFile;
 std::ofstream results;
 std::ofstream dat;
@@ -31,6 +16,7 @@ void Call_SQM_Local_Search(SQM_instance *I,int p,double lambda,double Mu_NT,doub
 void Test_MST(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 void Test_exponential(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 
+/* PathRelinking extern variables */
 int* (*matching_function)(SQM_solution*,SQM_solution*); /* function for match */
 int* (*order_function)(SQM_solution*,int*,SQM_solution*); /* function for proccess */
 

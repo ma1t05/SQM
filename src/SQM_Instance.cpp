@@ -1,8 +1,5 @@
  
-#include <fstream>
-#include <cstdlib>
 #include "SQM_Instance.h"
-#include "random.h"
 
 SQM_instance::SQM_instance (int m/* demand points */,int n/* sites */) {
   /* Create random demand points */

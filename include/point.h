@@ -2,6 +2,13 @@
 #ifndef _POINT_H_
 #define _POINT_H_
 
+#include <cstdlib>
+#include <iostream>
+#include <fstream>
+#include <cmath>
+/*#include <utility>*/
+using namespace std;
+
 struct point {
   float x,y;
   /* (x,y) coordinates of the point */

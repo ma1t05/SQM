@@ -1,12 +1,5 @@
 
-#include <cstdlib>
-#include <iostream>
-#include <fstream>
-#include <cmath>
-/*#include <utility>*/
 #include "point.h"
-#include "log.h"
-using namespace std;
 
 float dist(point *i,point *j){
   return sqrt((i->x - j->x)*(i->x - j->x) + (i->y - j->y) * (i->y - j->y));

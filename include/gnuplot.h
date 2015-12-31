@@ -3,6 +3,9 @@
 #define _GNUPLOT_H 1
 
 #include <string>
+#include <fstream>
+#include <cstdlib>
+#include <cmath>
 #include "SQM_Solution.h"
 
 void plot_instance_solution(SQM_instance*,int*,string);

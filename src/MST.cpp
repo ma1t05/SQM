@@ -1,8 +1,5 @@
 
-#include "SQM.h"
 #include "MST.h"
-#include "mp_jarvis.h"
-#include "log.h"
 
 double MST_response_time (SQM_solution *X) {
   

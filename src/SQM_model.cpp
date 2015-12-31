@@ -3,7 +3,6 @@
  * 
  */
 
-#include "SQM.h"
 #include "SQM_model.h"
 
 void SQM_model

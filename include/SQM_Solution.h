@@ -2,6 +2,7 @@
 #ifndef _SQM_SOLUTION_H
 #define _SQM_SOLUTION_H 1
 
+#include <iostream>
 #include "SQM_Instance.h"
 
 #define UNASIGNED_LOCATION -1

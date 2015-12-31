@@ -1,6 +1,4 @@
-#include <fstream>
-#include <cstdlib>
-#include <cmath>
+
 #include "gnuplot.h"
 
 using namespace std;

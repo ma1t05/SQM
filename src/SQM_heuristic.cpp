@@ -1,11 +1,5 @@
 
-#include "SQM.h"
 #include "SQM_heuristic.h"
-#include "mp_jarvis.h"
-#include "MST.h"
-#include "gnuplot.h"
-#include "log.h"
-#include <sstream>
 
 /* Populate matrix of distances */
 int Solve_1_median_location_model(int,int,double**,double*);

@@ -12,6 +12,11 @@ extern LogLevel logLevel;
 #define LogInfo (logLevel >= LOG_INFO)
 #define LogDebug (logLevel >= LOG_DEBUG)
 
+#include <fstream>
+extern std::ofstream LogFile;
+extern std::ofstream results;
+extern std::ofstream dat;
+
 void debugBreak();
 
 #endif

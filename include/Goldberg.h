@@ -2,7 +2,6 @@
 #ifndef _GOLDBERG_H_
 #define _GOLDBERG_H_
 
-#include "SQM.h"
 #include "SQM_model.h"
 
 void Goldberg(SQM_instance*, int, float, float);

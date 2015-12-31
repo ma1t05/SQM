@@ -4,6 +4,8 @@
 
 #include <list>
 #include "SQM_Solution.h"
+#include "PerfectMatching.h"
+#include "SQM_heuristic.h"
 
 list<SQM_solution*>* Path_Relinking (SQM_solution*,SQM_solution*);
 SQM_solution* SQM_path_relinking(list<SQM_solution*>*);

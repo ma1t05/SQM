@@ -3,7 +3,9 @@
 #define _MST_H 1
 
 #include "SQM_Solution.h"
-#include <gmp.h>
+#include "SQM.h"
+#include "mp_jarvis.h"
+#include "log.h"
 
 double MST_response_time (SQM_solution* Sol /* Current configuration */);
 double* MST_workload(SQM_solution *Sol);

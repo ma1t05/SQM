@@ -2,8 +2,9 @@
 #ifndef _SQM_INSTANCE_H
 #define _SQM_INSTANCE_H 1
 
-#include "point.h"
 #include <string>
+#include "point.h"
+#include "random.h"
 
 using namespace std;
 

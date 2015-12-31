@@ -1,6 +1,4 @@
 
-#include <cstdlib>
-#include <cmath>
 #include "random.h"
 
 float unif(float a,float b) {

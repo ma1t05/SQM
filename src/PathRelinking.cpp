@@ -1,12 +1,5 @@
 
-#include <iostream>
 #include "PathRelinking.h"
-#include "PerfectMatching.h"
-#include "SQM_heuristic.h"
-#include "MST.h"
-#include "random.h"
-#include "log.h"
-#include "SQM.h" /* results */
 
 using namespace std;
 

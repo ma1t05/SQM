@@ -2,9 +2,12 @@
 #ifndef _SQM_MODEL
 #define _SQM_MODEL 1
 
-#include "point.h"
-#include "SQM_Instance.h"
+#define EPSILON 0.00001
+#define TIME_MAX 1200.0
+
 #include <sstream>
+#include "SQM_Instance.h"
+#include "log.h"
 #include <ilcplex/ilocplex.h>
 ILOSTLBEGIN
 
