@@ -22,7 +22,7 @@ std::ofstream dat;
 
 void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f);
 void Call_SQM_model(SQM_instance*,int,int,double,double,double,string);
-void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu);
+void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu,double v);
 void Call_SQM_GRASP(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 void Call_SQM_random(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
 void Call_SQM_Path_Relinking(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
@@ -66,12 +66,12 @@ int main(int argc,char *argv[]) {
   I = SQM_load_instance(filename,M_clients,N_sites);
   // Call_SQM_model(I,p,l,f,mu,v,filename);
   // Call_SQM_GRASP(I,p,f,mu,v);
-  //Call_SQM_random(I,p,f,mu,v);
+  Call_SQM_random(I,p,f,mu,v);
   //Call_SQM_Path_Relinking(I,p,f,mu,v);
   //Call_SQM_Local_Search(I,p,f,mu,v);
-  Test_MST(I,p,f,mu,v);
-  /* Log Log_Start_SQMH(M_clients,N_sites,p,mu,f); /* */
-  // Call_SQM_heuristic(I,p,f,mu);
+  //Test_MST(I,p,f,mu,v);
+  /* Log  Log_Start_SQMH(M_clients,N_sites,p,mu,f); /* */
+  //Call_SQM_heuristic(I,p,f,mu,v);
   delete I;
   /* Log */ LogFile.close();
   logInfo(cout << endl << "Saved in LogFile: " << LogName.str() << endl);
@@ -129,14 +129,23 @@ void Call_SQM_model(SQM_instance* I,int p,int l,double f,double mu,double v,stri
   results.close();
 }
 
-void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu) {
+void Call_SQM_heuristic(SQM_instance* I,int p,double f,double mu,double v) {
   SQM_solution *Sol;
   logInfo(cout << "Calling SQM_Heuristic" << endl);
   Sol = new SQM_solution (I,p);
+  Sol->set_speed(v,BETA);
   Sol->set_params(f,mu);
+  cout << Sol->get_response_time() << endl;
+  for (int i = 0;i < p;i++) 
+    cout << Sol->get_server_location(i) << "\t";
+  cout << endl;
   SQM_heuristic(Sol);
+  cout << Sol->get_response_time() << endl;
+  for (int i = 0;i < p;i++) 
+    cout << Sol->get_server_location(i) << "\t";
+  cout << endl;
   if (LogInfo) {
-    for (int i = 0;i < p;i++) LogFile << Sol->get_server_location(i) << " ";
+    for (int i = 0;i < p;i++) LogFile << Sol->get_server_location(i) << "\t";
     LogFile << endl;
   }
   delete Sol;
