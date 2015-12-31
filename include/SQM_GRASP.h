@@ -2,7 +2,6 @@
 #ifndef _SQM_GRASP
 #define _SQM_GRASP 1
 
-#include "SQM_Solution.h"
 #include "MST.h"
 
 SQM_solution* GRASP

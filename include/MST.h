@@ -3,9 +3,12 @@
 #define _MST_H 1
 
 #include "SQM_Solution.h"
-#include "SQM.h"
 #include "mp_jarvis.h"
 #include "log.h"
+
+#define MINS_PER_BLOCK 60
+#define BLOCKS_PER_HORIZON 24
+/* */
 
 double MST_response_time (SQM_solution* Sol /* Current configuration */);
 double* MST_workload(SQM_solution *Sol);

@@ -7,7 +7,6 @@
 #include "gnuplot.h"
 
 void SQM_heuristic(SQM_solution*);
-double SQM_response_time(SQM_solution*);
 
 #endif
 
