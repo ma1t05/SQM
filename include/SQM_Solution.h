@@ -7,7 +7,8 @@
 
 #define UNASIGNED_LOCATION -1
 
-/* Note response_unit was changed to server */
+extern double BETA;
+
 class server {
  private:
   int location;
