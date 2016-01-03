@@ -66,8 +66,8 @@ int main(int argc,char *argv[]) {
   //Test_exponential(I,p,f,mu,v);
   Simulator(I,p,f,mu,v);
   delete I;
-  /* Log */ LogFile.close();
-  logInfo(cout << endl << "Saved in LogFile: " << LogName.str() << endl);
+  /* Log */ Log_Simulation.close();
+
 }
 
 void read_config_file(string configFile) {
