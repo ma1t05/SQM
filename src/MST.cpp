@@ -1,7 +1,7 @@
 
 #include "MST.h"
 
-double MST_response_time (SQM_solution *X) {
+double MST_response_time (SQM_Instance *I,int p,server *Servers,int **preferred_servers) {
   
   /* Variable definitions */
   double T_r;
@@ -12,13 +12,9 @@ double MST_response_time (SQM_solution *X) {
   double mu;
   /* */
   mpf_t *Lambda;
-  SQM_instance *I = X->get_instance();
   int m = I->demand_points(); /* Number of demand points */
-  int p = X->get_servers ();
  
   logDebug(cout << "Start: MST_response_time" << endl);
-  logDebug(cout << "MST_response_time: Populate matrix of pfreferred servers" << endl);
-  X->update_preferred_servers();
 
   logDebug(cout << "MST_response_time: Allocate memory for mpf numbers" << endl);
   _MST_mpf_init(&mst,p);
@@ -27,7 +23,7 @@ double MST_response_time (SQM_solution *X) {
   _MST_mpf_init(&f,p,m);
 
   logDebug(cout <<"MST_response_time: Run Service Mean Time Calibration" << endl);
-  MST_Calibration(f,mst,Tao,Lambda,X);
+  MST_Calibration(f,mst,Tao,Lambda,Inst,p,preferred_servers);
 
   /* *Expected Response Time* */
   logDebug(cout <<"MST_response_time: Calcule Expected Response Time" << endl);
@@ -206,12 +202,10 @@ double* MST_workload(SQM_solution *Sol) {
   return rho;
 }
 
-void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,SQM_solution *X) {
-  SQM_instance *I = X->get_instance();
-  int m = I->demand_points();
-  int p = X->get_servers();
-  double lambda = X->get_arrival_rate(); // mean rate per unit of time within service calls are generated in Poisson manner
-  double Mu_NT = X->get_non_travel_time();
+void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,SQM_instance *Inst,int p,server *Servers,int **preferred_servers) {
+  int m = Inst->demand_points();
+  double lambda = Inst->get_arrival_rate(); // mean rate per unit of time within service calls are generated in Poisson manner
+  double Mu_NT = Inst->get_service_rate();
   mpf_t *MST; // mean service time
   mpf_t delta_mu;
   mpf_t tmp;
@@ -224,9 +218,9 @@ void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,SQM_solution
   mpf_init(delta_mu);
   _MST_mpf_init(&MST,p);
 
-  demand = I->total_demand();
+  demand = Inst->total_demand();
   for (int k = 0;k < m;k++)
-    mpf_set_d(Lambda[k],I->demand(k)->demand * lambda / demand);
+    mpf_set_d(Lambda[k],Inst->demand(k)->demand * lambda / demand);
 
   /* **Step 0**
      Initialize Mean Service Time */
@@ -240,14 +234,14 @@ void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,SQM_solution
     logDebug(cout << "\t**Step 0** - Update matrix of response times" << endl);
     for (int i = 0;i < p;i++) {
       for (int k = 0;k < m;k++) {
-	mpf_set_d(Tao[i][k],X->get_server_rate(i) * X->distance(i,k));
+	mpf_set_d(Tao[i][k],Servers[i]->get_rate * Inst->distance(Servers[i]->get_location(),k));
 	mpf_div_ui(Tao[i][k],Tao[i][k],MINS_PER_BLOCK*BLOCKS_PER_HORIZON);
 	mpf_add(Tao[i][k],Tao[i][k],MST[i]);
       }
     }
       
     logDebug(cout << "\t**Step 1** - Run the Hypercube Model" << endl);
-    jarvis_hypercube_approximation(m,p,Lambda,Tao,X->preferred_servers(),f);
+    jarvis_hypercube_approximation(m,p,Lambda,Tao,preferred_servers,f);
 
     logDebug(cout << "\t**Step 2** - Update mean service time" << endl);
     MST_update_mst(mst,X,f);
