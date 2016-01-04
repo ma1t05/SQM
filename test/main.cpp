@@ -23,6 +23,8 @@ void Call_SQM_Local_Search(SQM_instance *I,int p,double lambda,double Mu_NT,doub
 std::ofstream LogFile;
 std::ofstream results;
 std::ofstream dat;
+/* Simulation.h variables */
+std::ofstream Log_Simulation;
 
 /* PathRelinking extern variables */
 int* (*matching_function)(SQM_solution*,SQM_solution*); /* function for match */
