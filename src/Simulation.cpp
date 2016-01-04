@@ -150,9 +150,14 @@ void Simulator_attend_call(status &state,event *call) {
     }
   }
 
-  Log_Simulation << "\tCall send to queue" << endl;
   call->type = QUEUING;
   state.queue.push_back(call);
+  Log_Simulation << "\tCall send to queue:";
+  for (list<event*>::iterator it = state.queue.begin();it != state.queue.end();it++){
+    Log_Simulation << " " << (*it)->node;
+  }
+  Log_Simulation << endl;
+
 }
 
 bool server_is_free(status &state,int server) {
