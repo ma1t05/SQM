@@ -3,31 +3,9 @@
 #define _SQM_SOLUTION_H 1
 
 #include <iostream>
-#include "SQM_Instance.h"
+#include "SQM_Server.h"
 
 #define UNASIGNED_LOCATION -1
-
-extern double BETA;
-
-class server {
- private:
-  int location;
-  int past_location;
-  double v;
-  double beta;
- public:
-  server();
-  server(int i);
-  ~server();
-  void set_speed (double v,double beta);
-  void set_location (int i);
-  void test_location (int i);
-  int get_location () const;
-  int get_past_location () const;
-  double get_speed () const;
-  double get_beta () const;
-  double get_rate () const;
-};
 
 class SQM_solution {
  private:
