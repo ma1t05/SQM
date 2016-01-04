@@ -1,7 +1,7 @@
  
 #include "SQM_Instance.h"
 
-SQM_instance::SQM_instance (int m/* demand points */,int n/* sites */) {
+SQM_instance::SQM_instance (int m/* demand points */,int n/* sites */,double ar,double sr) {
   /* Create random demand points */
   M = m;
   V = new point[m];
@@ -21,6 +21,8 @@ SQM_instance::SQM_instance (int m/* demand points */,int n/* sites */) {
   }
   set_distances();
   set_sites_distances();
+  lambda = ar;
+  Mu_NT = sr;
 }
 
 SQM_instance::SQM_instance (string nodes) {
@@ -46,6 +48,8 @@ SQM_instance::SQM_instance (string nodes) {
 
   set_distances();
   set_sites_distances();
+  lambda = ar;
+  Mu_NT = sr;
 }
 
 SQM_instance::SQM_instance (string Demand_nodes,string facility_nodes) {
@@ -71,6 +75,8 @@ SQM_instance::SQM_instance (string Demand_nodes,string facility_nodes) {
 
   set_distances();
   set_sites_distances();
+  lambda = ar;
+  Mu_NT = sr;
 }
 
 SQM_instance::~SQM_instance () {
@@ -170,6 +176,14 @@ double SQM_instance::get_demand (int j) {
   if (j >= 0 && j < M)
     return V[j].demand;
   return -1;
+}
+
+double SQM_instance::get_arrival_rate () {
+  return lambda;
+}
+
+double SQM_instance::get_service_rate () {
+  return Mu_NT;
 }
 
 double** SQM_instance::get_distances_matrix() {
