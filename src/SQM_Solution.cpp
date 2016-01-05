@@ -1,6 +1,5 @@
 
 #include "SQM_Solution.h"
-#include "MST.h"
 
 SQM_solution::SQM_solution (SQM_instance *I) {
   Inst = I;
@@ -191,9 +190,20 @@ double SQM_solution::get_non_travel_time () const {
 }
 
 double SQM_solution::get_response_time() {
-  if (response_time == -1)
-    response_time = MST_response_time(this);
+  if (response_time == -1) {
+    update_preferred_servers ();
+    response_time = MST_response_time(Inst,p,Servers,a);
+  }
   return response_time;
+}
+
+double* SQM_solution::get_workload () {
+  update_preferred_servers ();
+  return MST_workload(Inst,p,Servers,a);
+}
+
+server* SQM_solution::get_Servers () {
+  return Servers;
 }
 
 double SQM_solution::distance (int i,int k) const {

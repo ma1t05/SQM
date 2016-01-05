@@ -3,9 +3,8 @@
 #define _SQM_SOLUTION_H 1
 
 #include <iostream>
-#include "SQM_Server.h"
+#include "MST.h"
 
-#define UNASIGNED_LOCATION -1
 
 class SQM_solution {
  private:
@@ -41,6 +40,8 @@ class SQM_solution {
   double get_arrival_rate () const;
   double get_non_travel_time () const;
   double get_response_time ();
+  double* get_workload ();
+  server* get_Servers();
   double distance (int i,int k) const;
   int ** preferred_servers () const;
   bool operator<(SQM_solution&);
