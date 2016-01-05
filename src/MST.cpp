@@ -1,7 +1,7 @@
 
 #include "MST.h"
 
-double MST_response_time (SQM_Instance *I,int p,server *Servers,int **preferred_servers) {
+double MST_response_time (SQM_instance *Inst,int p,server *Servers,int **preferred_servers) {
   
   /* Variable definitions */
   double T_r;
@@ -12,7 +12,7 @@ double MST_response_time (SQM_Instance *I,int p,server *Servers,int **preferred_
   double mu;
   /* */
   mpf_t *Lambda;
-  int m = I->demand_points(); /* Number of demand points */
+  int m = Inst->demand_points(); /* Number of demand points */
  
   logDebug(cout << "Start: MST_response_time" << endl);
 
@@ -23,14 +23,14 @@ double MST_response_time (SQM_Instance *I,int p,server *Servers,int **preferred_
   _MST_mpf_init(&f,p,m);
 
   logDebug(cout <<"MST_response_time: Run Service Mean Time Calibration" << endl);
-  MST_Calibration(f,mst,Tao,Lambda,Inst,p,preferred_servers);
+  MST_Calibration(f,mst,Tao,Lambda,Inst,p,Servers,preferred_servers);
 
   /* *Expected Response Time* */
   logDebug(cout <<"MST_response_time: Calcule Expected Response Time" << endl);
   mpf_init(t_r);
   /* + expected travel time component */
   logDebug(cout <<"MST_response_time: add travel time component" << endl);
-  MST_expected_travel_time(t_r,X,f);
+  MST_expected_travel_time(t_r,Inst,p,Servers,f);
   /* + mean queue delay component */
   logDebug(cout <<"MST_response_time: add mean queue delay component" << endl);
   MST_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
@@ -49,11 +49,9 @@ double MST_response_time (SQM_Instance *I,int p,server *Servers,int **preferred_
   return T_r;
 }
 
-void MST_update_mst(mpf_t *mst,SQM_solution *X,mpf_t **f) {
-  SQM_instance *I = X->get_instance ();
-  int m = I->demand_points();
-  int p = X->get_servers();
-  double Mu_NT = X->get_non_travel_time();
+void MST_update_mst(mpf_t *mst,SQM_instance *Inst,int p,server *Servers,mpf_t **f) {
+  int m = Inst->demand_points();
+  double Mu_NT = Inst->get_service_rate();
   mpf_t h,tmp;
   mpf_init(h);
   mpf_init(tmp);
@@ -62,7 +60,7 @@ void MST_update_mst(mpf_t *mst,SQM_solution *X,mpf_t **f) {
 
     mpf_set_ui(mst[i],0);
     for (int k = 0;k < m;k++) {
-      mpf_set_d(tmp,1 / Mu_NT + X->get_server_rate(i) * X->distance(i,k)/(MINS_PER_BLOCK*BLOCKS_PER_HORIZON));
+      mpf_set_d(tmp,1 / Mu_NT + Servers[i].get_rate() * Inst->distance(Servers[i].get_location(),k)/(MINS_PER_BLOCK*BLOCKS_PER_HORIZON));
       mpf_mul(tmp,tmp,f[i][k]);
       mpf_add(mst[i],mst[i],tmp);
     }
@@ -88,17 +86,18 @@ void MST_update_mst(mpf_t *mst,SQM_solution *X,mpf_t **f) {
 /* *Expected Travel Time Component* */
 void MST_expected_travel_time
 (mpf_t t_r, /* stores the response time */
- SQM_solution* X,
+ SQM_instance *Inst,
+ int p,
+ server *Servers,
  mpf_t **f
  ){
-  SQM_instance *I = X->get_instance();
-  int m = I->demand_points();
-  int p = X->get_servers();
+
+  int m = Inst->demand_points();
   mpf_t tmp;
   mpf_init(tmp);
   for (int i = 0;i < p;i++) {
     for (int k = 0;k < m;k++) {
-      mpf_set_d(tmp,X->distance(i,k)/X->get_server_speed(i));
+      mpf_set_d(tmp,Inst->distance(Servers[i].get_location(),k)/Servers[i].get_speed());
       mpf_div_ui(tmp,tmp,MINS_PER_BLOCK*BLOCKS_PER_HORIZON);
       mpf_mul(tmp,tmp,f[i][k]);
       mpf_add(t_r,t_r,tmp);
@@ -150,7 +149,7 @@ void MST_mean_queue_delay(mpf_t t_r,int m,int p,mpf_t *Lambda,mpf_t *MST,mpf_t *
   logDebug(cout << "mean queue delay FINISH" << endl);
 }
 
-double* MST_workload(SQM_solution *Sol) {
+double* MST_workload(SQM_instance *Inst,int p,server *Servers,int **preferred_servers) {
   
   /* Variable definitions */
   mpf_t tmp,rho_i;
@@ -160,13 +159,10 @@ double* MST_workload(SQM_solution *Sol) {
   double *rho;
   double mu;
   /* */
-  SQM_instance *I = Sol->get_instance();
-  int m = I->demand_points(); /* Number of demand points */
-  int p = Sol->get_servers ();
+  int m = Inst->demand_points(); /* Number of demand points */
  
   logDebug(cout << "Start: MST_workload" << endl);
   logDebug(cout << "MST_workload: Populate matrix of pfreferred servers" << endl);
-  Sol->update_preferred_servers();
 
   rho = new double[p];
   logDebug(cout << "MST_workload: Allocate memory for mpf numbers" << endl);
@@ -178,7 +174,7 @@ double* MST_workload(SQM_solution *Sol) {
   mpf_init(rho_i);
 
   logDebug(cout <<"MST_workload: Run Service Mean Time Calibration" << endl);
-  MST_Calibration(f,mst,Tao,Lambda,Sol);
+  MST_Calibration(f,mst,Tao,Lambda,Inst,p,Servers,preferred_servers);
 
   for (int i = 0;i < p;i++) {
     mpf_set_ui(rho_i,0);
@@ -234,7 +230,7 @@ void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,SQM_instance
     logDebug(cout << "\t**Step 0** - Update matrix of response times" << endl);
     for (int i = 0;i < p;i++) {
       for (int k = 0;k < m;k++) {
-	mpf_set_d(Tao[i][k],Servers[i]->get_rate * Inst->distance(Servers[i]->get_location(),k));
+	mpf_set_d(Tao[i][k],Servers[i].get_rate() * Inst->distance(Servers[i].get_location(),k));
 	mpf_div_ui(Tao[i][k],Tao[i][k],MINS_PER_BLOCK*BLOCKS_PER_HORIZON);
 	mpf_add(Tao[i][k],Tao[i][k],MST[i]);
       }
@@ -244,7 +240,7 @@ void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,SQM_instance
     jarvis_hypercube_approximation(m,p,Lambda,Tao,preferred_servers,f);
 
     logDebug(cout << "\t**Step 2** - Update mean service time" << endl);
-    MST_update_mst(mst,X,f);
+    MST_update_mst(mst,Inst,p,Servers,f);
 
     logDebug(cout << "\t**Step 3** - ");
     mpf_set_ui(delta_mu,0);

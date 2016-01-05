@@ -2,7 +2,7 @@
 #ifndef _MST_H
 #define _MST_H 1
 
-#include "SQM_Solution.h"
+#include "SQM_Server.h"
 #include "mp_jarvis.h"
 #include "log.h"
 
@@ -10,26 +10,44 @@ extern int MINS_PER_BLOCK;
 extern int BLOCKS_PER_HORIZON;
 /* */
 
-double MST_response_time (SQM_solution* Sol /* Current configuration */);
-double* MST_workload(SQM_solution *Sol);
+double MST_response_time 
+(SQM_instance* Inst, /* Current configuration */
+ int p,
+ server *Servers,
+ int **preferred_servers
+);
+
+double* MST_workload
+(SQM_instance* Inst, /* Current configuration */
+ int p,
+ server *Servers,
+ int **preferred_servers
+);
 
 void MST_Calibration
 (mpf_t **f,      /* Stores the assignations */
  mpf_t *mst,     /* Stores the response time */
  mpf_t **Tao,    /* Stores the service times */
  mpf_t *Lambda,  /* Stores the arrival rate */
- SQM_solution *X /* Current configuration */
+ SQM_instance *Inst, /* Current configuration */
+ int p,
+ server *Servers,
+ int ** preferred_servers
  );
 
 void MST_update_mst
 (mpf_t *mst,       /* Stores the response time */
- SQM_solution *Sol,/* Current configuration */
+ SQM_instance *Inst,/* Current configuration */
+ int p,
+ server *Servers,
  mpf_t **f         /* Current matrix of assignations */
  );
 
 void MST_expected_travel_time
 (mpf_t t_r,        /* stores the response time */
- SQM_solution *Sol,/* Current configuration */
+ SQM_instance *Inst,/* Current configuration */
+ int p,
+ server *Servers,
  mpf_t **f         /* Current matrix of assignations */
  );
 
