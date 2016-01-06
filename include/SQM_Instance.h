@@ -13,6 +13,9 @@ extern double MAX_RANGE_X;
 extern double MIN_RANGE_Y;
 extern double MAX_RANGE_Y;
 
+extern double lambda;
+extern double Mu_NT;
+
 class SQM_instance {
 private:
   int M; /* Number of demand points */

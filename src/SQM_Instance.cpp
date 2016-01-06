@@ -25,7 +25,7 @@ SQM_instance::SQM_instance (int m/* demand points */,int n/* sites */,double ar,
   Mu_NT = sr;
 }
 
-SQM_instance::SQM_instance (string nodes) {
+SQM_instance::SQM_instance (string nodes,double ar,double sr) {
   double S;
   fstream demandfile;
 
@@ -52,7 +52,7 @@ SQM_instance::SQM_instance (string nodes) {
   Mu_NT = sr;
 }
 
-SQM_instance::SQM_instance (string Demand_nodes,string facility_nodes) {
+SQM_instance::SQM_instance (string Demand_nodes,string facility_nodes,double ar,double sr) {
   fstream demandfile,facilityfile;
 
   /* Read demand points */
@@ -212,15 +212,15 @@ SQM_instance* SQM_load_instance(string filename,int M_clients,int N_sites) {
       return NULL;
     }
     /*cout << "Read file: " << filename << endl;*/
-    I = new SQM_instance(filename);
+    I = new SQM_instance(filename,lambda,Mu_NT);
     return I;
   }
   if (file_exists(filename+"_demand.ins") &&
       file_exists(filename+"_facility.ins")) {
-    I = new SQM_instance(filename+"_demand.ins",filename+"_facility.ins");
+    I = new SQM_instance(filename+"_demand.ins",filename+"_facility.ins",lambda,Mu_NT);
   }
   else {
-    I = new SQM_instance(M_clients,N_sites);
+    I = new SQM_instance(M_clients,N_sites,lambda,Mu_NT);
     I->write(filename+"_demand.ins",filename+"_facility.ins");
   }
   return I;
