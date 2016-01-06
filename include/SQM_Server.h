@@ -3,6 +3,8 @@
 #define _SQM_SERVER_H 1
 
 #include "SQM_Instance.h"
+#define UNASIGNED_LOCATION -1
+
 extern double BETA;
 
 class server {
