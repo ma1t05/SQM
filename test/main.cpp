@@ -43,12 +43,15 @@ int GRASP_kNN_param;
 double EPSILON;
 
 double TIME_MAX;
+/* Global variables read as aguments */
+double lambda;
+double Mu_NT;
 
 int main(int argc,char *argv[]) {
   string filename;
   int M_clients,N_sites;
   int p,l;
-  double mu,f,v;
+  double v;
   stringstream LogName;
   SQM_instance *I;
 
@@ -56,7 +59,7 @@ int main(int argc,char *argv[]) {
     filename = "Pba";
     M_clients = 50; N_sites = 30;
     p = 5; l = 3;
-    mu = 60.0*24.0/20.0; f = 0.006; v = 40.0;
+    Mu_NT = 60.0*24.0/20.0; lambda = 0.006; v = 40.0;
   }
   else {
     filename = argv[1];
@@ -64,8 +67,8 @@ int main(int argc,char *argv[]) {
     N_sites = atoi(argv[3]);
     p = atoi(argv[4]);
     l = atoi(argv[5]);
-    mu = atof(argv[6]);
-    f = atof(argv[7]);
+    Mu_NT = atof(argv[6]);
+    lambda = atof(argv[7]);
     v = atof(argv[8]);
   }
   
@@ -77,13 +80,13 @@ int main(int argc,char *argv[]) {
   LogFile.open(LogName.str().c_str(),std::ofstream::app);
 
   I = SQM_load_instance(filename,M_clients,N_sites);
-  // Call_SQM_model(I,p,l,f,mu,v,filename);
-  // Call_SQM_GRASP(I,p,f,mu,v);
-  //Call_SQM_random(I,p,f,mu,v);
-  //Call_SQM_Path_Relinking(I,p,f,mu,v);
-  Call_SQM_Local_Search(I,p,f,mu,v);
-  /* Log  Log_Start_SQMH(M_clients,N_sites,p,mu,f); /* */
-  //Call_SQM_heuristic(I,p,f,mu,v);
+  // Call_SQM_model(I,p,l,lambda,Mu_NT,v,filename);
+  // Call_SQM_GRASP(I,p,lambda,Mu_NT,v);
+  //Call_SQM_random(I,p,lambda,Mu_NT,v);
+  //Call_SQM_Path_Relinking(I,p,lambda,Mu_NT,v);
+  Call_SQM_Local_Search(I,p,lambda,Mu_NT,v);
+  /* Log  Log_Start_SQMH(M_clients,N_sites,p,Mu_NT,f); /* */
+  //Call_SQM_heuristic(I,p,lambda,Mu_NT,v);
   delete I;
   /* Log */ LogFile.close();
   logInfo(cout << endl << "Saved in LogFile: " << LogName.str() << endl);

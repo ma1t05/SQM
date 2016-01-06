@@ -39,6 +39,9 @@ int GRASP_kNN_param;
 /* cplex */
 double EPSILON;
 double TIME_MAX;
+/* Global exter variables to read from arguments */
+double lambda;
+double Mu_NT;
 
 void read_config_file(string configFile);
 void Test_MST(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
@@ -48,7 +51,7 @@ int main(int argc,char *argv[]) {
   string filename;
   int M_clients,N_sites;
   int p,l;
-  double mu,f,v;
+  double v;
   stringstream LogName;
   SQM_instance *I;
 
@@ -56,15 +59,15 @@ int main(int argc,char *argv[]) {
   filename = "Test";
   M_clients = 50; N_sites = 50;
   p = 10; l = 10;
-  mu = 60.0*24.0/20.0; f = 6; v = 500.0;
+  Mu_NT = 60.0*24.0/20.0; lambda = 6; v = 500.0;
 
   srand(time(NULL));
 
   /* Open Log File */
   Log_Simulation.open("Simulation.log",std::ofstream::out);
   I = SQM_load_instance(filename,M_clients,N_sites);
-  //Test_exponential(I,p,f,mu,v);
-  Simulator(I,p,f,mu,v);
+  //Test_exponential(I,p,lambda,Mu_NT,v);
+  Simulator(I,p,lambda,Mu_NT,v);
   delete I;
   /* Log */ Log_Simulation.close();
 

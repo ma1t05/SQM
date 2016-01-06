@@ -83,8 +83,8 @@ int* PR_workload_matching(SQM_solution *X,SQM_solution *Y) {
   double *wl_x,*wl_y;
 
   pm = new int [p];
-  wl_x = MST_workload(X);
-  wl_y = MST_workload(Y);
+  wl_x = X->get_workload();
+  wl_y = Y->get_workload();
   a = new int [p];
   b = new int [p];
   sort_dist(p,wl_x,a);

@@ -48,12 +48,12 @@ void SQM_heuristic (SQM_solution *Sol) {
     */
 
     mpf_set(T_r,t_r);
-    MST_Calibration(f,mst,Tao,Lambda,Sol);
+    MST_Calibration(f,mst,Tao,Lambda,I,p,Sol->get_Servers(),Sol->preferred_servers());
     
     logDebug(cout << "/* *Expected Response Time* */" << endl);
     mpf_set_ui(t_r,0);
     logDebug(cout << "/* + expected travel time component */" << endl);
-    MST_expected_travel_time(t_r,Sol,f);
+    MST_expected_travel_time(t_r,I,p,Sol->get_Servers(),f);
     logDebug(cout << "/* + mean queue delay component */" << endl);
     MST_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
 
@@ -68,8 +68,9 @@ void SQM_heuristic (SQM_solution *Sol) {
     }
 
     /* mpf_abs(tmp,tmp); */ // This is a bad 
-    if (mpf_cmp_d(tmp,epsilon) > 0) {
-      logDebug(cout << "/* Plot Iteration */" << endl);
+    if (mpf_cmp_d(tmp,JARVIS_EPSILON) > 0) {
+      /*
+      logDebug(cout << " Plot Iteration " << endl);
       if (LogDebug) {
 
 	double **F; // Version double of matrix f
@@ -87,13 +88,14 @@ void SQM_heuristic (SQM_solution *Sol) {
 	for (int i = 0;i < p;i++) delete [] F[i];
 	delete [] F;
       }
+      */
       logDebug(cout << "Improve locations" << endl);
       SQM_improve_locations(Sol,f);
     }
     else if (mpf_cmp_ui(tmp,0) < 0)
       SQM_return_previous_solution(Sol);
 
-  } while (mpf_cmp_d(tmp,epsilon) > 0);
+  } while (mpf_cmp_d(tmp,JARVIS_EPSILON) > 0);
   //cout << endl;
   
   mpf_clear(t_r);

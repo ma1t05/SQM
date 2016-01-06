@@ -2,7 +2,6 @@
 #include <iostream>
 #include <list>
 #include "Local_Search.h"
-#include "MST.h"
 
 void LS_movement_lm(SQM_solution *X); /* move less workload server near to more workload */
 void LS_movement_mh(SQM_solution *X); /* move a adyacent server to the server with moreworkload closer to him */
@@ -61,7 +60,7 @@ int LS_get_server_with_less_workload(SQM_solution *X) {
   int j;
   int p = X->get_servers();
   double *wl;
-  wl = MST_workload(X);
+  wl = X->get_workload();
   j = 0;
   for (int i = 1;i < p;i++)
     if (wl[i] < wl[j])
@@ -74,7 +73,7 @@ int LS_get_server_with_more_workload(SQM_solution *X) {
   int j;
   int p = X->get_servers();
   double *wl;
-  wl = MST_workload(X);
+  wl = X->get_workload();
   j = 0;
   for (int i = 1;i < p;i++)
     if (wl[i] > wl[j])
@@ -102,7 +101,7 @@ list<int>* LS_get_adjacent_servers(SQM_solution *X,int i) {
 
   double radious = I->sites_distance(loc_i,nearest_loc);
   for (int k = 0;k < n;k++)
-    if (I->sites_distance(loc_i,k) < radious + epsilon)
+    if (I->sites_distance(loc_i,k) < radious + JARVIS_EPSILON)
       lst->push_back(k);
   return lst;
 }
