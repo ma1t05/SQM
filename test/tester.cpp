@@ -59,7 +59,7 @@ int main(int argc,char *argv[]) {
   filename = "Test";
   M_clients = 50; N_sites = 50;
   p = 10; l = 10;
-  Mu_NT = 3 * MINS_PER_BLOCK / 60.0;
+  Mu_NT = 3 * BLOCKS_PER_HORIZON * MINS_PER_BLOCK / 60.0;
   lambda = 6 * MINS_PER_BLOCK / 60.0;
   v = 500.0;
 
