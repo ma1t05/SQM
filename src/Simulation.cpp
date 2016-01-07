@@ -7,39 +7,52 @@ void Simulator_attend_call(status &state,event *event);
 bool server_is_free(status &state,int server);
 
 void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
+  int N = 100;
   SQM_solution *X = new SQM_solution(I,p);
   status state;
   event *incident;
   list<event*> releases;
-  list<event*> *calls = Generate_calls(I,lambda);
 
   X->set_speed(v,BETA);
   X->set_params(lambda,Mu_NT);
   SQM_heuristic(X);
   state.Sol = X;
   state.busy = new bool[p];
-  state.events = calls;
-  state.current_time = 0;
+  state.busy_time = new double[p];
 
   for (int i = 0; i < p;i++) state.busy[i] = false;
+  for (int i = 0; i < p;i++) state.busy_time[i] = 0.0;
 
-  while (!state.events->empty()) {
-    incident = state.events->front();
-    state.events->pop_front();
-    switch (incident->type) {
-    case CALL:
-      Simulator_attend_call(state,incident);
-      break;
-    case RELEASE:
-      Simulator_release_server(state,incident);
-      break;
-    default:
-      cout << "Unknow Type!" << endl;
-      break;
+  for (int i = 0;i < N;i++) {
+    state.events = Generate_calls(I,lambda);
+    state.current_time = 0;
+
+    while (!state.events->empty()) {
+      incident = state.events->front();
+      state.events->pop_front();
+      switch (incident->type) {
+      case CALL:
+	Simulator_attend_call(state,incident);
+	break;
+      case RELEASE:
+	Simulator_release_server(state,incident);
+	break;
+      default:
+	cout << "Unknow Type!" << endl;
+	break;
+      }
     }
+    delete state.events;
   }
+
+  double *wl = X->get_workload();
+  cout << "Workload\tBusy times" << endl;
+  for (int i = 0; i < p;i++)
+    cout << 10 * wl[i] << "\t" << state.busy_time[i]/N << endl;
+  cout << endl;
+
   delete [] state.busy;
-  delete calls;
+  delete [] state.busy_time;
   delete X;
 }
 
@@ -141,6 +154,7 @@ void Simulator_attend_call(status &state,event *call) {
       release->at_time = state.current_time 
 	+ state.Sol->distance(i,call->node) * state.Sol->get_server_rate(i)
 	+ exponential(state.Sol->get_non_travel_time());
+      state.busy_time[ps[i]] += release->at_time - state.current_time; /* data */
 
       list<event*>::iterator it = state.events->begin();
       while (it != state.events->end() && release->at_time > (*it)->at_time) it++;

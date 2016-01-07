@@ -20,6 +20,7 @@ struct status {
   SQM_solution *Sol;
   bool *busy;
   double current_time;
+  double *busy_time;
   list<event*> *events;
   list<event*> queue;
 };
