@@ -6,10 +6,10 @@
 #include <fstream>
 #include "SQM_heuristic.h"
 
-enum type_event {CALL,RELEASE,QUEUING};
+enum event_type {CALL,RELEASE};
 
 struct event {
-  type_event type;
+  event_type type;
   int node;
   double at_time;
 };

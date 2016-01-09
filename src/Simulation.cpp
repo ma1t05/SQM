@@ -5,9 +5,10 @@
 void Simulator_release_server(status &state,event *rel);
 void Simulator_attend_call(status &state,event *event);
 bool server_is_free(status &state,int server);
+event* get_nearest_event_from_queue(status &state,int server);
 
 void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
-  int N = 100;
+  int N = 500;
   SQM_solution *X = new SQM_solution(I,p);
   status state;
   event *incident;
@@ -116,12 +117,16 @@ void Simulator_release_server(status &state,event *rel) {
   Log_Simulation << endl;
 
   if (!state.queue.empty()) {
-    Log_Simulation << "\tQueue isn't empty!" << endl;
-    event *queued;
-    // Determinar evento a atender
-    queued = state.queue.front();
-    state.queue.pop_front();
-    // llamar Simulator_attend_call
+    event *queued = NULL;
+
+    Log_Simulation << "\tQueue isn't empty! [";
+    queued = get_nearest_event_from_queue(state,rel->node);
+    /*
+      queued = state.queue.front();
+      state.queue.pop_front();
+    */
+    Log_Simulation << "]" << endl;
+
     Simulator_attend_call(state,queued);
   }
 }
@@ -164,7 +169,6 @@ void Simulator_attend_call(status &state,event *call) {
     }
   }
 
-  call->type = QUEUING;
   state.queue.push_back(call);
   Log_Simulation << "\tCall send to queue:";
   for (list<event*>::iterator it = state.queue.begin();it != state.queue.end();it++){
@@ -176,4 +180,20 @@ void Simulator_attend_call(status &state,event *call) {
 
 bool server_is_free(status &state,int server) {
   return !state.busy[server];
+}
+
+event* get_nearest_event_from_queue(status &state,int server) {
+  event *queued;
+  list<event*>::iterator it,aux;
+
+  queued = NULL;
+  for (it = state.queue.begin();it != state.queue.end();it++) {
+    Log_Simulation << " " << (*it)->node;
+    if (queued == NULL || state.Sol->distance(server,(*it)->node) < state.Sol->distance(server,queued->node)) {
+      queued = *it;
+      aux = it;
+    }
+  }
+  state.queue.erase(aux);
+  return queued;
 }
