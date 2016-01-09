@@ -1,11 +1,43 @@
 
+#include <iomanip>
+#include <cmath>
 #include "Simulation.h"
 #include "log.h"
 
-void Simulator_release_server(status &state,event *rel);
-void Simulator_attend_call(status &state,event *event);
+void Simulator_release_server(status &state,event &release);
+void Simulator_attend_call(status &state,event &call);
 bool server_is_free(status &state,int server);
 event* get_nearest_event_from_queue(status &state,int server);
+
+event_type event::get_type () {
+  return type;
+}
+
+double event::get_time () {
+  return at_time;
+}
+
+int event::get_node () {
+  return node;
+}
+
+std::ostream& operator<<(std::ostream &os,event &incident) {
+  double at_time = incident.get_time();
+  os << "[" << setfill('0') << setw(2) << floor(at_time) + Start_Time
+     << ":" << setfill('0') << setw(2) << floor(60 * (at_time - floor(at_time))) << "] ";
+  switch (incident.get_type()) {
+  case CALL: 
+    os << "Incoming call from demand point " << incident.get_node();
+    break;
+  case RELEASE:
+    os << "Server " << incident.get_node() << " released";
+    break;
+  default:
+    os << "Unkow " << incident.get_node() << " event";
+    break;
+  }
+  return os;
+}
 
 void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
   int N = 500;
@@ -31,12 +63,12 @@ void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
     while (!state.events->empty()) {
       incident = state.events->front();
       state.events->pop_front();
-      switch (incident->type) {
+      switch (incident->get_type()) {
       case CALL:
-	Simulator_attend_call(state,incident);
+	Simulator_attend_call(state,*incident);
 	break;
       case RELEASE:
-	Simulator_release_server(state,incident);
+	Simulator_release_server(state,*incident);
 	break;
       default:
 	cout << "Unknow Type!" << endl;
@@ -60,7 +92,6 @@ void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
 list<event*>* Generate_calls(SQM_instance *I,double lambda) {
   int m;
   int events;
-  double Simulation_Time = 10;
   double current_time,etime;
   double demand,lambda_j;
   list<event*> *calls;
@@ -79,17 +110,14 @@ list<event*>* Generate_calls(SQM_instance *I,double lambda) {
     while (current_time < Simulation_Time) {
       /* Create Call */
       logDebug(cout << "Create event" << endl);
-      call = new event;
-      call->type = CALL;
-      call->at_time = current_time;
-      call->node = j;
+      call = new event(CALL,current_time,j);
       /* Insert Call */
       logDebug(cout << "Insert event with lambda_j = " << lambda_j << endl);
-      while (it != calls->end() && current_time > (*it)->at_time) it++;
+      while (it != calls->end() && current_time > (*it)->get_time()) it++;
       /*
-      if (it != calls->end())
+	if (it != calls->end())
 	calls->insert(it,call);
-      else calls->push_back(call);
+	else calls->push_back(call);
       */
       calls->insert(it,call);
       /* Determine time of next Call */
@@ -104,12 +132,13 @@ list<event*>* Generate_calls(SQM_instance *I,double lambda) {
   return calls;
 }
 
-void Simulator_release_server(status &state,event *rel) {
-  Log_Simulation << "["<< rel->at_time << "] "
-		 << "Server " << rel->node << " released" << endl;
-  state.busy[rel->node] = false;
-  state.current_time = rel->at_time;
-  delete rel;
+void Simulator_release_server(status &state,event &release) {
+  int server = release.get_node();
+  Log_Simulation << release << endl;
+  state.busy[server] = false;
+  state.current_time = release.get_time();
+  delete &release;
+
   int p = state.Sol->get_servers();
   Log_Simulation << "\tBusy servers:";
   for (int i = 0;i < p;i++)
@@ -120,59 +149,52 @@ void Simulator_release_server(status &state,event *rel) {
     event *queued = NULL;
 
     Log_Simulation << "\tQueue isn't empty! [";
-    queued = get_nearest_event_from_queue(state,rel->node);
+    queued = get_nearest_event_from_queue(state,server);
     /*
       queued = state.queue.front();
       state.queue.pop_front();
     */
     Log_Simulation << "]" << endl;
 
-    Simulator_attend_call(state,queued);
+    Simulator_attend_call(state,*queued);
   }
 }
 
-void Simulator_attend_call(status &state,event *call) {
+void Simulator_attend_call(status &state,event &call) {
   int p = state.Sol->get_servers();
   int **pref_srvrs = state.Sol->preferred_servers();
-  int *ps = pref_srvrs[call->node];
+  int *ps = pref_srvrs[call.get_node()];
+  double service_time;
 
-  if (call->type == CALL) {
-    Log_Simulation << "[" << call->at_time << "] "
-		   << "Incoming call from demand point " << call->node << endl;
-    state.current_time = call->at_time;
-  }
-  else {
-    Log_Simulation << "[" << state.current_time << "] "
-		   << "Queued call from demand point " << call->node << endl;
-  }
+  Log_Simulation << call << endl;
+  if (call.get_type() == CALL)
+    state.current_time = call.get_time();
 
   // Lookup for nearest free server
   for (int i = 0;i < p;i++) {
     if (server_is_free(state,ps[i])) {
-      delete call;
+      delete &call;
       Log_Simulation << "\tCall hosted by server " << ps[i] << endl;
       
       state.busy[ps[i]] = true;
-      event *release = new event;
-      release->type = RELEASE;
-      release->node = ps[i];
-      release->at_time = state.current_time 
-	+ state.Sol->distance(i,call->node) * state.Sol->get_server_rate(i)
-	+ exponential(state.Sol->get_non_travel_time());
-      state.busy_time[ps[i]] += release->at_time - state.current_time; /* data */
+      service_time = exponential(state.Sol->get_non_travel_time())
+	+ state.Sol->distance(i,call.get_node()) * state.Sol->get_server_rate(i);
+	
+      event *release = new event(RELEASE,state.current_time + service_time,ps[i]);
+      state.busy_time[ps[i]] += service_time; /* data */
 
       list<event*>::iterator it = state.events->begin();
-      while (it != state.events->end() && release->at_time > (*it)->at_time) it++;
+      while (it != state.events->end() && release->get_time() > (*it)->get_time()) it++;
       state.events->insert(it,release);
 
       return;
     }
   }
 
-  state.queue.push_back(call);
+  state.queue.push_back(&call);
   Log_Simulation << "\tCall send to queue:";
   for (list<event*>::iterator it = state.queue.begin();it != state.queue.end();it++){
-    Log_Simulation << " " << (*it)->node;
+    Log_Simulation << " " << (*it)->get_node();
   }
   Log_Simulation << endl;
 
@@ -188,8 +210,8 @@ event* get_nearest_event_from_queue(status &state,int server) {
 
   queued = NULL;
   for (it = state.queue.begin();it != state.queue.end();it++) {
-    Log_Simulation << " " << (*it)->node;
-    if (queued == NULL || state.Sol->distance(server,(*it)->node) < state.Sol->distance(server,queued->node)) {
+    Log_Simulation << " " << (*it)->get_node();
+    if (queued == NULL || state.Sol->distance(server,(*it)->get_node()) < state.Sol->distance(server,queued->get_node())) {
       queued = *it;
       aux = it;
     }

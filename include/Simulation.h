@@ -3,18 +3,28 @@
 #define _SIMULATION_H
 
 #include <list>
+#include <iostream>
 #include <fstream>
 #include "SQM_heuristic.h"
 
+#define Start_Time 7
+#define Simulation_Time 10
+
 enum event_type {CALL,RELEASE};
 
-struct event {
+class event {
+ protected:
   event_type type;
-  int node;
   double at_time;
+  int node;
+ public:
+  event (event_type et,double t,int i) : type(et), at_time(t) ,node(i) {};
+  event_type get_type ();
+  double get_time ();
+  int get_node ();
 };
 
-typedef struct event event;
+std::ostream& operator<<(std::ostream &os,event &e);
 
 struct status {
   SQM_solution *Sol;
