@@ -56,6 +56,7 @@ void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
   state.waiting_time = 0.0;
   state.total_calls = 0;
   state.response_time = 0.0;
+  state.service_time = 0.0;
 
   for (int i = 0; i < p;i++) state.busy[i] = false;
   for (int i = 0; i < p;i++) state.busy_time[i] = 0.0;
@@ -90,9 +91,9 @@ void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
   cout << endl;
   cout << "  Calls send to queue: " << (double) state.calls_sent_to_queue / N << endl
        << " Average waiting time: " << state.waiting_time / state.calls_sent_to_queue << endl;
-  cout << "      Attended calls : " << (double) state.total_calls / N << endl
-       << "Average response time: " << state.response_time / state.total_calls << endl
-       << " Average service time: " << (state.response_time + state.waiting_time) / state.total_calls << endl;
+  cout << "       Attended calls: " << (double) state.total_calls / N << endl
+       << "Average response time: " << (state.response_time + state.waiting_time) / state.total_calls << endl
+       << " Average service time: " << state.service_time / state.total_calls << endl;
   delete [] state.busy;
   delete [] state.busy_time;
   delete X;
@@ -185,7 +186,7 @@ void Simulator_attend_call(status &state,event &call) {
       service_time = exponential(state.Sol->get_non_travel_time())
 	+ state.Sol->distance(i,call.get_node()) * state.Sol->get_server_rate(i);
       state.response_time += state.Sol->distance(i,call.get_node()) / state.Sol->get_server_speed(i);
-	
+      state.service_time += service_time;
       event *release = new event(RELEASE,state.current_time + service_time,ps[i]);
       state.busy_time[ps[i]] += service_time; /* data */
 

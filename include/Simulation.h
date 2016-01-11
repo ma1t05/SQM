@@ -37,6 +37,7 @@ struct status {
   double waiting_time;
   int total_calls;
   double response_time;
+  double service_time;
 };
 
 typedef struct status status;
