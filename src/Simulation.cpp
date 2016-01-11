@@ -52,6 +52,8 @@ void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
   state.Sol = X;
   state.busy = new bool[p];
   state.busy_time = new double[p];
+  state.calls_sent_to_queue = 0;
+  state.waiting_time = 0.0;
 
   for (int i = 0; i < p;i++) state.busy[i] = false;
   for (int i = 0; i < p;i++) state.busy_time[i] = 0.0;
@@ -83,7 +85,8 @@ void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
   for (int i = 0; i < p;i++)
     cout << 10 * wl[i] << "\t" << state.busy_time[i]/N << endl;
   cout << endl;
-
+  cout << " Calls send to queue: " << (double) state.calls_sent_to_queue / N << endl
+       << "Average waiting time: " << state.waiting_time / state.calls_sent_to_queue << endl;
   delete [] state.busy;
   delete [] state.busy_time;
   delete X;
@@ -155,7 +158,7 @@ void Simulator_release_server(status &state,event &release) {
       state.queue.pop_front();
     */
     Log_Simulation << "]" << endl;
-
+    state.waiting_time += state.current_time - queued->get_time();
     Simulator_attend_call(state,*queued);
   }
 }
@@ -192,6 +195,7 @@ void Simulator_attend_call(status &state,event &call) {
   }
 
   state.queue.push_back(&call);
+  state.calls_sent_to_queue++;
   Log_Simulation << "\tCall send to queue:";
   for (list<event*>::iterator it = state.queue.begin();it != state.queue.end();it++){
     Log_Simulation << " " << (*it)->get_node();

@@ -33,6 +33,8 @@ struct status {
   double *busy_time;
   list<event*> *events;
   list<event*> queue;
+  int calls_sent_to_queue;
+  double waiting_time;
 };
 
 typedef struct status status;
