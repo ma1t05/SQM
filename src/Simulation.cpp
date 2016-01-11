@@ -54,6 +54,8 @@ void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
   state.busy_time = new double[p];
   state.calls_sent_to_queue = 0;
   state.waiting_time = 0.0;
+  state.total_calls = 0;
+  state.response_time = 0.0;
 
   for (int i = 0; i < p;i++) state.busy[i] = false;
   for (int i = 0; i < p;i++) state.busy_time[i] = 0.0;
@@ -68,6 +70,7 @@ void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
       switch (incident->get_type()) {
       case CALL:
 	Simulator_attend_call(state,*incident);
+	state.total_calls++;
 	break;
       case RELEASE:
 	Simulator_release_server(state,*incident);
@@ -85,8 +88,11 @@ void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
   for (int i = 0; i < p;i++)
     cout << 10 * wl[i] << "\t" << state.busy_time[i]/N << endl;
   cout << endl;
-  cout << " Calls send to queue: " << (double) state.calls_sent_to_queue / N << endl
-       << "Average waiting time: " << state.waiting_time / state.calls_sent_to_queue << endl;
+  cout << "  Calls send to queue: " << (double) state.calls_sent_to_queue / N << endl
+       << " Average waiting time: " << state.waiting_time / state.calls_sent_to_queue << endl;
+  cout << "      Attended calls : " << (double) state.total_calls / N << endl
+       << "Average response time: " << state.response_time / state.total_calls << endl
+       << " Average service time: " << (state.response_time + state.waiting_time) / state.total_calls << endl;
   delete [] state.busy;
   delete [] state.busy_time;
   delete X;
@@ -153,10 +159,6 @@ void Simulator_release_server(status &state,event &release) {
 
     Log_Simulation << "\tQueue isn't empty! [";
     queued = get_nearest_event_from_queue(state,server);
-    /*
-      queued = state.queue.front();
-      state.queue.pop_front();
-    */
     Log_Simulation << "]" << endl;
     state.waiting_time += state.current_time - queued->get_time();
     Simulator_attend_call(state,*queued);
@@ -182,6 +184,7 @@ void Simulator_attend_call(status &state,event &call) {
       state.busy[ps[i]] = true;
       service_time = exponential(state.Sol->get_non_travel_time())
 	+ state.Sol->distance(i,call.get_node()) * state.Sol->get_server_rate(i);
+      state.response_time += state.Sol->distance(i,call.get_node()) / state.Sol->get_server_speed(i);
 	
       event *release = new event(RELEASE,state.current_time + service_time,ps[i]);
       state.busy_time[ps[i]] += service_time; /* data */
@@ -221,5 +224,12 @@ event* get_nearest_event_from_queue(status &state,int server) {
     }
   }
   state.queue.erase(aux);
+  return queued;
+}
+
+event* get_first_event_from_queue(status &state,int server) {
+  event *queued;
+  queued = state.queue.front();
+  state.queue.pop_front();
   return queued;
 }

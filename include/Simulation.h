@@ -35,6 +35,8 @@ struct status {
   list<event*> queue;
   int calls_sent_to_queue;
   double waiting_time;
+  int total_calls;
+  double response_time;
 };
 
 typedef struct status status;
