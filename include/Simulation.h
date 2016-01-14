@@ -10,14 +10,17 @@
 #define Start_Time 7
 #define Simulation_Time 10
 
+#define NOT_QUEUED -1
 extern std::ofstream Log_Simulation;
-typedef list<event*> events_list;
+typedef struct status status;
 
 class event {
 public:
-  virtual double get_time () = 0;
   virtual void process (status&) = 0;
+  virtual int get_point () const = 0;
+  virtual double get_time () const = 0;
 };
+typedef list<event*> list_events;
 
 class call : public event {
 private:
@@ -25,13 +28,15 @@ private:
   int demand_point;
   bool queued;
   double queued_at_time;
+  void queue_call (list_events&);
+  void set_time (double t);
 public:
-  call (double t,int i) : at_time(t), demand_point(i) {};
-  double get_time () const;
+  call (double t,int i);
   void process (status&);
+  double get_time () const;
+  int get_point () const;
   bool is_queued () const;
   double get_waiting_time () const;
-  void queue_call (event_list&);
 };
 std::ostream& operator<<(std::ostream &os,call &c);
 
@@ -39,36 +44,36 @@ class release : public event {
 private:
   int server;
   int demand_point;
-  double arrival_time;
+  double travel_time;
+  double on_scene_st;
+  double follow_up_travel_time;
   double service_time;
   double return_time;
 public:
-  release (call&);
-  double get_time () const;
-  double get_arrival_time () const;
+  release (status&,int,int);
   void process (status&);
+  int get_point () const;
+  double get_time () const;
+  double get_travel_time () const;
 };
 std::ostream& operator<<(std::ostream &os,release &r);
 
 void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
-list<event*>* Generate_calls(SQM_instance *I,double lambda);
+list_events* Generate_calls(SQM_instance *I,double lambda);
 
 struct status {
   SQM_solution *Sol;
   bool *busy;
   double current_time;
   double *busy_time;
-  list<event*> *events;
-  list<event*> queue;
+  list_events *events;
+  list_events queue;
+  int total_calls;
   int calls_sent_to_queue;
   double waiting_time;
-  int total_calls;
-  double response_time;
+  double arrival_time;
   double service_time;
 };
-
-typedef struct status status;
-
 
 #endif
 
