@@ -4,13 +4,15 @@
 #include "Simulation.h"
 #include "log.h"
 
+void print_time(double current_time);
 void Simulator_release_server(status &state,event &release);
 void Simulator_attend_call(status &state,event &call);
 bool server_is_free(status &state,int server);
 event* get_nearest_event_from_queue(status &state,int server);
 
-event_type event::get_type () {
-  return type;
+void print_time(std::ostream &os,double current_time) {
+  os << "[" << setfill('0') << setw(2) << floor(at_time)
+     << ":" << setfill('0') << setw(2) << floor(60 * (at_time - floor(at_time))) << "] ";
 }
 
 double event::get_time () {
@@ -21,21 +23,23 @@ int event::get_node () {
   return node;
 }
 
-std::ostream& operator<<(std::ostream &os,event &incident) {
-  double at_time = incident.get_time();
-  os << "[" << setfill('0') << setw(2) << floor(at_time) + Start_Time
-     << ":" << setfill('0') << setw(2) << floor(60 * (at_time - floor(at_time))) << "] ";
-  switch (incident.get_type()) {
-  case CALL: 
-    os << "Incoming call from demand point " << incident.get_node();
-    break;
-  case RELEASE:
-    os << "Server " << incident.get_node() << " released";
-    break;
-  default:
-    os << "Unkow " << incident.get_node() << " event";
-    break;
+std::ostream& operator<<(std::ostream &os,call &incident) {
+  print_time(os,incident.get_time() + Start_Time);
+
+  if (incident.is_queued()) {
+    os << "Queued call since ";
+    print_time(os,incident.get_waiting_time());
+    os << " from demand point " << incident.get_node();
   }
+  else 
+    os << "Incoming call from demand point " << incident.get_node();
+    
+  return os;
+}
+
+std::ostream& operator<<(std::ostream &os,release &incident) {
+  print_time(os,incident.get_time() + Start_Time);
+  os << "Server " << incident.get_node() << " released";
   return os;
 }
 
@@ -87,13 +91,19 @@ void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
   double *wl = X->get_workload();
   cout << "Workload\tBusy times" << endl;
   for (int i = 0; i < p;i++)
-    cout << 10 * wl[i] << "\t" << state.busy_time[i]/N << endl;
+    cout << 10 * wl[i] << "\t" << state.busy_time[i]/ (N * Simulation_Time) << endl;
   cout << endl;
-  cout << "  Calls send to queue: " << (double) state.calls_sent_to_queue / N << endl
-       << " Average waiting time: " << state.waiting_time / state.calls_sent_to_queue << endl;
-  cout << "       Attended calls: " << (double) state.total_calls / N << endl
-       << "Average response time: " << (state.response_time + state.waiting_time) / state.total_calls << endl
-       << " Average service time: " << state.service_time / state.total_calls << endl;
+  delete [] wl;
+  cout << "  Calls send to queue: " 
+       << (double) state.calls_sent_to_queue / N << endl
+       << " Average waiting time: " 
+       << state.waiting_time / state.calls_sent_to_queue << endl;
+  cout << "       Attended calls: " 
+       << (double) state.total_calls / N << endl
+       << "Average response time: " 
+       << (state.response_time + state.waiting_time) / state.total_calls << endl
+       << " Average service time: " 
+       << state.service_time / state.total_calls << endl;
   delete [] state.busy;
   delete [] state.busy_time;
   delete X;

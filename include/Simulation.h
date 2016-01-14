@@ -10,21 +10,48 @@
 #define Start_Time 7
 #define Simulation_Time 10
 
-enum event_type {CALL,RELEASE};
+extern std::ofstream Log_Simulation;
+typedef list<event*> events_list;
 
 class event {
- protected:
-  event_type type;
-  double at_time;
-  int node;
- public:
-  event (event_type et,double t,int i) : type(et), at_time(t) ,node(i) {};
-  event_type get_type ();
-  double get_time ();
-  int get_node ();
+public:
+  virtual double get_time () = 0;
+  virtual void process (status&) = 0;
 };
 
-std::ostream& operator<<(std::ostream &os,event &e);
+class call : public event {
+private:
+  double at_time;
+  int demand_point;
+  bool queued;
+  double queued_at_time;
+public:
+  call (double t,int i) : at_time(t), demand_point(i) {};
+  double get_time () const;
+  void process (status&);
+  bool is_queued () const;
+  double get_waiting_time () const;
+  void queue_call (event_list&);
+};
+std::ostream& operator<<(std::ostream &os,call &c);
+
+class release : public event {
+private:
+  int server;
+  int demand_point;
+  double arrival_time;
+  double service_time;
+  double return_time;
+public:
+  release (call&);
+  double get_time () const;
+  double get_arrival_time () const;
+  void process (status&);
+};
+std::ostream& operator<<(std::ostream &os,release &r);
+
+void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
+list<event*>* Generate_calls(SQM_instance *I,double lambda);
 
 struct status {
   SQM_solution *Sol;
@@ -42,10 +69,6 @@ struct status {
 
 typedef struct status status;
 
-void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
-list<event*>* Generate_calls(SQM_instance *I,double lambda);
-
-extern std::ofstream Log_Simulation;
 
 #endif
 
