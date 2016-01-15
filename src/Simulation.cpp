@@ -77,8 +77,8 @@ void call::queue_call (status &state) {
 }
 
 void call::dequeue_call (status &state,int server) {
-  state.waiting_time += get_waiting_time();
   set_time(state.current_time);
+  state.waiting_time += get_waiting_time();
   Log_Simulation << *this << endl;
   new release (state,server,demand_point);
   delete this;
