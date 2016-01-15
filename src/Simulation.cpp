@@ -56,7 +56,6 @@ void call::process (status &state) {
     if (server_is_free(state,ps[i])) {
       new release (state,ps[i],demand_point);
       delete this;
-      cout << "Call deleted" << endl;
       return;
     }
   }
@@ -93,7 +92,6 @@ double call::get_waiting_time () const {
 }
 
 std::ostream& operator<<(std::ostream &os,call &incident) {
-  cout << "Print time" << endl;
   print_time(os,incident.get_time() + Start_Time);
 
   if (incident.is_queued()) {
@@ -108,9 +106,10 @@ std::ostream& operator<<(std::ostream &os,call &incident) {
 }
 
 /* Class 'release' methods */
-release::release(status &state,int server,int demand_point) {
-  Log_Simulation << "\tCall hosted by server " << server << endl;
-
+release::release(status &state,int id_server,int id_demand) {
+  Log_Simulation << "\tCall hosted by server " << id_server << endl;
+  server = id_server;
+  demand_point = id_demand;
   travel_time = state.Sol->distance(server,demand_point) / state.Sol->get_server_speed(server);
   on_scene_st = exponential(state.Sol->get_non_travel_time());
   follow_up_travel_time = 
@@ -128,10 +127,8 @@ release::release(status &state,int server,int demand_point) {
 }
 
 void release::process (status &state) {
-  cout << "Start process release" << endl;
   state.busy[server] = false;
   state.current_time = return_time;
-
   Log_Simulation << *this << endl;
   int p = state.Sol->get_servers();
   Log_Simulation << "\tBusy servers:";
@@ -145,7 +142,6 @@ void release::process (status &state) {
     queued->process(state);
   }
   delete this;
-  cout << "Finish process release" << endl;
 }
 
 int release::get_point () const {
@@ -197,7 +193,6 @@ void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
       incident = state.events->front();
       state.events->pop_front();
       incident->process(state);
-      cout << "Main process end" << endl;
     }
     delete state.events;
   }
