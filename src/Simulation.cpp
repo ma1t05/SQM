@@ -215,10 +215,12 @@ void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
        << "  Calls send to queue: " 
        << (double) state.calls_sent_to_queue / N << endl
        << "\t*** Average times ***" << endl
-       << "service\twaiting\tarrival" << endl;
+       << "service\twaiting\ttravel\tarrival" << endl;
   print_time(cout,state.service_time / state.total_calls); /* service */
   cout << "\t";
   print_time(cout,state.waiting_time / state.calls_sent_to_queue); /* waiting */
+  cout << "\t";
+  print_time(cout,state.arrival_time / state.total_calls); /* travel */
   cout << "\t";
   print_time(cout,(state.arrival_time + state.waiting_time) / state.total_calls); /* arrival */
   cout << endl;
