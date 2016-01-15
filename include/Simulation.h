@@ -28,17 +28,19 @@ private:
   int demand_point;
   bool queued;
   double queued_at_time;
-  void queue_call (list_events&);
+  void queue_call (status&);
   void set_time (double t);
 public:
   call (double t,int i);
   void process (status&);
+  void dequeue_call (status&,int);
   double get_time () const;
   int get_point () const;
   bool is_queued () const;
   double get_waiting_time () const;
 };
 std::ostream& operator<<(std::ostream &os,call &c);
+typedef list<call*> queued_calls;
 
 class release : public event {
 private:
@@ -67,7 +69,7 @@ struct status {
   double current_time;
   double *busy_time;
   list_events *events;
-  list_events queue;
+  queued_calls queue;
   int total_calls;
   int calls_sent_to_queue;
   double waiting_time;
