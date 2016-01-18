@@ -115,8 +115,27 @@ void jarvis_hypercube_approximation
     for (int k = 0;k < N;k++)
       correction_factor_Q(Q_N_rho[k],N,Rho,k);
   
+    /* Compute f_{im} */
+    mpf_t rho_a_ml;
+    mpf_init(rho_a_ml);
+    for (int i = 0;i < N;i++) {
+      for (int m = 0;m < C;m++) {
+	mpf_set_ui(rho_a_ml,1);
+	for (int k = 0;k < N;k++) {
+	  if (a[m][k] == i) {
+	    mpf_ui_sub(tmp,1,rho[i]);
+	    mpf_mul(tmp,tmp,rho_a_ml);
+	    mpf_mul(f[i][m],tmp,Q_N_rho[k]);
+	    break;
+	  }
+	  mpf_mul(rho_a_ml,rho_a_ml,rho[a[m][k]]);
+	}
+      }
+    }
+    mpf_clear(rho_a_ml);
+
     /* Aproximation of 'rho'_i */
-    mpf_t Vi,rho_a_ml;
+    mpf_t Vi;
     mpf_init(Vi);
     mpf_init(rho_a_ml);
     for (int i = 0;i < N;i++) {
@@ -179,24 +198,6 @@ void jarvis_hypercube_approximation
     mpf_div(tmp,tmp,Rho);
     mpf_ui_sub(P__N,1,tmp);
 
-    /* Compute f_{im} */
-    mpf_init(rho_a_ml);
-    for (int i = 0;i < N;i++) {
-      for (int m = 0;m < C;m++) {
-	mpf_set_ui(rho_a_ml,1);
-	for (int k = 0;k < N;k++) {
-	  if (a[m][k] == i) {
-	    mpf_ui_sub(tmp,1,rho[i]);
-	    mpf_mul(tmp,tmp,rho_a_ml);
-	    mpf_mul(f[i][m],tmp,Q_N_rho[k]);
-	    break;
-	  }
-	  mpf_mul(rho_a_ml,rho_a_ml,rho[a[m][k]]);
-	}
-      }
-    }
-    mpf_clear(rho_a_ml);
-
     /* Compute mean service time 'tao' */
     mpf_t aux;
     mpf_set_ui(tao,0);
@@ -218,13 +219,13 @@ void jarvis_hypercube_approximation
   } while (1);
 
   /*
-    cout << "finsh jarvis" << endl;
-    for (int i = 0;i < N;i++) {
+  cout << "finsh jarvis" << endl;
+  for (int i = 0;i < N;i++) {
     for (int m = 0;m < C;m++) {
-    cout << f[i][m] << " ";
+      cout << mpf_get_d(f[i][m]) << " ";
     }
     cout << endl;
-    }
+  }
   */
 
   mpf_clear(tmp);
