@@ -178,9 +178,7 @@ void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
   X = new SQM_solution(I,p);
   X->set_speed(v,BETA);
   X->set_params(lambda,Mu_NT);
-  logLevel = LOG_DEBUG;
   SQM_heuristic(X);
-  logLevel = LOG_INFO;
 
   state.Sol = X;
   state.busy = new bool[p];
