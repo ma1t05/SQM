@@ -52,6 +52,7 @@ double MST_response_time (SQM_instance *Inst,int p,server *Servers,int **preferr
 void MST_update_mst(mpf_t *mst,SQM_instance *Inst,int p,server *Servers,mpf_t **f) {
   int m = Inst->demand_points();
   double Mu_NT = Inst->get_service_rate();
+  double distance;
   mpf_t h,tmp;
   mpf_init(h);
   mpf_init(tmp);
@@ -60,10 +61,14 @@ void MST_update_mst(mpf_t *mst,SQM_instance *Inst,int p,server *Servers,mpf_t **
 
     mpf_set_ui(mst[i],0);
     for (int k = 0;k < m;k++) {
-      mpf_set_d(tmp,1 / Mu_NT + Servers[i].get_rate() * Inst->distance(Servers[i].get_location(),k)/(MINS_PER_BLOCK*BLOCKS_PER_HORIZON));
+      distance = Inst->distance(Servers[i].get_location(),k);
+      mpf_set_d(tmp,1 / Mu_NT + Servers[i].get_rate() * distance);
+      mpf_div_ui(tmp,tmp,MINS_PER_BLOCK * BLOCKS_PER_HORIZON);
       mpf_mul(tmp,tmp,f[i][k]);
+      /* cout << " " << mpf_get_d(f[i][k]);*/
       mpf_add(mst[i],mst[i],tmp);
     }
+    /*cout << endl;*/
 
     mpf_set_ui(h,0);
     for (int k = 0;k < m;k++) {
@@ -75,7 +80,8 @@ void MST_update_mst(mpf_t *mst,SQM_instance *Inst,int p,server *Servers,mpf_t **
     */
     if (mpf_cmp_ui(h,0) > 0) /* WARNING: This sum shoudn't be 0 */
       mpf_div(mst[i],mst[i],h);
-    else cout << endl;
+    else logError(cout << "MST_update_mst:\tWARNING! sum over j of f_" << i+1 
+		  << "j = 0" << endl);
   }
   mpf_clear(tmp);
   mpf_clear(h);
@@ -206,6 +212,7 @@ void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,SQM_instance
   mpf_t delta_mu;
   mpf_t tmp;
   double demand;
+  double distance;
   
   logDebug(cout << "Start: MST_Calibration" << endl);
   logDebug(cout << "/* SERVICE MEAN TIME CALIBRATION */" << endl);
@@ -220,20 +227,25 @@ void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,SQM_instance
 
   /* **Step 0**
      Initialize Mean Service Time */
-  for (int i = 0;i < p;i++)
+  for (int i = 0;i < p;i++) {
     mpf_set_d(mst[i],1 / Mu_NT);
+    mpf_div_ui(mst[i],mst[i],MINS_PER_BLOCK*BLOCKS_PER_HORIZON);
+  }
 
   do {
     for (int i = 0;i < p;i++)
       mpf_set(MST[i],mst[i]);
 
     logDebug(cout << "\t**Step 0** - Update matrix of response times" << endl);
-    for (int i = 0;i < p;i++) {
-      for (int k = 0;k < m;k++) {
-	mpf_set_d(Tao[i][k],Servers[i].get_rate() * Inst->distance(Servers[i].get_location(),k));
-	mpf_div_ui(Tao[i][k],Tao[i][k],MINS_PER_BLOCK*BLOCKS_PER_HORIZON);
+    for (int k = 0;k < m;k++) {
+      for (int i = 0;i < p;i++) {
+	distance = Inst->distance(Servers[i].get_location(),k);
+	mpf_set_d(Tao[i][k],Servers[i].get_rate() * distance);
 	mpf_add(Tao[i][k],Tao[i][k],MST[i]);
+	mpf_div_ui(Tao[i][k],Tao[i][k],MINS_PER_BLOCK*BLOCKS_PER_HORIZON);
+	/* cout << "\t" << mpf_get_d(Tao[i][k]);*/
       }
+      /* cout << endl;*/
     }
       
     logDebug(cout << "\t**Step 1** - Run the Hypercube Model" << endl);
