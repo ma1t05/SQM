@@ -60,8 +60,8 @@ public:
 };
 std::ostream& operator<<(std::ostream &os,release &r);
 
-void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
-list_events* Generate_calls(SQM_instance *I,double lambda);
+void Simulator(SQM_instance &Inst,int p,double lambda,double Mu_NT,double v);
+list_events* Generate_calls(SQM_instance &Inst,double lambda);
 
 struct status {
   SQM_solution *Sol;

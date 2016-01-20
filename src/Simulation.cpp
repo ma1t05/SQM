@@ -169,13 +169,13 @@ std::ostream& operator<<(std::ostream &os,release &incident) {
   return os;
 }
 
-void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
+void Simulator(SQM_instance &Inst,int p,double lambda,double Mu_NT,double v) {
   int N = 500;
   SQM_solution *X;
   status state;
   event *incident;
 
-  X = new SQM_solution(I,p);
+  X = new SQM_solution(Inst,p);
   X->set_speed(v,BETA);
   X->set_params(lambda,Mu_NT);
   SQM_heuristic(X);
@@ -193,7 +193,7 @@ void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
   for (int i = 0; i < p;i++) state.busy_time[i] = 0.0;
 
   for (int i = 0;i < N;i++) {
-    state.events = Generate_calls(I,lambda);
+    state.events = Generate_calls(Inst,lambda);
     state.current_time = 0;
 
     while (!state.events->empty()) {
@@ -230,7 +230,7 @@ void Simulator(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
   delete X;
 }
 
-list_events* Generate_calls(SQM_instance *I,double lambda) {
+list_events* Generate_calls(SQM_instance &Inst,double lambda) {
   int m;
   int events;
   double current_time,etime;
@@ -241,10 +241,10 @@ list_events* Generate_calls(SQM_instance *I,double lambda) {
 
   logDebug(cout << "Start Generate_calls" << endl);
   calls = new list_events;
-  m = I->demand_points();
-  demand = I->total_demand();
+  m = Inst.demand_points();
+  demand = Inst.total_demand();
   for (int j = 0;j < m;j++) {
-    lambda_j = lambda * I->get_demand(j) / demand;
+    lambda_j = lambda * Inst.get_demand(j) / demand;
     current_time = exponential(lambda_j);
     it = calls->begin();
     events = 0;

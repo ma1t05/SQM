@@ -5,8 +5,16 @@
 
 #include "Goldberg.h"
 
+void gnuplot_goldberg
+(SQM_instance&,
+ int,
+ IloCplex&,
+ IloBoolVarArray&,
+ BoolVarArrayMatrix&
+ );
+
 void Goldberg
-(SQM_instance* I, // Set of points
+(SQM_instance &Inst, // Set of points
  int p, // facilities
  float mu, // rate parameter
  float f) //
@@ -15,8 +23,8 @@ void Goldberg
   try {
     clock_t clocks = clock();
     int i,j,k,r;
-    IloInt n = I->potential_sites();
-    IloInt m = I->demand_points();
+    IloInt n = Inst.potential_sites();
+    IloInt m = Inst.demand_points();
     IloNum f_i;
     IloNum rho;
     IloNum M = 10000.0;
@@ -84,7 +92,7 @@ void Goldberg
       O[i] = IloNumArray(env,n);
     for (i = 0;i < m;i++) {
       for (j = 0;j < n;j++) {
-	O[i][j] = I->distance(i,j);
+	O[i][j] = Inst.distance(i,j);
       }
     }
       
@@ -107,7 +115,7 @@ void Goldberg
     // rho from Daskin
     rho = 0.0;
     for (i = 0;i < m;i++)
-      rho += f * I->get_demand(i);
+      rho += f * Inst.get_demand(i);
     rho /= (mu * p);
     cout << "rho = " << rho << endl;
     // rho from ReVelle & Hogan
@@ -118,7 +126,7 @@ void Goldberg
       for (k = 0;k < p;k++) {
 	coef = (1 - rho) * pow(rho,k);
 	for (i = 0;i < m;i++) {
-	  f_i = f * I->get_demand(i);
+	  f_i = f * Inst.get_demand(i);
 	  workload += f_i * coef * O[i][j]* y[i][j][k];
 	}
       }
@@ -171,7 +179,7 @@ void Goldberg
 	cout << endl;
       }/**/
 
-      gnuplot_goldberg(I,p,&cplex,&x,&y);
+      gnuplot_goldberg(Inst,p,cplex,x,y);
     }
     else {
       cout << "No solution found" << endl;
@@ -188,21 +196,28 @@ void Goldberg
   
 }
 
-void gnuplot_goldberg(SQM_instance *I,int p,IloCplex *cplex, IloBoolVarArray *x, BoolVarArrayMatrix *y) {
+void gnuplot_goldberg
+(SQM_instance &Inst,
+ int p,
+ IloCplex &cplex,
+ IloBoolVarArray &location,
+ BoolVarArrayMatrix &assignment
+ )
+{
   int i,j,k;
-  int n = I->potential_sites(),m = I->demand_points();
-  point *client = I->demand(0);
-  point *potential_site = I->site(0);
+  int n = Inst.potential_sites(),m = Inst.demand_points();
+  point *client = Inst.demand(0);
+  point *potential_site = Inst.site(0);
   char outfilename[32],centersfilename[32],clientsfilename[32];
 
   sprintf(centersfilename,"Tmp_centers_%d.dat",n);
   ofstream centros(centersfilename);
 
   for(j = 0;j < n;j++){
-    /*if (cplex->getValue((*x)[j]))*/
+    /*if (cplex.getValue(location[j]))*/
     centros << potential_site[j].x << " " 
 	    << potential_site[j].y << " "
-	    << cplex->getValue((*x)[j]) << endl;
+	    << cplex.getValue(location[j]) << endl;
   }
   centros.close();
 
@@ -220,7 +235,7 @@ void gnuplot_goldberg(SQM_instance *I,int p,IloCplex *cplex, IloBoolVarArray *x,
 
     for(i = 0;i < m;i++){
       for(j = 0;j < n;j++){
-	if (cplex->getValue((*y)[i][j][k]) > 0.5)
+	if (cplex.getValue(assignment[i][j][k]) > 0.5)
 	  outfile << client[i].x << " " 
 		  << client[i].y << " " 
 		  << potential_site[j].x - client[i].x << " " 
@@ -265,7 +280,7 @@ void gnuplot_goldberg(SQM_instance *I,int p,IloCplex *cplex, IloBoolVarArray *x,
   }
 
   for (j = 0;j < n;j++) {
-    if (cplex->getValue((*x)[j]) > 0.5) {
+    if (cplex.getValue(location[j]) > 0.5) {
       for (k = 0;k < p;k++) {
 	sprintf(outfilename,"Tmp_edges_%d_%d_%d.dat",m,n,k+1);
 	fprintf(gnuPipe,"set output 'Goldberg_%d_%d_%d_center_%02d_order_%02d.svg'\n",m,n,p,j+1,k+1);

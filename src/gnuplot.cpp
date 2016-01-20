@@ -7,23 +7,23 @@ void gnuplot_sets(FILE*);
 void gnuplot_unsets(FILE*);
 void gnuplot_write_points_file(char*,point*,int);
 
-void plot_instance_solution(SQM_instance *I,int *Sol,string output) {
-  int n = I->demand_points(),m = I->potential_sites();
+void plot_instance_solution(SQM_instance &Inst,int *Sol,string output) {
+  int n = Inst.demand_points(),m = Inst.potential_sites();
   char demand_output[32],facility_output[32],centers_output[32];
   fstream centersfile;
   
   sprintf(demand_output,"Tmp_demand_%d.dat",rand());
-  gnuplot_write_points_file(demand_output,I->demand(0),m);
+  gnuplot_write_points_file(demand_output,Inst.demand(0),m);
 
   sprintf(facility_output,"Tmp_facility_%d.dat",rand());
-  gnuplot_write_points_file(facility_output,I->site(0),m);
+  gnuplot_write_points_file(facility_output,Inst.site(0),m);
 
   sprintf(centers_output,"Tmp_centers_%d.dat",rand());
   centersfile.open(centers_output,fstream::out);
   for (int j = 0;j < n;j++) {
     if (Sol[j] > 0) {
-      centersfile << I->site(j)->x << " "
-		  << I->site(j)->y << " "
+      centersfile << Inst.site(j)->x << " "
+		  << Inst.site(j)->y << " "
 		  << Sol[j] << endl;
     }
   }

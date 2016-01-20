@@ -7,25 +7,25 @@ bool GRASP_closest_to_b(SQM_instance *I,int node,int center_a,int center_b);
 int GRASP_nearest_server(SQM_solution *Sol,int j);
 
 SQM_solution* GRASP
-(SQM_instance *I,
+(SQM_instance &Inst,
  int p, // Number of adjusters
- double lambda, // mean rate per unit of time within service calls are generated in Poisson manner
- double Mu_NT, // mean of non-travel time component of the service time
  double v, // Speed
  double beta, // Beta
  double alpha // Random factor {1: random, 0: greedy}
  ) {
-  int n = I->potential_sites(),m = I->demand_points();
+  int n = Inst.potential_sites(),m = Inst.demand_points();
   int r;
   int element;
   int *rcl;
   double *T_r;
+  double lambda = Inst.get_arrival_rate(); // mean rate per unit of time within service calls are generated in Poisson manner
+  double Mu_NT = Inst.get_service_rate(); // mean of non-travel time component of the service time
   server *serv;
   SQM_solution *Sol;
 
   logDebug(cout << endl << endl << "*****Start GRASP*****" << endl << endl);
   if (p < 1) return NULL;
-  Sol = new SQM_solution(I);
+  Sol = new SQM_solution(Inst);
   Sol->set_params(lambda,Mu_NT);
 
   logDebug(cout << "/* Locate the first server */" << endl);

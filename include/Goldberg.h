@@ -4,7 +4,11 @@
 
 #include "cplex.h"
 
-void Goldberg(SQM_instance*, int, float, float);
-void gnuplot_goldberg(SQM_instance*,int,IloCplex*,IloBoolVarArray*,BoolVarArrayMatrix*);
+void Goldberg
+(SQM_instance&,
+ int, 
+ float, 
+ float
+ );
 
 #endif

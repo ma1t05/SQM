@@ -6,19 +6,17 @@
 #include "cplex.h"
 
 void SQM_model
-(SQM_instance* I, // Set of points
- int p, // facilities
- float mu, // rate parameter
- float f, // portion of demand
- float speed); // speed
+(SQM_instance&I, // Set of points
+ int,            // facilities
+ float         // speed
+ );
 
 int* SQM_model
-(SQM_instance* I, // Set of points
- int p, // facilities
- int k, // Number of facilities that care
- float mu, // rate parameter
- float f, // portion of demand
- float speed); // speed
+(SQM_instance&, // Set of points
+ int,           // facilities
+ int,           // Number of facilities that care
+ float          // speed
+ );
 
 #endif
 
