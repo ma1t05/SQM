@@ -16,9 +16,9 @@ class SQM_solution {
   double lambda;
   double Mu_NT;
  public:
-  SQM_solution (SQM_instance *I);
-  SQM_solution (SQM_instance *I,int p);
-  SQM_solution (SQM_solution *Sol);
+  SQM_solution (SQM_instance&);
+  SQM_solution (SQM_instance&,int);
+  SQM_solution (SQM_solution&);
   ~SQM_solution ();
   SQM_solution* clone();
   double pm_cost; /* cost of perfect matching */

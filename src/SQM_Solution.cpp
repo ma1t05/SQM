@@ -1,25 +1,27 @@
 
 #include "SQM_Solution.h"
 
-SQM_solution::SQM_solution (SQM_instance *I) {
-  Inst = I;
+SQM_solution::SQM_solution (SQM_instance &I) {
+  Inst = &I;
   p = 0;
   Servers = NULL;
   a = NULL;
   response_time = -1;
+  set_params(I.get_arrival_rate(),I.get_service_rate());
 }
 
-SQM_solution::SQM_solution (SQM_instance *I,int servers) {
-  int n = I->potential_sites();
+SQM_solution::SQM_solution (SQM_instance &I,int servers) {
+  int n = I.potential_sites();
   bool *option;
   int location,locations = 0;
   int l = 0;
 
-  Inst = I;
+  Inst = &I;
   p = servers;
   Servers = new server[p];
   a = NULL;
   response_time = -1;
+  set_params(I.get_arrival_rate(),I.get_service_rate());
 
   option = new bool[n];
   for (int i = 0;i < n;i++) option[i] = false;
@@ -37,18 +39,19 @@ SQM_solution::SQM_solution (SQM_instance *I,int servers) {
   delete [] option;
 }
 
-SQM_solution::SQM_solution (SQM_solution *Sol) {
+SQM_solution::SQM_solution (SQM_solution &Sol) {
 
-  Inst = Sol->get_instance();
-  p = Sol->get_servers();
+  Inst = Sol.get_instance();
+  p = Sol.get_servers();
   Servers = new server[p];
   a = NULL;
   response_time = -1;
+  set_params(Inst->get_arrival_rate(),Inst->get_service_rate());
 
   for (int i = 0;i < p;i++) {
-    Servers[i].set_location(Sol->get_server_past_location(i));
-    Servers[i].set_location(Sol->get_server_location(i));
-    Servers[i].set_speed(Sol->get_server_speed(i),Sol->get_server_beta(i));
+    Servers[i].set_location(Sol.get_server_past_location(i));
+    Servers[i].set_location(Sol.get_server_location(i));
+    Servers[i].set_speed(Sol.get_server_speed(i),Sol.get_server_beta(i));
   }
 }
 
@@ -64,7 +67,7 @@ SQM_solution::~SQM_solution () {
 
 SQM_solution* SQM_solution::clone() {
   SQM_solution *clon;
-  clon = new SQM_solution(this);
+  clon = new SQM_solution(*this);
   clon->set_params(lambda,Mu_NT);
   return clon;
 }
