@@ -27,7 +27,7 @@ void read_config_file(string configFile);
 void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f);
 
 /* Test Functions */
-void Test_SQM_model(SQM_instance&,int,int,double);
+void Test_SQM_model(SQM_instance&,int,double);
 void Test_SQM_heuristic(SQM_instance&,int,double);
 void Test_SQM_GRASP(SQM_instance&,int,double);
 void Test_SQM_random(SQM_instance&,int,double);
@@ -78,7 +78,6 @@ int main(int argc,char **argv) {
   LogFile.open(LogName.str().c_str(),std::ofstream::app);
 
   I = SQM_load_instance(Instance_Name,M_clients,N_sites);
-  Test_Function = Test_SQM_heuristic;
   Test_Function(*I,p,v);
   delete I;
 
@@ -191,8 +190,24 @@ void process_command_line(int argc,char **argv) {
   if (optind < argc)
     {
       cout << "non-option ARGV-elements: ";
-      while (optind < argc)
+      while (optind < argc) {
+	string method = string(argv[optind]);
+	if (method == "model")
+	  Test_Function = Test_SQM_model;
+	else if (method == "heuristic")
+	  Test_Function = Test_SQM_heuristic;
+	else if (method == "GRASP")
+	  Test_Function = Test_SQM_GRASP;
+	else if (method == "random")
+	  Test_Function = Test_SQM_random;
+	else if (method == "Path_Relinking")
+	  Test_Function = Test_SQM_Path_Relinking;
+	else if (method == "Local_Search")
+	  Test_Function = Test_SQM_Local_Search;
+	else
+	  Test_Function = Test_SQM_heuristic;	  
         cout << argv[optind++] << " ";
+      }
       cout << endl;
     }
 }
@@ -291,7 +306,7 @@ void Test_SQM_heuristic(SQM_instance &Inst,int p,double v) {
 }
 
 /* Experiment to determine the necesary GRASP iterations */
-void Test_SQM_GRASP(SQM_instance &Inst,int p,double lambda,double Mu_NT,double v) {
+void Test_SQM_GRASP(SQM_instance &Inst,int p,double v) {
   int m = Inst.demand_points();
   int n = Inst.potential_sites();
   double T_r1,T_r2,t_r;
@@ -459,7 +474,7 @@ void Test_SQM_random(SQM_instance &Inst,int p,double v) {
   delete BEST_GRASP;
 }
 
-void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double lambda,double Mu_NT,double v) {
+void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
   int N = 400,num_elite = 10;
   double rt,worst_rt;
   clock_t beginning,now;
@@ -472,7 +487,6 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double lambda,double Mu_NT
   for (int r = 0;r < N;r++) {
     X = new SQM_solution(Inst,p);
     X->set_speed(v,BETA);
-    X->set_params(lambda,Mu_NT);
     SQM_heuristic(X);
     rt = X->get_response_time();
     if (rt < worst_rt) {
@@ -509,7 +523,6 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double lambda,double Mu_NT
   for (int r = 0;r < 5*num_elite;r++) {
     X = new SQM_solution(Inst,p);
     X->set_speed(v,BETA);
-    X->set_params(lambda,Mu_NT);
     X->pm_cost = SQM_min_cost_pm(elite_sols,X);
     if (various_sols->size() > 0) {
       list<SQM_solution*>::iterator it;
@@ -611,7 +624,7 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double lambda,double Mu_NT
   SQM_delete_sols(elite_sols);
 }
 
-void Test_SQM_Local_Search(SQM_instance &Inst,int p,double lambda,double Mu_NT,double v) {
+void Test_SQM_Local_Search(SQM_instance &Inst,int p,double v) {
   int N = 1;
   SQM_solution *X,*Y;
   double rt,h_rt,ls_rt;
@@ -620,7 +633,6 @@ void Test_SQM_Local_Search(SQM_instance &Inst,int p,double lambda,double Mu_NT,d
   for (int r = 0;r < N;r++) {
     X = new SQM_solution(Inst,p);
     X->set_speed(v,BETA);
-    X->set_params(lambda,Mu_NT);
     rt = X->get_response_time();
     Y = X->clone();
     cout << "\t        Method: " << "Response Time\t" << "% Improvement" << endl
