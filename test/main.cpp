@@ -1,6 +1,8 @@
 
 #include <ctime>
 #include <iostream>
+#include <unistd.h> /* getopt */
+#include <getopt.h> /* getopt_long */
 
 using namespace std;
 #include "config.h"
@@ -10,6 +12,17 @@ using namespace std;
 #include "PathRelinking.h"
 #include "Local_Search.h"
 
+/* Global Variables */
+string Instance_Name;
+int M_clients,N_sites;
+int p,l;
+double v;
+/* Global variables read as aguments */
+double lambda;
+double Mu_NT;
+
+void print_usage ();
+void process_command_line(int,char**);
 void read_config_file(string configFile);
 void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f);
 
@@ -51,35 +64,12 @@ int GRASP_kNN_param;
 double EPSILON;
 
 double TIME_MAX;
-/* Global variables read as aguments */
-double lambda;
-double Mu_NT;
 
-int main(int argc,char *argv[]) {
-  string Instance_Name;
-  int M_clients,N_sites;
-  int p,l;
-  double v;
+int main(int argc,char **argv) {
   stringstream LogName;
   SQM_instance *I;
 
-  if (argc < 9) {
-    filename = "Pba";
-    M_clients = 50; N_sites = 30;
-    p = 5; l = 3;
-    Mu_NT = 60.0*24.0/20.0; lambda = 0.006; v = 40.0;
-  }
-  else {
-    filename = argv[1];
-    M_clients = atoi(argv[2]);
-    N_sites = atoi(argv[3]);
-    p = atoi(argv[4]);
-    l = atoi(argv[5]);
-    Mu_NT = atof(argv[6]);
-    lambda = atof(argv[7]);
-    v = atof(argv[8]);
-  }
-  
+  process_command_line(argc,argv);
   read_config_file("SQM.conf");
   srand(time(NULL));
 
@@ -98,6 +88,115 @@ int main(int argc,char *argv[]) {
   return 0;
 }
 
+void print_usage () {
+  cout << "Usage: SQM [options] p-Median" << endl
+       << "Options:" << endl;
+  cout << "  -f                          " 
+       << "File prefix.";
+
+}
+
+void process_command_line(int argc,char **argv) {
+  int c;
+  static int verbose_flag;
+
+  /* Default Values */
+  Instance_Name = "Test";
+  M_clients = 50; 
+  N_sites = 50;
+  p = 10; 
+  l = 10;
+  Mu_NT = 3;
+  lambda = 6;
+  v = 500.0;
+
+  verbose_flag = LOG_INFO;
+  while (1) 
+    {
+      int long_index = 0;
+      static struct option long_options[] =
+	{
+	  {"verbose"     ,no_argument      ,&verbose_flag , LOG_DEBUG},
+	  {"brief"       ,no_argument      ,&verbose_flag , LOG_INFO },
+	  {"superbrief"  ,no_argument      ,&verbose_flag , LOG_QUIET},
+	  {"file-prefix" ,optional_argument,0 , 'f'},
+	  {"demand"      ,required_argument,0 , 'm'},
+	  {"sites"       ,required_argument,0 , 'n'},
+	  {"servers"     ,required_argument,0 , 'p'},
+	  {"aux"         ,optional_argument,0 , 'l'},
+	  {"lambda"      ,optional_argument,0 , 'L'},
+	  {"mu"          ,optional_argument,0 , 'M'},
+	  {"spped"       ,optional_argument,0 , 'v'},
+	  {0             ,0                ,0 , 0  }
+	};
+
+      c = getopt_long (argc,argv,"f::m:n:p:l::M::L::v::",long_options,&long_index);
+      if (c == -1) break;
+      cout << "Start switch with '" << char(c) << "'" << endl;
+      switch (c) 
+	{
+	case 0: /* If this option set a flag, do nothing else now. */
+	  if (long_options[long_index].flag != 0)
+	    break;
+	  cout << "option " << long_options[long_index].name;
+	  if (optarg)
+	    cout << " with arg " << optarg;
+	  cout << endl;
+	  break;
+	case 'f': Instance_Name = string(optarg); /* file-prefix */
+	  cout << "file-prefix " << optarg << endl;
+	  break;
+	case 'm': M_clients = atoi(optarg);
+	  cout << "M_clients " << M_clients << endl;
+	  break;
+	case 'n': N_sites = atoi(optarg);
+	  cout << "N_sites " << N_sites << endl;
+	  break;
+	case 'p': p = atoi(optarg);
+	  cout << "p " << p << endl;
+	  break;
+	case 'l': l = atoi(optarg);
+	  cout << "l " << l << endl;
+	  break;
+	case 'M': Mu_NT = atof(optarg);
+	  cout << "Mu_NT " << Mu_NT << endl;
+	  break;
+	case 'L': lambda = atof(optarg);
+	  cout << "lambda " << lambda << endl;
+	  break;
+	case 'v': v = atof(optarg);
+	  break;
+	case '?':
+	  /* getopt_long already printed an error message */
+	  cout << "Option " << optarg << endl;
+	  break;
+	default: print_usage ();
+	  abort ();
+	}
+    }
+  
+  switch (verbose_flag) 
+    {
+    case LOG_QUIET: logLevel = LOG_QUIET;
+      break;
+    case LOG_INFO: logLevel = LOG_INFO;
+      break;
+    case LOG_DEBUG: logLevel = LOG_DEBUG;
+      break;
+    default: logLevel = LOG_INFO;
+      break;
+    }
+
+  /* Print any remaining command line arguments (not options). */
+  if (optind < argc)
+    {
+      cout << "non-option ARGV-elements: ";
+      while (optind < argc)
+        cout << argv[optind++] << " ";
+      cout << endl;
+    }
+}
+  
 void read_config_file(string configFile) {
   char *envp = NULL;
   Config SQM_conf(configFile,&envp);
