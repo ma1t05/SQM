@@ -169,16 +169,17 @@ std::ostream& operator<<(std::ostream &os,release &incident) {
   return os;
 }
 
-void Simulator(SQM_instance &Inst,int p,double lambda,double Mu_NT,double v) {
+void Simulator(SQM_instance &Inst,int p,double v) {
   int N = 500;
+  double lambda;
   SQM_solution *X;
   status state;
   event *incident;
 
   X = new SQM_solution(Inst,p);
   X->set_speed(v,BETA);
-  X->set_params(lambda,Mu_NT);
   SQM_heuristic(X);
+  lambda = X->get_arrival_rate ();
 
   state.Sol = X;
   state.busy = new bool[p];

@@ -69,7 +69,7 @@ int main(int argc,char *argv[]) {
   Log_Simulation.open("Simulation.log",std::ofstream::out);
   I = SQM_load_instance(filename,M_clients,N_sites);
   //Test_exponential(I,p,lambda,Mu_NT,v);
-  Simulator(I,p,lambda,Mu_NT,v);
+  Simulator(*I,p,v);
   delete I;
   /* Log */ Log_Simulation.close();
 
@@ -105,7 +105,7 @@ void Test_MST(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
   SQM_solution *X;
   double rt;
   cout << "Start: Test_MST" << endl;
-  X = new SQM_solution(I,p);
+  X = new SQM_solution(*I,p);
   X->set_speed(v,BETA);
   X->set_params(lambda,Mu_NT);
   for (int i = 0;i < p;i++) {
