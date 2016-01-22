@@ -4,7 +4,7 @@
 
 #include "SQM_Solution.h"
 
-void Local_Search(SQM_solution*);
+void Local_Search(SQM_solution&);
 
 #endif
 

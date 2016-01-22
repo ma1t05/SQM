@@ -614,7 +614,7 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
     time = (double)(now - beginning)/CLOCKS_PER_SEC;
     results << time << "," << gap << "," << X->get_response_time() << endl;
     double rt = X->get_response_time();
-    Local_Search(X);
+    Local_Search(*X);
     cout << "After local search the new response time is: " << X->get_response_time() << endl;
     cout << "The % of improvement was " << 100 * (rt - X->get_response_time())/rt << endl;
     delete X;
@@ -640,12 +640,12 @@ void Test_SQM_Local_Search(SQM_instance &Inst,int p,double v) {
 
     SQM_heuristic(Y);
     h_rt = Y->get_response_time();
-    Local_Search(Y);
+    Local_Search(*Y);
     ls_rt = Y->get_response_time();
     cout << "\t     heuristic: " << h_rt << "\t" << 100.0*(rt-h_rt)/rt << endl
 	 << "\t +local search: " << ls_rt << "\t+" << 100.0*(h_rt-ls_rt)/rt << endl;
 
-    Local_Search(X);
+    Local_Search(*X);
     ls_rt = X->get_response_time();
     SQM_heuristic(X);	
     h_rt = X->get_response_time();
