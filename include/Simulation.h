@@ -60,7 +60,7 @@ public:
 };
 std::ostream& operator<<(std::ostream &os,release &r);
 
-void Simulator(SQM_instance &Inst,int p,double lambda,double Mu_NT,double v);
+void Simulator(SQM_instance &Inst,int p,double v);
 list_events* Generate_calls(SQM_instance &Inst,double lambda);
 
 struct status {
