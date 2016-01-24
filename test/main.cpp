@@ -619,10 +619,6 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
       now = clock();
       time = (double)(now - beginning)/CLOCKS_PER_SEC;
       results << time << "," << gap << "," << X->get_response_time() << endl;
-      double rt = X->get_response_time();
-      Local_Search(*X);
-      cout << "After local search the new response time is: " << X->get_response_time() << endl;
-      cout << "The % of improvement was " << 100 * (rt - X->get_response_time())/rt << endl;
       delete X;
     }
   }
