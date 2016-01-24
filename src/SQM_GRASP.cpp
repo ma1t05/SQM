@@ -131,27 +131,13 @@ double GRASP_func_kNN (SQM_solution *Sol,int K) {
   double RT = 0.0; /* Response Time */
   double lambda = Sol->get_arrival_rate();
   double Mu_NT = Sol->get_non_travel_time();
-  int **a;
-  double **Dist;
+  int **a = Sol->preferred_servers();
   double *Lambda;
   double demand;
   logDebug(cout << "Termina definicion de variables" << endl);
 
-  a = new int*[m];
-  for (int k = 0;k < m;k++)
-    a[k] = new int[p];
-
-  double *d = new double[p];
-  for (int k = 0;k < m;k++) {
-    for (int i = 0;i < p;i++)
-
-    sort_dist(p,d,a[k]);
-  }
-  delete [] d;
-
   Lambda = new double[m];
-  demand = 0.0;
-  for (int k = 0;k < m;k++) demand += I->demand(k)->demand;
+  demand = I->total_demand();
   for (int k = 0;k < m;k++) Lambda[k] = I->demand(k)->demand * lambda / demand;
 
   logDebug(cout << "Comienza calculo de rho_i" << endl);
@@ -163,8 +149,8 @@ double GRASP_func_kNN (SQM_solution *Sol,int K) {
     distance = 0.0;
     for (int k = 0;k < m;k++)
       if (a[k][0] == i) {
-	rho[i] += Lambda[k] * (1/Mu_NT + Sol->get_server_rate(i) * I->distance(Sol->get_server_location(i),k) / (MINS_PER_BLOCK * BLOCKS_PER_HORIZON));
-	distance +=  I->distance(Sol->get_server_location(i),k);
+	rho[i] += Lambda[k] * (1/Mu_NT + Sol->get_server_rate(i) * Sol->distance(i,k) / (MINS_PER_BLOCK * BLOCKS_PER_HORIZON));
+	distance +=  Sol->distance(i,k);
       }
     RT += rho[i] * distance / (Sol->get_server_speed(i) * MINS_PER_BLOCK * BLOCKS_PER_HORIZON);
   }
@@ -181,10 +167,13 @@ double GRASP_func_kNN (SQM_solution *Sol,int K) {
 	if (a[k][t] == i) {
 	  rho_a_ml = 1;
 	  for (int l = 0;l < t;l++) rho_a_ml *= rho[a[k][l]];
-	  new_rho[i] += (1 - rho[i]) * rho_a_ml * Lambda[k] * (1/Mu_NT + Sol->get_server_rate(i) * I->distance(Sol->get_server_location(i),k) / (MINS_PER_BLOCK * BLOCKS_PER_HORIZON));
-	  distance += I->distance(Sol->get_server_location(i),k);
+	  new_rho[i] += (1 - rho[i]) * rho_a_ml * Lambda[k] * (1/Mu_NT + Sol->get_server_rate(i) * Sol->distance(i,k) / (MINS_PER_BLOCK * BLOCKS_PER_HORIZON));
+	  distance += Sol->distance(i,k);
 	}
       RT += new_rho[i] * distance / (Sol->get_server_speed(i) * MINS_PER_BLOCK * BLOCKS_PER_HORIZON);
+    }
+    
+    for (int i = 0;i < p;i++) {
       rho[i] += new_rho[i];
       if (rho[i] > 1)
 	logError(cout << "¡rho_" << i+1 << " > 1! in order " << t << endl);
@@ -193,9 +182,8 @@ double GRASP_func_kNN (SQM_solution *Sol,int K) {
 
   logDebug(cout << "Comienza a liberar memoria" << endl);
   delete [] new_rho;    
+  delete [] rho;
   delete [] Lambda;
-  for (int k = 0;k < m;k++) delete [] a[k];
-  delete [] a;
   logDebug(cout << "Finish GRASP_func_kNN" << endl);
   return RT;
 }
