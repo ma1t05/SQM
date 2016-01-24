@@ -88,10 +88,38 @@ int main(int argc,char **argv) {
 }
 
 void print_usage () {
-  cout << "Usage: SQM [options] p-Median" << endl
-       << "Options:" << endl;
-  cout << "  -f                          " 
-       << "File prefix.";
+  cout << "Usage: SQM [options] <command>" << endl;
+
+  /* Print Options */
+  cout << "Options:" << endl
+       << "  -f FILE, --prefix=FILE      " 
+       << "Use FILE as file prefix, for read/write instance." << endl
+       << "  -m M, --demand=M            " 
+       << "Sets the number of Demand Points to M." << endl
+       << "  -n N, --sites=N             " 
+       << "Sets the number of Potential Sites to N." << endl
+       << "  -p P, --servers=P           " 
+       << "Sets the number of servers to P." << endl
+       << "  -k K, --consider=K          " 
+       << "For commands that apply, only considered the K" << endl
+       << "                              closest servers." << endl
+       << "  -l LAMBDA, --arrival-rate=LAMBDA" << endl 
+       << "                              " 
+       << "Sets the General Arrival Rate to LAMBDA." << endl
+       << "  -m MU, --service-rate=MU    " 
+       << "Sets the on scene Service Rate to MU." << endl
+       << "  -s SPEED, --speed=SPEED     " 
+       << "Sets the speed of transfer to SPEED." << endl
+       << endl;
+
+  /* Print available commands */
+  cout << "The available commands are:" << endl
+       << "  model             " << endl
+       << "  heuristic         " << endl
+       << "  GRASP             " << endl
+       << "  random            " << endl
+       << "  Path_Relinking    " << endl
+       << "  Local_Search      " << endl;
 
 }
 
@@ -118,20 +146,20 @@ void process_command_line(int argc,char **argv) {
 	  {"verbose"     ,no_argument      ,&verbose_flag , LOG_DEBUG},
 	  {"brief"       ,no_argument      ,&verbose_flag , LOG_INFO },
 	  {"superbrief"  ,no_argument      ,&verbose_flag , LOG_QUIET},
-	  {"file-prefix" ,optional_argument,0 , 'f'},
-	  {"demand"      ,required_argument,0 , 'm'},
-	  {"sites"       ,required_argument,0 , 'n'},
+	  {"help"        ,no_argument      ,0 , 'h'},
+	  {"prefix"      ,required_argument,0 , 'f'},
+	  {"demand"      ,required_argument,0 , 'M'},
+	  {"sites"       ,required_argument,0 , 'N'},
 	  {"servers"     ,required_argument,0 , 'p'},
-	  {"aux"         ,optional_argument,0 , 'l'},
-	  {"lambda"      ,optional_argument,0 , 'L'},
-	  {"mu"          ,optional_argument,0 , 'M'},
-	  {"spped"       ,optional_argument,0 , 'v'},
+	  {"aux"         ,required_argument,0 , 'k'},
+	  {"arrival-rate",required_argument,0 , 'l'},
+	  {"service-rate",required_argument,0 , 'm'},
+	  {"spped"       ,required_argument,0 , 's'},
 	  {0             ,0                ,0 , 0  }
 	};
 
-      c = getopt_long (argc,argv,"f::m:n:p:l::M::L::v::",long_options,&long_index);
+      c = getopt_long (argc,argv,"hf:M:N:p:k:l:m:s:",long_options,&long_index);
       if (c == -1) break;
-      cout << "Start switch with '" << char(c) << "'" << endl;
       switch (c) 
 	{
 	case 0: /* If this option set a flag, do nothing else now. */
@@ -143,28 +171,23 @@ void process_command_line(int argc,char **argv) {
 	  cout << endl;
 	  break;
 	case 'f': Instance_Name = string(optarg); /* file-prefix */
-	  cout << "file-prefix " << optarg << endl;
 	  break;
-	case 'm': M_clients = atoi(optarg);
-	  cout << "M_clients " << M_clients << endl;
+	case 'M': M_clients = atoi(optarg);
 	  break;
-	case 'n': N_sites = atoi(optarg);
-	  cout << "N_sites " << N_sites << endl;
+	case 'N': N_sites = atoi(optarg);
 	  break;
 	case 'p': p = atoi(optarg);
-	  cout << "p " << p << endl;
 	  break;
-	case 'l': l = atoi(optarg);
-	  cout << "l " << l << endl;
+	case 'k': l = atoi(optarg);
 	  break;
-	case 'M': Mu_NT = atof(optarg);
-	  cout << "Mu_NT " << Mu_NT << endl;
+	case 'l': lambda = atof(optarg);
 	  break;
-	case 'L': lambda = atof(optarg);
-	  cout << "lambda " << lambda << endl;
+	case 'm': Mu_NT = atof(optarg);
 	  break;
-	case 'v': v = atof(optarg);
+	case 's': v = atof(optarg);
 	  break;
+	case 'h': print_usage ();
+	  exit (0);
 	case '?':
 	  /* getopt_long already printed an error message */
 	  cout << "Option " << optarg << endl;
@@ -189,7 +212,6 @@ void process_command_line(int argc,char **argv) {
   /* Print any remaining command line arguments (not options). */
   if (optind < argc)
     {
-      cout << "non-option ARGV-elements: ";
       while (optind < argc) {
 	string method = string(argv[optind]);
 	if (method == "model")
@@ -205,8 +227,8 @@ void process_command_line(int argc,char **argv) {
 	else if (method == "Local_Search")
 	  Test_Function = Test_SQM_Local_Search;
 	else
-	  Test_Function = Test_SQM_heuristic;	  
-        cout << argv[optind++] << " ";
+	  Test_Function = Test_SQM_heuristic;
+	optind++;
       }
       cout << endl;
     }
