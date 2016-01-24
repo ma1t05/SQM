@@ -64,6 +64,11 @@ bool incompatible_solutions(SQM_solution *X,SQM_solution *Y) {
 	  );
 }
 
+matching_type& operator++(matching_type &target) {
+  target = static_cast<matching_type>(target + 1);
+  return target;
+}
+
 /* Create distances matrix and call Perfect_Matching procedure */
 int* PR_run_perfect_matching(SQM_solution *X,SQM_solution *Y) {
   int p = X->get_servers();
@@ -118,6 +123,11 @@ int* PR_random_matching(SQM_solution *X,SQM_solution *Y) {
   }
   delete [] used;
   return pm;
+}
+
+order_type& operator++(order_type &target) {
+  target = static_cast<order_type>(target + 1);
+  return target;
 }
 
 double PR_perfect_matching_cost(SQM_solution *X,SQM_solution *Y) {

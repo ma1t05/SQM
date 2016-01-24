@@ -25,6 +25,7 @@ void print_usage ();
 void process_command_line(int,char**);
 void read_config_file(string configFile);
 void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f);
+typedef list<SQM_solution*> Solutions;
 
 /* Test Functions */
 void Test_SQM_model(SQM_instance&,int,double);
@@ -369,8 +370,8 @@ void Test_SQM_random(SQM_instance &Inst,int p,double v) {
   SQM_solution *X,*G;
   char GRASP_output[32];
   //int *Sol = new int [n];
-  list<SQM_solution*> *best_solutions;
-  best_solutions = new list<SQM_solution*>;
+  Solutions *best_solutions;
+  best_solutions = new Solutions;
 
   cout << "      Total Demand : " << Inst.total_demand() << endl;
 
@@ -501,11 +502,11 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
   double rt,worst_rt;
   clock_t beginning,now;
   SQM_solution *X,*Best;
-  list<SQM_solution*> *elite_sols,*various_sols;
+  Solutions *elite_sols,*various_sols;
 
   worst_rt = 100.0;
   beginning = clock();
-  elite_sols = new list<SQM_solution*>;
+  elite_sols = new Solutions;
   for (int r = 0;r < N;r++) {
     X = new SQM_solution(Inst,p);
     X->set_speed(v,BETA);
@@ -519,7 +520,7 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
       }
 
       if (elite_sols->size() > 0) {
-	for (list<SQM_solution*>::iterator it = elite_sols->begin();it != elite_sols->end();it++)
+	for (Solutions::iterator it = elite_sols->begin(),end = elite_sols->end();it != end;it++)
 	  if (**it > *X) {
 	    elite_sols->insert(it,X);
 	    break;
@@ -537,17 +538,17 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
   now = clock();
   cout << "After " << (double)(now - beginning)/CLOCKS_PER_SEC << " seconds" << endl;
   cout << "The best " << num_elite << " response times:" << endl;
-  for (list<SQM_solution*>::iterator it = elite_sols->begin();it != elite_sols->end();it++)
+  for (Solutions::iterator it = elite_sols->begin();it != elite_sols->end();it++)
     cout << (*it)->get_response_time() << endl;
   Best = elite_sols->front();
 
-  various_sols = new list<SQM_solution*>;
+  various_sols = new Solutions;
   for (int r = 0;r < 5*num_elite;r++) {
     X = new SQM_solution(Inst,p);
     X->set_speed(v,BETA);
     X->pm_cost = SQM_min_cost_pm(elite_sols,X);
     if (various_sols->size() > 0) {
-      list<SQM_solution*>::iterator it;
+      Solutions::iterator it;
       for (it = various_sols->begin();it != various_sols->end();it++)
 	if ((*it)->pm_cost < X->pm_cost) {
 	  various_sols->insert(it,X);
@@ -565,7 +566,7 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
   }
   
   cout << "The various " << num_elite << " response times:" << endl;
-  for (list<SQM_solution*>::iterator it = various_sols->begin();it != various_sols->end();it++) {
+  for (Solutions::iterator it = various_sols->begin(), end = various_sols->end();it != end;it++) {
     cout << (*it)->get_response_time() << endl;
     elite_sols->push_back(*it);
   }
@@ -573,74 +574,58 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
 
   int Case = 1;
   double time,gap;
+
   results.open("results_PathRelinking.csv",std::ofstream::app);
-  do {
-    results << Best;
-    switch (Case) {
-      /* Perfect Matching */
-    case 1:
-      matching_function = PR_run_perfect_matching; /* {perfect|random}_matching */
-      order_function = PR_processing_order_nf; /* {nf|ff|random} */
-      results << "perfect,nf,"; 
-      break;
-    case 2: 
-      matching_function = PR_run_perfect_matching; /* {perfect|random}_matching */
-      order_function = PR_processing_order_ff; /* {nf|ff|random} */
-      results << "perfect,ff,";
-      break;
-    case 3:
-      matching_function = PR_run_perfect_matching; /* {perfect|random}_matching */
-      order_function = PR_processing_order_random; /* {nf|ff|random} */
-      results << "perfect,random,";
-      break;
-      /* Random Matching */
-    case 4:
-      matching_function = PR_random_matching; /* {perfect|random}_matching */
-      order_function = PR_processing_order_nf; /* {nf|ff|random} */
-      results << "random,nf,";
-      break;
-    case 5:
-      matching_function = PR_random_matching; /* {perfect|random}_matching */
-      order_function = PR_processing_order_ff; /* {nf|ff|random} */
-      results << "random,ff,";
-      break;
-    case 6:
-      matching_function = PR_random_matching; /* {perfect|random}_matching */
-      order_function = PR_processing_order_random; /* {nf|ff|random} */
-      results << "random,random,";      
-      break;
-      /* Workload Matching */
-    case 7:
-      matching_function = PR_workload_matching; /* {perfect|random}_matching */
-      order_function = PR_processing_order_nf; /* {nf|ff|random} */
-      results << "workload,nf,";      
-      break;
-    case 8:
-      matching_function = PR_workload_matching; /* {perfect|random}_matching */
-      order_function = PR_processing_order_ff; /* {nf|ff|random} */
-      results << "workload,ff,";      
-      break;
-    case 9:
-      matching_function = PR_workload_matching; /* {perfect|random}_matching */
-      order_function = PR_processing_order_random; /* {nf|ff|random} */
-      results << "workload,random,";      
-      break;
-    default:
-      break;
+  for (matching_type matching = perfect_matching;matching != invalid_matching;++matching) {
+    for (order_type order = nearest_first;order != invalid_order;++order) {
+      results << Best;
+
+      switch (matching) 
+	{
+	case perfect_matching:
+	  matching_function = PR_run_perfect_matching;
+	  results << "perfect,";
+	  break;
+	case workload_matching:
+	  matching_function = PR_workload_matching;
+	  results << "workload,";
+	  break;
+	case random_matching:
+	  matching_function = PR_random_matching;
+	  results << "random,";
+	  break;
+	}
+
+      switch (order)
+	{
+	case nearest_first:
+	  order_function = PR_processing_order_nf;
+	  results << "nf,";
+	  break;
+	case farthest_first:
+	  order_function = PR_processing_order_ff;
+	  results << "ff,";
+	  break;
+	case random_order:
+	  order_function = PR_processing_order_random;
+	  results << "random,";
+	  break;
+	}
+
+      beginning = clock();
+      X = SQM_path_relinking(elite_sols);
+      //SQM_heuristic(X);
+      gap = 100*(Best->get_response_time() - X->get_response_time()) / Best->get_response_time();
+      now = clock();
+      time = (double)(now - beginning)/CLOCKS_PER_SEC;
+      results << time << "," << gap << "," << X->get_response_time() << endl;
+      double rt = X->get_response_time();
+      Local_Search(*X);
+      cout << "After local search the new response time is: " << X->get_response_time() << endl;
+      cout << "The % of improvement was " << 100 * (rt - X->get_response_time())/rt << endl;
+      delete X;
     }
-    beginning = clock();
-    X = SQM_path_relinking(elite_sols);
-    //SQM_heuristic(X);
-    gap = 100*(Best->get_response_time() - X->get_response_time()) / Best->get_response_time();
-    now = clock();
-    time = (double)(now - beginning)/CLOCKS_PER_SEC;
-    results << time << "," << gap << "," << X->get_response_time() << endl;
-    double rt = X->get_response_time();
-    Local_Search(*X);
-    cout << "After local search the new response time is: " << X->get_response_time() << endl;
-    cout << "The % of improvement was " << 100 * (rt - X->get_response_time())/rt << endl;
-    delete X;
-  } while (Case++ < 9);
+  }
   results.close();
 
   SQM_delete_sols(elite_sols);

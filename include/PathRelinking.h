@@ -15,11 +15,16 @@ void SQM_delete_sols(list<SQM_solution*>* Solutions);
 double PR_perfect_matching_cost(SQM_solution *X,SQM_solution *Y);
 double SQM_min_cost_pm(list<SQM_solution*>*,SQM_solution*);
 
+enum matching_type {perfect_matching,workload_matching,random_matching,invalid_matching};
+matching_type& operator++(matching_type&);
 extern int* (*matching_function)(SQM_solution*,SQM_solution*);
+matching_type& operator++(matching_type& target);
 int* PR_run_perfect_matching(SQM_solution*,SQM_solution*);
 int* PR_random_matching(SQM_solution*,SQM_solution*);
 int* PR_workload_matching(SQM_solution*,SQM_solution*);
 
+enum order_type {nearest_first,farthest_first,random_order,invalid_order};
+order_type& operator++(order_type&);
 extern int* (*order_function)(SQM_solution*,int*,SQM_solution*);
 int* PR_processing_order_random(SQM_solution*,int*,SQM_solution*);
 int* PR_processing_order_nf(SQM_solution*,int*,SQM_solution*);
