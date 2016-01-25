@@ -230,6 +230,8 @@ SQM_solution* SQM_path_relinking(list<SQM_solution*>* Solutions) {
   double best_rt,avg_rt,worst_rt;
   int N;
 
+  logLevel = LOG_DEBUG;
+  logDebug(cout << "SQM_path_relinking: START" << endl);
   beginning = clock();
   improved_solutions = new list<SQM_solution*>;
   best_rt = 100.0,worst_rt = 0.0,avg_rt = 0.0, N = 0;
@@ -260,13 +262,17 @@ SQM_solution* SQM_path_relinking(list<SQM_solution*>* Solutions) {
   }
   now = clock();
 
-  cout << "\t***\tPath Relinking results\t***" << endl;
-  cout << "   Best Response time :\t" << best_rt << endl
-       << "Average Response time :\t" << avg_rt / N << endl
-       << "  Worst Response time :\t" << worst_rt << endl
-       << "           time (sec) :\t" << (double)(now - beginning)/CLOCKS_PER_SEC << endl
-       << "   Improved solutions :\t" << total_improved_solutions 
-       << " (" << N << ")" << endl;
+  logInfo
+    (cout
+     << "\t***\tPath Relinking results\t***" << endl
+     << "   Best Response time :\t" << best_rt << endl
+     << "Average Response time :\t" << avg_rt / N << endl
+     << "  Worst Response time :\t" << worst_rt << endl
+     << "           time (sec) :\t" << (double)(now - beginning)/CLOCKS_PER_SEC << endl
+     << "   Improved solutions :\t" << total_improved_solutions 
+     << " (" << N << ")" << endl
+     );
+
   results << N << "," << total_improved_solutions << "," 
 	  << best_rt << "," << avg_rt << "," << worst_rt << ",";
 
@@ -275,9 +281,14 @@ SQM_solution* SQM_path_relinking(list<SQM_solution*>* Solutions) {
   Best = SQM_leave_only_the_best(improved_solutions);
   logDebug(cout << "Improved solutions deleted" << endl);
 
-  logInfo(cout << "Diference between best input and best output :\t"
-	  << 100*(Best_input->get_response_time() - Best->get_response_time()) / Best_input->get_response_time() << " %" << endl);
-
+  logInfo
+    (cout
+     << "Diference between best input and best output :\t"
+     << 100 * (Best_input->get_response_time() - Best->get_response_time()) /
+     Best_input->get_response_time() << " %" << endl
+     );
+  logDebug(cout << "SQM_path_relinking: FINISH" << endl);
+  logLevel = LOG_INFO;
   return Best;
 }
 

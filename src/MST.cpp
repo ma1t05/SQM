@@ -1,8 +1,9 @@
 
 #include "MST.h"
 
-double MST_response_time (SQM_instance *Inst,int p,server *Servers,int **preferred_servers) {
-  
+double MST_response_time (SQM_instance *Inst,int p,server *Servers,
+			  int **preferred_servers) 
+{
   /* Variable definitions */
   double T_r;
   mpf_t t_r; // expected response time
@@ -13,29 +14,30 @@ double MST_response_time (SQM_instance *Inst,int p,server *Servers,int **preferr
   /* */
   mpf_t *Lambda;
   int m = Inst->demand_points(); /* Number of demand points */
+  string tag = "MST_response_time: ";
  
-  logDebug(cout << "Start: MST_response_time" << endl);
+  logDebug(cout << tag << "Start" << endl);
 
-  logDebug(cout << "MST_response_time: Allocate memory for mpf numbers" << endl);
+  logDebug(cout << tag << "Allocate memory for mpf numbers" << endl);
   _MST_mpf_init(&mst,p);
   _MST_mpf_init(&Lambda,m);
   _MST_mpf_init(&Tao,p,m);
   _MST_mpf_init(&f,p,m);
 
-  logDebug(cout <<"MST_response_time: Run Service Mean Time Calibration" << endl);
+  logDebug(cout << tag << "Run Service Mean Time Calibration" << endl);
   MST_Calibration(f,mst,Tao,Lambda,Inst,p,Servers,preferred_servers);
 
   /* *Expected Response Time* */
-  logDebug(cout <<"MST_response_time: Calcule Expected Response Time" << endl);
+  logDebug(cout << tag << "Calcule Expected Response Time" << endl);
   mpf_init(t_r);
   /* + expected travel time component */
-  logDebug(cout <<"MST_response_time: add travel time component" << endl);
+  logDebug(cout << tag << "add travel time component" << endl);
   MST_expected_travel_time(t_r,Inst,p,Servers,f);
   /* + mean queue delay component */
-  logDebug(cout <<"MST_response_time: add mean queue delay component" << endl);
+  logDebug(cout << tag << "add mean queue delay component" << endl);
   MST_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
   /* Conver mpf to double */
-  logDebug(cout <<"MST_response_time: convert mpf_t to double" << endl);
+  logDebug(cout << tag << "convert mpf_t to double" << endl);
   T_r = mpf_get_d(t_r);
 
   /* Deallocate memory for mpf numbers */
@@ -45,18 +47,21 @@ double MST_response_time (SQM_instance *Inst,int p,server *Servers,int **preferr
   _MST_mpf_clear(&Lambda,m);
   _MST_mpf_clear(&mst,p);
 
-  logDebug(cout << "Finish: MST_response_time" << endl);
+  logDebug(cout << tag << "Finish" << endl);
   return T_r;
 }
 
-void MST_update_mst(mpf_t *mst,SQM_instance *Inst,int p,server *Servers,mpf_t **f) {
+void MST_update_mst(mpf_t *mst,SQM_instance *Inst,int p,server *Servers,
+		    mpf_t **f) 
+{
   int m = Inst->demand_points();
   double Mu_NT = Inst->get_service_rate();
   double distance;
   mpf_t h,tmp;
   mpf_init(h);
   mpf_init(tmp);
-  /* cout << "Start update mst" << endl; */
+  string tag = "MST_update_mst: ";
+  /* cout << tag << "Start" << endl; */
   for (int i = 0;i < p;i++) {
 
     mpf_set_ui(mst[i],0);
@@ -80,7 +85,7 @@ void MST_update_mst(mpf_t *mst,SQM_instance *Inst,int p,server *Servers,mpf_t **
     */
     if (mpf_cmp_ui(h,0) > 0) /* WARNING: This sum shoudn't be 0 */
       mpf_div(mst[i],mst[i],h);
-    else logError(cout << "MST_update_mst:\tWARNING! sum over j of f_" << i+1 
+    else logError(cout << tag << "\tWARNING! sum over j of f_" << i+1 
 		  << "j = 0" << endl);
   }
   mpf_clear(tmp);
@@ -113,12 +118,15 @@ void MST_expected_travel_time
 }
 
 /* mean queue delay component */
-void MST_mean_queue_delay(mpf_t t_r,int m,int p,mpf_t *Lambda,mpf_t *MST,mpf_t **Tao,mpf_t **f) {
+void MST_mean_queue_delay(mpf_t t_r,int m,int p,mpf_t *Lambda,mpf_t *MST,
+			  mpf_t **Tao,mpf_t **f)
+{
   mpf_t mu;
   mpf_t P_B0,rho_i;
   mpf_t tmp;
+  string tag = "MST_mean_queue_delay: ";
 
-  logDebug(cout << "mean queue delay START" << endl);
+  logDebug(cout << tag << "Start" << endl);
 
   mpf_init(tmp);
   mpf_init(rho_i);
@@ -152,11 +160,12 @@ void MST_mean_queue_delay(mpf_t t_r,int m,int p,mpf_t *Lambda,mpf_t *MST,mpf_t *
   mpf_clear(P_B0);
   mpf_clear(mu);
   mpf_clear(tmp);
-  logDebug(cout << "mean queue delay FINISH" << endl);
+  logDebug(cout << tag << "Finish" << endl);
 }
 
-double* MST_workload(SQM_instance *Inst,int p,server *Servers,int **preferred_servers) {
-  
+double* MST_workload(SQM_instance *Inst,int p,server *Servers,
+		     int **preferred_servers) 
+{
   /* Variable definitions */
   mpf_t tmp,rho_i;
   mpf_t *mst; // mean service time
@@ -166,12 +175,13 @@ double* MST_workload(SQM_instance *Inst,int p,server *Servers,int **preferred_se
   double mu;
   /* */
   int m = Inst->demand_points(); /* Number of demand points */
- 
-  logDebug(cout << "Start: MST_workload" << endl);
-  logDebug(cout << "MST_workload: Populate matrix of pfreferred servers" << endl);
+  string tag = "MST_workload: ";
+
+  logDebug(cout << tag << "Start" << endl);
+  logDebug(cout << tag << "Populate matrix of pfreferred servers" << endl);
 
   rho = new double[p];
-  logDebug(cout << "MST_workload: Allocate memory for mpf numbers" << endl);
+  logDebug(cout << tag << "Allocate memory for mpf numbers" << endl);
   _MST_mpf_init(&f,p,m);
   _MST_mpf_init(&mst,p);
   _MST_mpf_init(&Tao,p,m);
@@ -179,7 +189,7 @@ double* MST_workload(SQM_instance *Inst,int p,server *Servers,int **preferred_se
   mpf_init(tmp);
   mpf_init(rho_i);
 
-  logDebug(cout <<"MST_workload: Run Service Mean Time Calibration" << endl);
+  logDebug(cout << tag << "Run Service Mean Time Calibration" << endl);
   MST_Calibration(f,mst,Tao,Lambda,Inst,p,Servers,preferred_servers);
 
   for (int i = 0;i < p;i++) {
@@ -200,11 +210,14 @@ double* MST_workload(SQM_instance *Inst,int p,server *Servers,int **preferred_se
   _MST_mpf_clear(&mst,p);
   _MST_mpf_clear(&f,p,m);
 
-  logDebug(cout << "Finish: MST_workload" << endl);
+  logDebug(cout << tag << "Finish" << endl);
   return rho;
 }
 
-void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,SQM_instance *Inst,int p,server *Servers,int **preferred_servers) {
+void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,
+		     SQM_instance *Inst,int p,server *Servers,
+		     int **preferred_servers) 
+{
   int m = Inst->demand_points();
   double lambda = Inst->get_arrival_rate(); // mean rate per unit of time within service calls are generated in Poisson manner
   double Mu_NT = Inst->get_service_rate();
@@ -213,9 +226,10 @@ void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,SQM_instance
   mpf_t tmp;
   double demand;
   double distance;
+  string tag = "MST_Calibration: ";
   
-  logDebug(cout << "Start: MST_Calibration" << endl);
-  logDebug(cout << "/* SERVICE MEAN TIME CALIBRATION */" << endl);
+  logDebug(cout << tag << "Start" << endl);
+  logDebug(cout << tag << "/* SERVICE MEAN TIME CALIBRATION */" << endl);
 
   mpf_init(tmp);
   mpf_init(delta_mu);
@@ -236,7 +250,7 @@ void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,SQM_instance
     for (int i = 0;i < p;i++)
       mpf_set(MST[i],mst[i]);
 
-    logDebug(cout << "\t**Step 0** - Update matrix of response times" << endl);
+    logDebug(cout << tag << " **Step 0** - Update matrix of response times" << endl);
     for (int k = 0;k < m;k++) {
       for (int i = 0;i < p;i++) {
 	distance = Inst->distance(Servers[i].get_location(),k);
@@ -248,13 +262,13 @@ void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,SQM_instance
       /* cout << endl;*/
     }
       
-    logDebug(cout << "\t**Step 1** - Run the Hypercube Model" << endl);
+    logDebug(cout << tag << " **Step 1** - Run the Hypercube Model" << endl);
     jarvis_hypercube_approximation(m,p,Lambda,Tao,preferred_servers,f);
 
-    logDebug(cout << "\t**Step 2** - Update mean service time" << endl);
+    logDebug(cout << tag << " **Step 2** - Update mean service time" << endl);
     MST_update_mst(mst,Inst,p,Servers,f);
 
-    logDebug(cout << "\t**Step 3** - ");
+    logDebug(cout << tag << " **Step 3** - ");
     mpf_set_ui(delta_mu,0);
     for (int i = 0;i < p;i++) {
       mpf_sub(tmp,mst[i],MST[i]);
@@ -263,13 +277,13 @@ void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,SQM_instance
 	mpf_set(delta_mu,tmp);
     }
     
-    logDebug(cout << "Delta in mst: " << mpf_get_d(delta_mu) << endl);
+    logDebug(cout << tag << " Delta in mst: " << mpf_get_d(delta_mu) << endl);
   } while (mpf_cmp_d(delta_mu,JARVIS_EPSILON) > 0);
 
   _MST_mpf_clear(&MST,p);
   mpf_clear(delta_mu);
   mpf_clear(tmp);
-
+  logDebug(cout << tag << " Finish" << endl);
 }
 
  void _MST_mpf_init(mpf_t **a,int n) {
