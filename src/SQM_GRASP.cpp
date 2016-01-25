@@ -44,7 +44,7 @@ SQM_solution* GRASP
 	Sol->test_server_location(r,i);
 	/* T_r[i] = MST_response_time(Sol);*/
 	/* T_r[i] = GRASP_func_NN(Sol);*/
-	T_r[i] = GRASP_func_kNN(Sol,min(r+1,GRASP_kNN_param));
+	T_r[i] = GRASP_func_kNN(Sol,min(r,GRASP_kNN_param));
       }
 
       logDebug(cout << "/* Sort Restricted Candidates List */" << "\t");
@@ -131,7 +131,7 @@ double GRASP_func_kNN (SQM_solution *Sol,int K) {
   double RT = 0.0; /* Response Time */
   double lambda = Sol->get_arrival_rate();
   double Mu_NT = Sol->get_non_travel_time();
-  int **a = Sol->preferred_servers();
+  int **a;
   double *Lambda;
   double demand;
   logDebug(cout << "Termina definicion de variables" << endl);
@@ -141,6 +141,8 @@ double GRASP_func_kNN (SQM_solution *Sol,int K) {
   for (int k = 0;k < m;k++) Lambda[k] = I->demand(k)->demand * lambda / demand;
 
   logDebug(cout << "Comienza calculo de rho_i" << endl);
+  Sol->update_preferred_servers();
+  a = Sol->preferred_servers();
   /* Calculate the first approach for rho */
   double distance;
   double *rho = new double[p];
