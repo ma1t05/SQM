@@ -7,38 +7,42 @@ bool incompatible_solutions(SQM_solution*,SQM_solution*);
 double** PR_distances_matrix(SQM_solution*,SQM_solution*);
 
 list<SQM_solution*>* Path_Relinking (SQM_solution *X,SQM_solution *Y) {
-  logDebug(cout << "START:\t***\tPath_Relinking\t***" << endl);
+  log_depth++;
+  string tag = log_tag("Path_Relinking: ");
+  logDebug(cout << tag << "Start" << endl);
   if (incompatible_solutions(X,Y)) {
-    logError(cerr << "Call Path_Relinking with incompatible solutions" << endl);
+    logError(cerr << tag << "Call with incompatible solutions" << endl);
     return NULL;
   }
 
   /* Run perfect matching */
-  logDebug(cout << "Run perfect matching" << endl);
+  logDebug(cout << tag << "Run matching" << endl);
   int *pm;
   pm = matching_function(X,Y);
 
   /* Determine order of change */
-  logDebug(cout << "Determine order of change" << endl);
+  logDebug(cout << tag << "Determine order of change" << endl);
   int p = X->get_servers();
   int *order = order_function(X,pm,Y);
 
-  logDebug(cout << "Create solutions" << endl);
+  logDebug(cout << tag << "Create solutions" << endl);
   list<SQM_solution*> *Solutions;
   int x,y,loc_x,loc_y;
   SQM_solution *Z;
 
   Solutions = new list<SQM_solution*>;
-  logDebug(cout << "Create list to store solutions" << endl);
+  logDebug(cout << tag << "Create list to store solutions" << endl);
   for (int step = 0;step < p - 1;step++) {
-    logDebug(cout << "Step " << step+1 << endl);
     x = order[step];
     y = pm[x];
-    logDebug(cout << "process server " << x << ", change with srever " << y << endl);
     loc_x = X->get_server_location(x);
     loc_y = Y->get_server_location(y);
-    logDebug(cout << "\twith locations " << loc_x << " and " << loc_y << endl);
     if (loc_x != loc_y) {
+      logDebug
+	(cout << tag << "Step " << step+1 << " change server " << x 
+	 << ", with srever " << y << " with locations " << loc_x << " and " 
+	 << loc_y << endl
+	 );
       Z = X->clone();
       Z->set_server_location(x,loc_y);
       Solutions->push_back(Z);
@@ -48,7 +52,8 @@ list<SQM_solution*>* Path_Relinking (SQM_solution *X,SQM_solution *Y) {
   
   delete [] order;
   delete [] pm;
-  logDebug(cout << "FINISH:\t***\tPath_Relinking\t***" << endl);
+  logDebug(cout << tag << "Finish" << endl);
+  log_depth--;
   return Solutions;
 }
 
@@ -229,9 +234,10 @@ SQM_solution* SQM_path_relinking(list<SQM_solution*>* Solutions) {
   clock_t beginning,now;
   double best_rt,avg_rt,worst_rt;
   int N;
+  string tag = "SQM_path_relinking: ";
 
   logLevel = LOG_DEBUG;
-  logDebug(cout << "SQM_path_relinking: START" << endl);
+  logDebug(cout << tag << "Start" << endl);
   beginning = clock();
   improved_solutions = new list<SQM_solution*>;
   best_rt = 100.0,worst_rt = 0.0,avg_rt = 0.0, N = 0;
@@ -279,15 +285,14 @@ SQM_solution* SQM_path_relinking(list<SQM_solution*>* Solutions) {
   Best_input = SQM_best_solution(Solutions);
   /* Clears Solutions */
   Best = SQM_leave_only_the_best(improved_solutions);
-  logDebug(cout << "Improved solutions deleted" << endl);
+  logDebug(cout << tag << "Improved solutions deleted" << endl);
 
   logInfo
-    (cout
-     << "Diference between best input and best output :\t"
+    (cout << tag << "Diference between best input and best output :\t"
      << 100 * (Best_input->get_response_time() - Best->get_response_time()) /
      Best_input->get_response_time() << " %" << endl
      );
-  logDebug(cout << "SQM_path_relinking: FINISH" << endl);
+  logDebug(cout << tag << "Finish" << endl);
   logLevel = LOG_INFO;
   return Best;
 }

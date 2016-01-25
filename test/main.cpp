@@ -45,6 +45,7 @@ void (*Test_Function)
 std::ofstream LogFile;
 std::ofstream results;
 std::ofstream dat;
+int log_depth;
 /* Simulation.h extern variables */
 std::ofstream Log_Simulation;
 
@@ -77,6 +78,7 @@ int main(int argc,char **argv) {
   /* Open Log File */
   LogName << "SQM_" << M_clients << "_" << N_sites << "_" << p << ".log";
   LogFile.open(LogName.str().c_str(),std::ofstream::app);
+  log_depth = 0;
 
   I = SQM_load_instance(Instance_Name,M_clients,N_sites);
   Test_Function(*I,p,v);

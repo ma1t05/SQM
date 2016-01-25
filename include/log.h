@@ -13,10 +13,13 @@ extern LogLevel logLevel;
 #define LogDebug (logLevel >= LOG_DEBUG)
 
 #include <fstream>
+#include <string>
 extern std::ofstream LogFile;
 extern std::ofstream results;
 extern std::ofstream dat;
 
+extern int log_depth;
 void debugBreak();
+std::string log_tag(std::string);
 
 #endif

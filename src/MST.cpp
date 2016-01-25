@@ -14,7 +14,8 @@ double MST_response_time (SQM_instance *Inst,int p,server *Servers,
   /* */
   mpf_t *Lambda;
   int m = Inst->demand_points(); /* Number of demand points */
-  string tag = "MST_response_time: ";
+  log_depth++;
+  string tag = log_tag("MST_response_time: ");
  
   logDebug(cout << tag << "Start" << endl);
 
@@ -48,6 +49,7 @@ double MST_response_time (SQM_instance *Inst,int p,server *Servers,
   _MST_mpf_clear(&mst,p);
 
   logDebug(cout << tag << "Finish" << endl);
+  log_depth--;
   return T_r;
 }
 
@@ -124,7 +126,8 @@ void MST_mean_queue_delay(mpf_t t_r,int m,int p,mpf_t *Lambda,mpf_t *MST,
   mpf_t mu;
   mpf_t P_B0,rho_i;
   mpf_t tmp;
-  string tag = "MST_mean_queue_delay: ";
+  log_depth++;
+  string tag = log_tag("MST_mean_queue_delay: ");
 
   logDebug(cout << tag << "Start" << endl);
 
@@ -161,6 +164,7 @@ void MST_mean_queue_delay(mpf_t t_r,int m,int p,mpf_t *Lambda,mpf_t *MST,
   mpf_clear(mu);
   mpf_clear(tmp);
   logDebug(cout << tag << "Finish" << endl);
+  log_depth--;
 }
 
 double* MST_workload(SQM_instance *Inst,int p,server *Servers,
@@ -175,7 +179,8 @@ double* MST_workload(SQM_instance *Inst,int p,server *Servers,
   double mu;
   /* */
   int m = Inst->demand_points(); /* Number of demand points */
-  string tag = "MST_workload: ";
+  log_depth++;
+  string tag = log_tag("MST_workload: ");
 
   logDebug(cout << tag << "Start" << endl);
   logDebug(cout << tag << "Populate matrix of pfreferred servers" << endl);
@@ -211,6 +216,7 @@ double* MST_workload(SQM_instance *Inst,int p,server *Servers,
   _MST_mpf_clear(&f,p,m);
 
   logDebug(cout << tag << "Finish" << endl);
+  log_depth--;
   return rho;
 }
 
@@ -226,7 +232,8 @@ void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,
   mpf_t tmp;
   double demand;
   double distance;
-  string tag = "MST_Calibration: ";
+  log_depth++;
+  string tag = log_tag("MST_Calibration: ");
   
   logDebug(cout << tag << "Start" << endl);
   logDebug(cout << tag << "/* SERVICE MEAN TIME CALIBRATION */" << endl);
@@ -284,6 +291,7 @@ void MST_Calibration(mpf_t **f,mpf_t *mst,mpf_t **Tao,mpf_t *Lambda,
   mpf_clear(delta_mu);
   mpf_clear(tmp);
   logDebug(cout << tag << " Finish" << endl);
+  log_depth--;
 }
 
  void _MST_mpf_init(mpf_t **a,int n) {

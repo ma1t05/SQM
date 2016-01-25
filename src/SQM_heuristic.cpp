@@ -21,8 +21,9 @@ void SQM_heuristic (SQM_solution *Sol) {
   int it = 0; /* iterator counter */
   int key = rand(); // key number to naming plots
   char plot_output[32];
- 
-  logDebug(cout << "Start Berman Heuristic" << endl);
+  string tag = "SQM_heuristic: ";
+
+  logDebug(cout << tag << "Start" << endl);
   _MST_mpf_init(&mst,p);
   _MST_mpf_init(&Lambda,m);
   _MST_mpf_init(&Tao,p,m);
@@ -37,11 +38,12 @@ void SQM_heuristic (SQM_solution *Sol) {
 
   do {
 
-    logDebug(cout << "/* Update matrix of pfreferred servers */" << endl);
+    logDebug(cout << tag << "Update matrix of pfreferred servers" << endl);
     Sol->update_preferred_servers();
 
     /* Print Current solution */
     /*
+    cout << tag;
     for (int i = 0;i < p;i++)
       cout << Sol->get_server_location(i) << " ";
     cout << endl;
@@ -50,16 +52,17 @@ void SQM_heuristic (SQM_solution *Sol) {
     mpf_set(T_r,t_r);
     MST_Calibration(f,mst,Tao,Lambda,I,p,Sol->get_Servers(),Sol->preferred_servers());
     
-    logDebug(cout << "/* *Expected Response Time* */" << endl);
+    logDebug(cout << tag << "Expected Response Time" << endl);
     mpf_set_ui(t_r,0);
-    logDebug(cout << "/* + expected travel time component */" << endl);
+    logDebug(cout << tag << "+ expected travel time component" << endl);
     MST_expected_travel_time(t_r,I,p,Sol->get_Servers(),f);
-    logDebug(cout << "/* + mean queue delay component */" << endl);
+    logDebug(cout << tag << "+ mean queue delay component" << endl);
     MST_mean_queue_delay(t_r,m,p,Lambda,mst,Tao,f);
 
     mpf_sub(tmp,T_r,t_r);
 
-    logDebug(cout << "Berman Heuristic ERT [" << ++it << "]:\t" << mpf_get_d(t_r) << (mpf_cmp_ui(tmp,0) < 0 ? "*\t" : "\t"));
+    logDebug(cout << tag << "ERT [" << ++it << "]:\t" << mpf_get_d(t_r) 
+	     << (mpf_cmp_ui(tmp,0) < 0 ? "*\t" : "\t"));
     /* Print current solution */
     if (LogDebug) {
       for (int i = 0;i < p;i++)
@@ -70,7 +73,7 @@ void SQM_heuristic (SQM_solution *Sol) {
     /* mpf_abs(tmp,tmp); */ // This is a bad 
     if (mpf_cmp_d(tmp,JARVIS_EPSILON) > 0) {
       /*
-      logDebug(cout << " Plot Iteration " << endl);
+	logDebug(cout << tag << " Plot Iteration " << endl);
       if (LogDebug) {
 
 	double **F; // Version double of matrix f
@@ -89,7 +92,7 @@ void SQM_heuristic (SQM_solution *Sol) {
 	delete [] F;
       }
       */
-      logDebug(cout << "Improve locations" << endl);
+      logDebug(cout << tag << "Improve locations" << endl);
       SQM_improve_locations(Sol,f);
     }
     else if (mpf_cmp_ui(tmp,0) < 0)
@@ -111,7 +114,7 @@ void SQM_heuristic (SQM_solution *Sol) {
       for (int i = 0;i < p;i++)
 	if (Sol->get_server_location(i) == k) cout << k << " ";
     cout << endl;
-    cout << "Finish Berman Heuristic" << endl;
+    cout << tag << "Finish" << endl;
   }
 }
 
@@ -139,13 +142,16 @@ void SQM_improve_locations(SQM_solution *X,mpf_t **f) {
   int new_location;
   double *h_i;
   mpf_t h,tmp;
+  string tag = "SQM_improve_locations: ";
+
+  logDebug(cout << tag << "Start");
   mpf_init(h);
   mpf_init(tmp);
   h_i = new double[m];
 
   for (int i = 0;i < p;i++) {
     // Block A
-    logDebug(cout << "\t\tBlock A " << i << endl);
+    logDebug(cout << tag << "Block A " << i << endl);
     mpf_set_ui(h,0);
     for (int k = 0;k < m;k++) 
       mpf_add(h,h,f[i][k]);
