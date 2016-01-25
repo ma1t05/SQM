@@ -152,10 +152,10 @@ void process_command_line(int argc,char **argv) {
 	  {"demand"      ,required_argument,0 , 'M'},
 	  {"sites"       ,required_argument,0 , 'N'},
 	  {"servers"     ,required_argument,0 , 'p'},
-	  {"aux"         ,required_argument,0 , 'k'},
+	  {"consider"    ,required_argument,0 , 'k'},
 	  {"arrival-rate",required_argument,0 , 'l'},
 	  {"service-rate",required_argument,0 , 'm'},
-	  {"spped"       ,required_argument,0 , 's'},
+	  {"speed"       ,required_argument,0 , 's'},
 	  {0             ,0                ,0 , 0  }
 	};
 
