@@ -504,7 +504,7 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
   double rt,worst_rt;
   clock_t beginning,now;
   SQM_solution *X,*Best;
-  Solutions *elite_sols,*various_sols;
+  Solutions *elite_sols,*misc_sols;
 
   worst_rt = 100.0;
   beginning = clock();
@@ -535,46 +535,49 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
     }
     else delete X;
   }
-  cout << endl;
 
-  now = clock();
-  cout << "After " << (double)(now - beginning)/CLOCKS_PER_SEC << " seconds" << endl;
-  cout << "The best " << num_elite << " response times:" << endl;
-  for (Solutions::iterator it = elite_sols->begin();it != elite_sols->end();it++)
-    cout << (*it)->get_response_time() << endl;
+  if (LogInfo) {
+    now = clock();
+    cout << "After " << (double)(now - beginning)/CLOCKS_PER_SEC << " seconds"
+	 << endl << "The best " << num_elite << " response times:" << endl;
+    for (Solutions::iterator it = elite_sols->begin(),end = elite_sols->end();
+	 it != end;it++) cout << (*it)->get_response_time() << endl;
+  }
+
   Best = elite_sols->front();
 
-  various_sols = new Solutions;
+  misc_sols = new Solutions;
   for (int r = 0;r < 5*num_elite;r++) {
     X = new SQM_solution(Inst,p);
     X->set_speed(v,BETA);
     X->pm_cost = SQM_min_cost_pm(elite_sols,X);
-    if (various_sols->size() > 0) {
+    if (misc_sols->size() > 0) {
       Solutions::iterator it;
-      for (it = various_sols->begin();it != various_sols->end();it++)
+      for (it = misc_sols->begin();it != misc_sols->end();it++)
 	if ((*it)->pm_cost < X->pm_cost) {
-	  various_sols->insert(it,X);
+	  misc_sols->insert(it,X);
 	  break;
 	}
-      if (it == various_sols->end())
-	various_sols->push_back(X);
+      if (it == misc_sols->end())
+	misc_sols->push_back(X);
 
-      if (various_sols->size() > num_elite) {
-	delete various_sols->back();
-	various_sols->pop_back();
+      if (misc_sols->size() > num_elite) {
+	delete misc_sols->back();
+	misc_sols->pop_back();
       }
     }
-    else various_sols->push_back(X);
+    else misc_sols->push_back(X);
   }
   
-  cout << "The various " << num_elite << " response times:" << endl;
-  for (Solutions::iterator it = various_sols->begin(), end = various_sols->end();it != end;it++) {
-    cout << (*it)->get_response_time() << endl;
-    elite_sols->push_back(*it);
+  if (LogInfo) {
+    cout << "The various " << num_elite << " response times:" << endl;
+    for (Solutions::iterator it = misc_sols->begin(), end = misc_sols->end();
+	 it != end;it++) cout << (*it)->get_response_time() << endl;
   }
-  delete various_sols;
+  for (Solutions::iterator it = misc_sols->begin(), end = misc_sols->end();
+       it != end;it++) elite_sols->push_back(*it);
+  delete misc_sols;
 
-  int Case = 1;
   double time,gap;
 
   results.open("results_PathRelinking.csv",std::ofstream::app);
@@ -616,8 +619,8 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
 
       beginning = clock();
       X = SQM_path_relinking(elite_sols);
-      //SQM_heuristic(X);
-      gap = 100*(Best->get_response_time() - X->get_response_time()) / Best->get_response_time();
+      gap = 100 * (Best->get_response_time() - X->get_response_time());
+      gap =/ Best->get_response_time();
       now = clock();
       time = (double)(now - beginning)/CLOCKS_PER_SEC;
       results << time << "," << gap << "," << X->get_response_time() << endl;
