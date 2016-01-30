@@ -620,7 +620,7 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
       beginning = clock();
       X = SQM_path_relinking(elite_sols);
       gap = 100 * (Best->get_response_time() - X->get_response_time());
-      gap =/ Best->get_response_time();
+      gap /= Best->get_response_time();
       now = clock();
       time = (double)(now - beginning)/CLOCKS_PER_SEC;
       results << time << "," << gap << "," << X->get_response_time() << endl;
@@ -633,35 +633,47 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
 }
 
 void Test_SQM_Local_Search(SQM_instance &Inst,int p,double v) {
-  int N = 1;
+  int N = 500;
   SQM_solution *X,*Y;
-  double rt,h_rt,ls_rt;
+  double rt,h_rt,h_ls_rt,ls_rt,ls_h_rt;
 
-  cout << "Start: Local_Search" << endl;
+  logInfo(cout << "Test Local_Search: Start" << endl);
+  rt = h_rt = h_ls_rt = ls_rt = ls_h_rt = 0.0;
   for (int r = 0;r < N;r++) {
     X = new SQM_solution(Inst,p);
     X->set_speed(v,BETA);
-    rt = X->get_response_time();
+    rt += X->get_response_time();
     Y = X->clone();
-    cout << "\t        Method: " << "Response Time\t" << "% Improvement" << endl
-	 << "\t response time: " << rt << endl;
 
     SQM_heuristic(Y);
-    h_rt = Y->get_response_time();
+    h_rt += Y->get_response_time();
     Local_Search(*Y);
-    ls_rt = Y->get_response_time();
-    cout << "\t     heuristic: " << h_rt << "\t" << 100.0*(rt-h_rt)/rt << endl
-	 << "\t +local search: " << ls_rt << "\t+" << 100.0*(h_rt-ls_rt)/rt << endl;
+    h_ls_rt += Y->get_response_time();
 
     Local_Search(*X);
-    ls_rt = X->get_response_time();
+    ls_rt += X->get_response_time();
     SQM_heuristic(X);	
-    h_rt = X->get_response_time();
-    cout << "\t  local search: " << ls_rt << "\t" << 100.0*(rt-ls_rt)/rt << endl 
-	 << "\t    +heuristic: " << h_rt << "\t+" << 100.0*(ls_rt-h_rt)/rt << endl;
+    ls_h_rt = X->get_response_time();
     
-    cout << endl;
     delete X;
     delete Y;
   }
+  logDebug
+    (cout 
+     << "       Method: " << "Response Time\t" << "% Improvement" << endl
+     << "response time: " << rt/N << endl
+     << "    heuristic: " << h_rt/N << "\t" << 100.0*(rt-h_rt)/rt << endl
+     << "+local search: " << ls_rt/N << "\t+" << 100.0*(h_rt-ls_rt)/rt << endl
+     << " local search: " << ls_rt/N << "\t" << 100.0*(rt-ls_rt)/rt << endl
+     << "   +heuristic: " << h_rt/N << "\t+" << 100.0*(ls_rt-h_rt)/rt << endl);
+  logInfo(cout << "Test Local_Search: Finish" << endl);
+  results.open("results_LocalSearch.csv",std::ofstream::app);
+  X = new SQM_solution(Inst,p);
+  results << X;
+  delete X;
+  results << rt/N << "," << h_rt/N << "," << 100.0*(rt-h_rt)/rt << ","
+	  << h_ls_rt/N << "," << 100.0*(h_rt-h_ls_rt)/rt  << ","
+	  << ls_rt/N << "," << 100.0*(rt-ls_rt)/rt << ","
+	  << ls_h_rt/N << "," << 100.0*(ls_rt-ls_h_rt)/rt << endl;
+  results.close();
 }
