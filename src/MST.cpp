@@ -1,5 +1,6 @@
 
 #include "MST.h"
+#include <exception>
 
 double MST_response_time (SQM_instance *Inst,int p,server *Servers,
 			  int **preferred_servers) 
@@ -62,7 +63,8 @@ void MST_update_mst(mpf_t *mst,SQM_instance *Inst,int p,server *Servers,
   mpf_t h,tmp;
   mpf_init(h);
   mpf_init(tmp);
-  string tag = "MST_update_mst: ";
+  log_depth++;
+  string tag = log_tag("MST_update_mst: ");
   /* cout << tag << "Start" << endl; */
   for (int i = 0;i < p;i++) {
 
@@ -93,6 +95,7 @@ void MST_update_mst(mpf_t *mst,SQM_instance *Inst,int p,server *Servers,
   mpf_clear(tmp);
   mpf_clear(h);
   /* cout << "End update mst" << endl; */
+  log_depth--;
 }
 
 
@@ -130,10 +133,9 @@ void MST_mean_queue_delay(mpf_t t_r,int m,int p,mpf_t *Lambda,mpf_t *MST,
   string tag = log_tag("MST_mean_queue_delay: ");
 
   logDebug(cout << tag << "Start" << endl);
-
   mpf_init(tmp);
-  mpf_init(rho_i);
   mpf_init_set_ui(P_B0,1);
+  mpf_init(rho_i);
   for (int i = 0;i < p;i++) {
     mpf_set_ui(rho_i,0);
     for (int k = 0;k < m;k++) {
@@ -144,12 +146,16 @@ void MST_mean_queue_delay(mpf_t t_r,int m,int p,mpf_t *Lambda,mpf_t *MST,
     mpf_ui_sub(tmp,1,rho_i);
     mpf_mul(P_B0,P_B0,tmp);
   }
+  mpf_clear(rho_i);
 
   mpf_init_set_ui(mu,0);
   for (int i = 0;i < p;i++) {
-    mpf_ui_div(tmp,1,MST[i]);
-    mpf_add(mu,mu,tmp);
+    if (mpf_cmp_ui(MST[i],0) > 0){
+      mpf_ui_div(tmp,1,MST[i]);
+      mpf_add(mu,mu,tmp);
+    }
   }
+
   mpf_set_ui(tmp,0);
   for (int k = 0;k < m;k++)
     mpf_add(tmp,tmp,Lambda[k]); // lambda

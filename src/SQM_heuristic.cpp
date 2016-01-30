@@ -155,11 +155,15 @@ void SQM_improve_locations(SQM_solution *X,mpf_t **f) {
     mpf_set_ui(h,0);
     for (int k = 0;k < m;k++) 
       mpf_add(h,h,f[i][k]);
-    if (LogInfo && mpf_cmp_ui(h,0) == 0)
-      cout << "for i = " << i+1 << " sum over f_ij is 0" << endl;
-    for (int k = 0;k < m;k++) {
-      mpf_div(tmp,f[i][k],h);
-      h_i[k] = mpf_get_d(tmp);
+    if (mpf_cmp_ui(h,0) == 0) {
+      logInfo(cout << "for i = " << i+1 << " sum over f_ij is 0" << endl);
+      for (int k = 0;k < m;k++) h_i[k] = 0.0;
+    }
+    else {
+      for (int k = 0;k < m;k++) {
+	mpf_div(tmp,f[i][k],h);
+	h_i[k] = mpf_get_d(tmp);
+      }
     }
 
     // Block B
