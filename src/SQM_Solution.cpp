@@ -192,6 +192,13 @@ double SQM_solution::get_non_travel_time () const {
   return Mu_NT;
 }
 
+double SQM_solution::Hash () const{
+  double hash = 0.0;
+  for (int i = 0;i < p;i++)
+    hash += Inst->site(get_server_location(i))->x;
+  return hash;
+}
+
 double SQM_solution::get_response_time() {
   if (response_time == -1) {
     update_preferred_servers ();
@@ -223,6 +230,31 @@ bool SQM_solution::operator>(SQM_solution& X) {
 
 bool SQM_solution::operator<(SQM_solution& X) {
   return X > (*this);
+}
+
+bool SQM_solution::operator==(SQM_solution& X) {
+  int N;
+  int *this_servers,*X_servers;
+  bool they_are_equal = true;
+  if (Inst != X.get_instance() || p != X.get_servers())
+    return false;
+  N = Inst->potential_sites();
+  this_servers = new int[N];
+  X_servers = new int[N];
+  for (int i = 0;i < p;i++) {
+    this_servers[i] = 0;
+    X_servers[i] = 0;
+  }
+  for (int i = 0;i < p;i++) {
+    this_servers[get_server_location(i)]++;
+    X_servers[X.get_server_location(i)]++;
+  }
+  for (int i = 0;i < p;i++)
+    if (this_servers[i] != X_servers[i])
+      they_are_equal = false;
+  delete [] this_servers;
+  delete X_servers;
+  return they_are_equal;
 }
 
 ostream& operator<<(ostream& os, SQM_solution *X) {
