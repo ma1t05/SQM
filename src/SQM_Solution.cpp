@@ -249,7 +249,7 @@ bool SQM_solution::operator==(SQM_solution& X) {
     this_servers[get_server_location(i)]++;
     X_servers[X.get_server_location(i)]++;
   }
-  for (int i = 0;i < p;i++)
+  for (int i = 0;i < N;i++)
     if (this_servers[i] != X_servers[i])
       they_are_equal = false;
   delete [] this_servers;
