@@ -7,6 +7,25 @@
 #include "PerfectMatching.h"
 #include "SQM_heuristic.h"
 
+class RefSet {
+ private:
+  int bMax;
+  int bNow;
+  int RefSetCall;
+  int RefSetAdd;
+  int DupCheck;
+  int FullDupCheck;
+  int FullDupFound;
+  std::list<SQM_solution*> Solutions;
+  std::list<SQM_solution*>::reverse_iterator rit,rend;
+  void Add(SQM_solution&);
+ public:
+  RefSet(int);
+  ~RefSet() {};
+  int NewRank;
+  void Update(SQM_solution&);
+};
+
 list<SQM_solution*>* Path_Relinking (SQM_solution*,SQM_solution*);
 SQM_solution* SQM_path_relinking(list<SQM_solution*>*);
 SQM_solution* SQM_best_solution(list<SQM_solution*>* Solutions);
@@ -15,7 +34,8 @@ void SQM_delete_sols(list<SQM_solution*>* Solutions);
 double PR_perfect_matching_cost(SQM_solution *X,SQM_solution *Y);
 double SQM_min_cost_pm(list<SQM_solution*>*,SQM_solution*);
 
-enum matching_type {perfect_matching,workload_matching,random_matching,invalid_matching};
+enum matching_type {perfect_matching,workload_matching,random_matching,
+		    invalid_matching};
 matching_type& operator++(matching_type&);
 extern int* (*matching_function)(SQM_solution*,SQM_solution*);
 matching_type& operator++(matching_type& target);

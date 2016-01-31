@@ -344,3 +344,60 @@ double SQM_min_cost_pm(list<SQM_solution*> *Sols,SQM_solution *Sol) {
 
   return min_cost;
 }
+
+RefSet::RefSet (int Max) {
+  bMax = Max;
+  bNow = 0;
+  RefSetCall = 0;
+  RefSetAdd = 0;
+  DupCheck = 0;
+  FullDupCheck = 0;
+  FullDupFound = 0;
+}
+
+void RefSet::Add (SQM_solution &Sol) {
+  RefSetAdd++;
+  /* Pending: note if the insertion is correct */
+  Solutions.insert(rit.base(),&Sol);
+  if (bNow < bMax)
+    bNow++;
+  else {
+    delete Solutions.back();
+    Solutions.pop_back();
+  }
+}
+
+void RefSet::Update (SQM_solution &Sol) {
+  RefSetCall++;
+  if (bNow = 0) {
+    Add (Sol);
+    return;
+  }
+  else {
+    if (Sol > *(Solutions.back()) && bNow == bMax)
+      return;
+    double Hash0 = Sol.Hash();
+
+    if (Sol > *(Solutions.front())) {
+      for (rit = Solutions.rbegin(),rend = Solutions.rend();rit != rend; ++rit) {
+	if ((*rit)->get_response_time() == Sol.get_response_time()) {
+	  DupCheck++;
+	  if ((*rit)->Hash() == Hash0) {
+	    FullDupCheck++;
+	    if (Sol == **rit) {
+	      FullDupFound++;
+	      return;
+	    }
+	  }
+	}
+	else if (**rit < Sol){
+	  Add (Sol);
+	  return;
+	}
+      }
+      NewRank = 1;
+    }
+    Add (Sol);
+  }
+}
+
