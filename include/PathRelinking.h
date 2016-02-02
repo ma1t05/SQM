@@ -56,6 +56,11 @@ protected:
   double worst () const {return E[loc[bNow-1]];};
   SQM_solution* best_sol () const {return Solutions[loc[0]];};
   SQM_solution* worst_sol () const {return Solutions[loc[bNow-1]];};
+  int Calls () const {return RefSetCall;};
+  int Adds () const {return RefSetAdd;};
+  int Checks () const {return DupCheck;};
+  int FullCheck () const {return FullDupCheck;};
+  int DupFound () const {return FullDupFound;};
 };
 
 list<SQM_solution*>* Path_Relinking (SQM_solution*,SQM_solution*);
