@@ -370,9 +370,16 @@ RefSet::RefSet (int Max) {
   E = new double [bMax];
   Hash = new double [bMax];
   Solutions = new SQM_solution*[bMax];
+  LastChange = new int [bMax];
+  LastRunTime = new int [invalid_subset];
 }
 
 RefSet::~RefSet () {
+  for (int i = 0;i < bNow;i++) {
+    delete Solutions[loc[i]];
+  }
+  delete [] LastRunTime;
+  delete [] LastChange;
   delete [] Solutions;
   delete [] Hash;
   delete [] E;
@@ -395,7 +402,7 @@ void RefSet::Add (SQM_solution &Sol) {
   }
   loc0 = loc[bNow-1];
   if (NewRank < bNow) {
-    for (int i = bNow - 1;i > NewRank;i--)
+    for (int i = bNow - 1;i >= NewRank;i--)
       loc[i] = loc[i-1];
   }
   Solutions[loc0] = &Sol;
@@ -407,30 +414,34 @@ void RefSet::Add (SQM_solution &Sol) {
   log_depth--;
 }
 
-void RefSet::Update (SQM_solution &Sol) {
+bool RefSet::Update (SQM_solution &Sol) {
   log_depth++;
   string tag = log_tag("RefSet::Update: ");
   logDebug(cout << tag << "Start" << endl);
   RefSetCall++;
   NewRank = 0;
   E0 = Sol.get_response_time();
-  if (bNow = 0) {
+  logDebug(cout << tag << "bNow = " << bNow << endl);
+  if (bNow == 0) {
     NewRank = 1;
-    logDebug(cout << tag << "Calculate Hash" << endl);
+    logDebug(cout << tag << "Calculate Hash (bNow = 0)" << endl);
     Hash0 = Sol.Hash();
     Add (Sol);
     logDebug(cout << tag << "Finish" << endl);
-    return;
+    log_depth--;
+    return true;
   }
   else {
     if (E0 >= worst() && bNow == bMax) {
-      logDebug(cout << "RefSet::Update: Finish" << endl);
-      return;
+      logDebug(cout << tag << "Finish" << endl);
+      log_depth--;
+      return false;
     }
+    logDebug(cout << tag << "Calculate Hash (bNow > 0)" << endl);
     Hash0 = Sol.Hash();
 
     if (Sol < *best_sol()) {
-      
+      NewRank = 1;
     }
     else {
       for (int i = bNow-1;i >= 0; i--) {
@@ -440,23 +451,27 @@ void RefSet::Update (SQM_solution &Sol) {
 	    FullDupCheck++;
 	    if (Sol == *Solutions[i-1]) {
 	      FullDupFound++;
-	      logDebug(cout << "RefSet::Update: Finish" << endl);
-	      return;
+	      logDebug(cout << tag << "Finish" << endl);
+	      log_depth--;
+	      return false;
 	    }
 	  }
 	}
 	else if (E[loc[i]] < E0){
 	  NewRank = i+1;
 	  Add (Sol);
-	  logDebug(cout << "RefSet::Update: Finish" << endl);
-	  return;
+	  logDebug(cout << tag << "Finish" << endl);
+	  log_depth--;
+	  return true;
 	}
       }
       NewRank = 1;
     }
     Add (Sol);
   }
-  logDebug(cout << "RefSet::Update: Finish" << endl);
+  logDebug(cout << tag << "Finish" << endl);
+  log_depth--;
+  return true;
 }
 
 void RefSet::SubsetControl () {
