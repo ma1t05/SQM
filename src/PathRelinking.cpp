@@ -380,6 +380,10 @@ RefSet::~RefSet () {
 }
 
 void RefSet::Add (SQM_solution &Sol) {
+  log_depth++;
+  string tag = log_tag("RefSet::Add: ");
+ 
+  logDebug(cout << tag << "Start" << endl);
   int loc0;
   RefSetAdd++;
   if (bNow < bMax) {
@@ -399,21 +403,30 @@ void RefSet::Add (SQM_solution &Sol) {
   Hash[loc0] = Hash0;
   E[loc0] = E0;
   LastChange[loc0] = NowTime;
+  logDebug(cout << tag << "Finish" << endl);
+  log_depth--;
 }
 
 void RefSet::Update (SQM_solution &Sol) {
+  log_depth++;
+  string tag = log_tag("RefSet::Update: ");
+  logDebug(cout << tag << "Start" << endl);
   RefSetCall++;
   NewRank = 0;
   E0 = Sol.get_response_time();
   if (bNow = 0) {
     NewRank = 1;
+    logDebug(cout << tag << "Calculate Hash" << endl);
     Hash0 = Sol.Hash();
     Add (Sol);
+    logDebug(cout << tag << "Finish" << endl);
     return;
   }
   else {
-    if (E0 >= worst() && bNow == bMax)
+    if (E0 >= worst() && bNow == bMax) {
+      logDebug(cout << "RefSet::Update: Finish" << endl);
       return;
+    }
     Hash0 = Sol.Hash();
 
     if (Sol < *best_sol()) {
@@ -427,6 +440,7 @@ void RefSet::Update (SQM_solution &Sol) {
 	    FullDupCheck++;
 	    if (Sol == *Solutions[i-1]) {
 	      FullDupFound++;
+	      logDebug(cout << "RefSet::Update: Finish" << endl);
 	      return;
 	    }
 	  }
@@ -434,6 +448,7 @@ void RefSet::Update (SQM_solution &Sol) {
 	else if (E[loc[i]] < E0){
 	  NewRank = i+1;
 	  Add (Sol);
+	  logDebug(cout << "RefSet::Update: Finish" << endl);
 	  return;
 	}
       }
@@ -441,6 +456,7 @@ void RefSet::Update (SQM_solution &Sol) {
     }
     Add (Sol);
   }
+  logDebug(cout << "RefSet::Update: Finish" << endl);
 }
 
 void RefSet::SubsetControl () {
