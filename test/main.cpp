@@ -313,19 +313,22 @@ void Test_SQM_model(SQM_instance &Inst,int p,double v) {
 }
 
 void Test_SQM_multistart(SQM_instance &Inst,int p,double v) {
-  int N = 500;
+  int N = 1000;
   SQM_solution *Sol;
   RefSet Top(10);
+
   for (int i = 0;i < N;i++) {
     Sol = new SQM_solution (Inst,p);
     Sol->set_speed(v,BETA);
-    Top.Update(*Sol);
+    if (!Top.Update(*Sol)) delete Sol;
   }
-  cout << "  RefSetCall:" << Top.Calls() << endl
-       << "   RefSetAdd:" << Top.Adds() << endl
-       << "    DupCheck:" << Top.Checks() << endl
-       << "FullDupCheck:" << Top.FullCheck() << endl
-       << "FullDupFound:" << Top.DupFound() << endl
+  cout << "  RefSetCall:" << Top.get_Calls() << endl
+       << "   RefSetAdd:" << Top.get_Adds() << endl
+       << "    DupCheck:" << Top.get_Checks() << endl
+       << "FullDupCheck:" << Top.get_FullCheck() << endl
+       << "FullDupFound:" << Top.get_DupFound() << endl
+       << "    Best Sol:" << Top.best() << endl
+       << "   Worst Sol:" << Top.worst() << endl
        << endl;
 }
 
