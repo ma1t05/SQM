@@ -29,6 +29,7 @@ typedef list<SQM_solution*> Solutions;
 
 /* Test Functions */
 void Test_SQM_model(SQM_instance&,int,double);
+void Test_SQM_multistart(SQM_instance&,int,double);
 void Test_SQM_heuristic(SQM_instance&,int,double);
 void Test_SQM_GRASP(SQM_instance&,int,double);
 void Test_SQM_random(SQM_instance&,int,double);
@@ -122,7 +123,8 @@ void print_usage () {
        << "  GRASP             " << endl
        << "  random            " << endl
        << "  Path_Relinking    " << endl
-       << "  Local_Search      " << endl;
+       << "  Local_Search      " << endl
+       << endl;
 
 }
 
@@ -219,6 +221,8 @@ void process_command_line(int argc,char **argv) {
 	string method = string(argv[optind]);
 	if (method == "model")
 	  Test_Function = Test_SQM_model;
+	else if (method == "multi_start")
+	  Test_Function = Test_SQM_multistart;
 	else if (method == "heuristic")
 	  Test_Function = Test_SQM_heuristic;
 	else if (method == "GRASP")
@@ -306,6 +310,23 @@ void Test_SQM_model(SQM_instance &Inst,int p,double v) {
     Goldberg(Inst,p,Mu_NT,lambda);
   }
   results.close();
+}
+
+void Test_SQM_multistart(SQM_instance &Inst,int p,double v) {
+  int N = 500;
+  SQM_solution *Sol;
+  RefSet Top(10);
+  for (int i = 0;i < N;i++) {
+    Sol = new SQM_solution (Inst,p);
+    Sol->set_speed(v,BETA);
+    Top.Update(*Sol);
+  }
+  cout << "  RefSetCall:" << Top.Calls() << endl
+       << "   RefSetAdd:" << Top.Adds() << endl
+       << "    DupCheck:" << Top.Checks() << endl
+       << "FullDupCheck:" << Top.FullCheck() << endl
+       << "FullDupFound:" << Top.DupFound() << endl
+       << endl;
 }
 
 void Test_SQM_heuristic(SQM_instance &Inst,int p,double v) {
