@@ -1,6 +1,7 @@
 #ifndef _REFERENCE_SET_H
 #define _REFERENCE_SET_H 1
 
+#include <list>
 #include "SQM_Solution.h"
 
 enum Subset {two_element,   /* all 2-element subsets. */

@@ -2,7 +2,6 @@
 #ifndef _PATH_RELINKING_H
 #define _PATH_RELINKING_H
 
-#include <list>
 #include "Reference_Set.h"
 #include "PerfectMatching.h"
 #include "SQM_heuristic.h"
