@@ -31,7 +31,6 @@ class RefSet {
   double *E,*Hash;
   SQM_solution **Solutions;
   void Add(SQM_solution&);
-  void SubsetControl ();
   void algorithm_for_SubsetType1 ();
   void algorithm_for_SubsetType2 ();
   void algorithm_for_SubsetType3 ();
@@ -49,6 +48,7 @@ protected:
   RefSet (int);
   ~RefSet ();
   bool Update (SQM_solution&);
+  void SubsetControl ();
   double best () const {return E[loc[0]];};
   double worst () const {return E[loc[bNow-1]];};
   double evaluation (int i) const {return ((i >= 0 && i < bNow) ? E[loc[i]] : -1);};
