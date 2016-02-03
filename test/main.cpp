@@ -313,11 +313,14 @@ void Test_SQM_model(SQM_instance &Inst,int p,double v) {
 }
 
 void Test_SQM_multistart(SQM_instance &Inst,int p,double v) {
-  int N = 1000;
+  int N = 5000;
   SQM_solution *Sol;
   RefSet Top(10);
 
-  for (int i = 0;i < N;i++) {
+  for (int i = 1;i <= N;i++) {
+    if (i%100 == 0) 
+      cout << "The best solution at iteration " << i << " is: " << Top.best()
+	   << endl;
     Sol = new SQM_solution (Inst,p);
     Sol->set_speed(v,BETA);
     if (!Top.Update(*Sol)) delete Sol;
@@ -524,51 +527,30 @@ void Test_SQM_random(SQM_instance &Inst,int p,double v) {
 }
 
 void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
-  int N = 400,num_elite = 10;
+  int N = 400,num_elite = 40;
   double rt,worst_rt;
   clock_t beginning,now;
   SQM_solution *X,*Best;
-  Solutions *elite_sols,*misc_sols;
+  Solutions *misc_sols;
+  RefSet elite_sols(num_elite);
 
-  worst_rt = 100.0;
   beginning = clock();
-  elite_sols = new Solutions;
   for (int r = 0;r < N;r++) {
     X = new SQM_solution(Inst,p);
     X->set_speed(v,BETA);
-    SQM_heuristic(X);
-    rt = X->get_response_time();
-    if (rt < worst_rt) {
-      if (elite_sols->size() == num_elite) {
-	delete elite_sols->back();
-	elite_sols->pop_back();
-	worst_rt = elite_sols->back()->get_response_time();
-      }
-
-      if (elite_sols->size() > 0) {
-	for (Solutions::iterator it = elite_sols->begin(),end = elite_sols->end();it != end;it++)
-	  if (**it > *X) {
-	    elite_sols->insert(it,X);
-	    break;
-	  }
-      }
-      else {
-	elite_sols->push_back(X);
-	worst_rt = X->get_response_time();
-      }
-    }
-    else delete X;
+    /*SQM_heuristic(X);*/
+    if (!elite_sols.Update(*X)) delete X;
   }
-
+  
   if (LogInfo) {
     now = clock();
     cout << "After " << (double)(now - beginning)/CLOCKS_PER_SEC << " seconds"
 	 << endl << "The best " << num_elite << " response times:" << endl;
-    for (Solutions::iterator it = elite_sols->begin(),end = elite_sols->end();
-	 it != end;it++) cout << (*it)->get_response_time() << endl;
+    for (int i = 0; i < elite_sols.get_elements();i++) 
+      cout << elite_sols.evaluation(i) << endl;
   }
 
-  Best = elite_sols->front();
+  Best = elite_sols.best_sol();
 
   misc_sols = new Solutions;
   for (int r = 0;r < 5*num_elite;r++) {
@@ -599,61 +581,11 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
 	 it != end;it++) cout << (*it)->get_response_time() << endl;
   }
   for (Solutions::iterator it = misc_sols->begin(), end = misc_sols->end();
-       it != end;it++) elite_sols->push_back(*it);
-  delete misc_sols;
-
-  double time,gap;
-
-  results.open("results_PathRelinking.csv",std::ofstream::app);
-  for (matching_type matching = perfect_matching;matching != invalid_matching;++matching) {
-    for (order_type order = nearest_first;order != invalid_order;++order) {
-      results << Best;
-
-      switch (matching) 
-	{
-	case perfect_matching:
-	  matching_function = PR_run_perfect_matching;
-	  results << "perfect,";
-	  break;
-	case workload_matching:
-	  matching_function = PR_workload_matching;
-	  results << "workload,";
-	  break;
-	case random_matching:
-	  matching_function = PR_random_matching;
-	  results << "random,";
-	  break;
-	}
-
-      switch (order)
-	{
-	case nearest_first:
-	  order_function = PR_processing_order_nf;
-	  results << "nf,";
-	  break;
-	case farthest_first:
-	  order_function = PR_processing_order_ff;
-	  results << "ff,";
-	  break;
-	case random_order:
-	  order_function = PR_processing_order_random;
-	  results << "random,";
-	  break;
-	}
-
-      beginning = clock();
-      X = SQM_path_relinking(elite_sols);
-      gap = 100 * (Best->get_response_time() - X->get_response_time());
-      gap /= Best->get_response_time();
-      now = clock();
-      time = (double)(now - beginning)/CLOCKS_PER_SEC;
-      results << time << "," << gap << "," << X->get_response_time() << endl;
-      delete X;
-    }
+       it != end;it++) {
+    SQM_heuristic(*it);
+    if (!elite_sols.Update(**it)) delete *it;
   }
-  results.close();
-
-  SQM_delete_sols(elite_sols);
+  elite_sols.SubsetControl();
 }
 
 void Test_SQM_Local_Search(SQM_instance &Inst,int p,double v) {
