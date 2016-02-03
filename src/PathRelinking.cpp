@@ -225,81 +225,37 @@ int* PR_processing_order_ff(SQM_solution *X,int *pm,SQM_solution *Y) {
   return order;
 }
 
-SQM_solution* SQM_path_relinking(list<SQM_solution*>* Solutions) {
+void SQM_path_relinking(RefSet &EliteSols,list<SQM_solution*> &Solutions) {
   int total_improved_solutions = 0;
-  double Tr_x,Tr_y,Best_TR,TR;
-  list<SQM_solution*>::iterator X,Y,Z;
-  RefSet *EliteSols;
-  list<SQM_solution*> *path_relinking_sols,*improved_solutions;
+  SQM_solution *X,*Y;
+  list<SQM_solution*>::iterator it1,it2,end,Z;
+  list<SQM_solution*> *pr_sols;
   SQM_solution *Best,*Best_input;
-  clock_t beginning,now;
-  double best_rt,avg_rt,worst_rt;
   int N;
   string tag = "SQM_path_relinking: ";
 
-  EliteSols = new RefSet(Solutions->size());
-  for (X = Solutions->begin();X != Solutions->end();X++)
-    EliteSols->Update(**X);
-
-  logLevel = LOG_DEBUG;
-  logDebug(cout << tag << "Start" << endl);
-  beginning = clock();
-  improved_solutions = new list<SQM_solution*>;
-  best_rt = 100.0,worst_rt = 0.0,avg_rt = 0.0, N = 0;
-  for (X = Solutions->begin();X != Solutions->end();X++) {
-    Tr_x = (*X)->get_response_time(); 
-    Y = X;
-    Y++;
-    for (;Y != Solutions->end();Y++) {
-      Tr_y = (*Y)->get_response_time();
-      Best_TR = (Tr_x > Tr_y ? Tr_y : Tr_x);
-      path_relinking_sols = Path_Relinking(*X,*Y);
-      if (path_relinking_sols != NULL) {
-	for (Z = path_relinking_sols->begin();Z != path_relinking_sols->end();Z++) {
-	  SQM_heuristic(*Z);
-	  TR = (*Z)->get_response_time();
-	  avg_rt += TR; N++;
-	  if (best_rt > TR) best_rt = TR;
-	  if (worst_rt < TR) worst_rt = TR;
-	  if (TR < Best_TR) {
+  logInfo(cout << tag << "Start" << endl);
+  it1 = Solutions.begin();
+  end = Solutions.end();
+  while (it1 != end) {
+    X = *it1;
+    it2 = ++it1;
+    while (it2 != end) {
+      Y = *it2; it2++;
+      pr_sols = Path_Relinking(X,Y);
+      if (pr_sols != NULL) {
+	for (Z = pr_sols->begin();Z != pr_sols->end();Z++) {
+	  SQM_heuristic(*Z); /* Improvement method */
+	  if (EliteSols.Update(**Z))
 	    total_improved_solutions++;
-	    improved_solutions->push_back(*Z);
-	  }
 	  else delete *Z;
 	}
-	delete path_relinking_sols;
+	delete pr_sols;
       }
     }
   }
-  now = clock();
 
-  logInfo
-    (cout
-     << "\t***\tPath Relinking results\t***" << endl
-     << "   Best Response time :\t" << best_rt << endl
-     << "Average Response time :\t" << avg_rt / N << endl
-     << "  Worst Response time :\t" << worst_rt << endl
-     << "           time (sec) :\t" << (double)(now - beginning)/CLOCKS_PER_SEC << endl
-     << "   Improved solutions :\t" << total_improved_solutions 
-     << " (" << N << ")" << endl
-     );
-
-  results << N << "," << total_improved_solutions << "," 
-	  << best_rt << "," << avg_rt << "," << worst_rt << ",";
-
-  Best_input = SQM_best_solution(Solutions);
-  /* Clears Solutions */
-  Best = SQM_leave_only_the_best(improved_solutions);
-  logDebug(cout << tag << "Improved solutions deleted" << endl);
-
-  logInfo
-    (cout << tag << "Diference between best input and best output :\t"
-     << 100 * (Best_input->get_response_time() - Best->get_response_time()) /
-     Best_input->get_response_time() << " %" << endl
-     );
-  logDebug(cout << tag << "Finish" << endl);
-  logLevel = LOG_INFO;
-  return Best;
+  logInfo(cout << tag << "Finish" << endl);
 }
 
 SQM_solution* SQM_best_solution(list<SQM_solution*>* Solutions) {
@@ -336,391 +292,15 @@ void SQM_delete_sols(list<SQM_solution*>* Solutions) {
   delete Solutions;
 }
 
-double SQM_min_cost_pm(list<SQM_solution*> *Sols,SQM_solution *Sol) {
+double SQM_min_cost_pm(RefSet &Sols,SQM_solution *Sol) {
   double cost,min_cost;
-  list<SQM_solution*>::iterator it = Sols->begin();
+  int bNow = Sols.get_elements();
 
-  min_cost = PR_perfect_matching_cost(*it,Sol);
-  while (it != Sols->end()) {
-    cost = PR_perfect_matching_cost(*it,Sol);
+  min_cost = PR_perfect_matching_cost(Sols.get_sol(0),Sol);
+  for (int i = 1;i < bNow;i++) {
+    cost = PR_perfect_matching_cost(Sols.get_sol(i),Sol);
     if (min_cost > cost) min_cost = cost;
-    it++;
   }
 
   return min_cost;
-}
-
-Subset& operator++(Subset &target) {
-  target = (target == invalid_subset ?
-	    static_cast<Subset>(0) : static_cast<Subset>(target + 1));
-  if (target == invalid_subset)
-    target = static_cast<Subset>(0);
-  return target;
-}
-
-RefSet::RefSet (int Max) {
-  bMax = Max;
-  bNow = 0;
-  RefSetCall = 0;
-  RefSetAdd = 0;
-  DupCheck = 0;
-  FullDupCheck = 0;
-  FullDupFound = 0;
-  loc = new int [bMax];
-  E = new double [bMax];
-  Hash = new double [bMax];
-  Solutions = new SQM_solution*[bMax];
-  LastChange = new int [bMax];
-  LastRunTime = new int [invalid_subset];
-}
-
-RefSet::~RefSet () {
-  for (int i = 0;i < bNow;i++) {
-    delete Solutions[loc[i]];
-  }
-  delete [] LastRunTime;
-  delete [] LastChange;
-  delete [] Solutions;
-  delete [] Hash;
-  delete [] E;
-  delete [] loc;
-}
-
-void RefSet::Add (SQM_solution &Sol) {
-  log_depth++;
-  string tag = log_tag("RefSet::Add: ");
- 
-  logDebug(cout << tag << "Start" << endl);
-  int loc0;
-  RefSetAdd++;
-  if (bNow < bMax) {
-    bNow++;
-    loc[bNow-1] = bNow-1;
-  }
-  else {
-    delete Solutions[loc[bNow-1]];
-  }
-  loc0 = loc[bNow-1];
-  if (NewRank < bNow) {
-    for (int i = bNow - 1;i >= NewRank;i--)
-      loc[i] = loc[i-1];
-  }
-
-  Solutions[loc0] = &Sol;
-  loc[NewRank-1] = loc0;
-  Hash[loc0] = Hash0;
-  E[loc0] = E0;
-  LastChange[loc0] = NowTime;
-  logDebug(cout << tag << "Finish" << endl);
-  log_depth--;
-}
-
-bool RefSet::Update (SQM_solution &Sol) {
-  log_depth++;
-  string tag = log_tag("RefSet::Update: ");
-  logDebug(cout << tag << "Start" << endl);
-  RefSetCall++;
-  NewRank = 0;
-  E0 = Sol.get_response_time();
-  logDebug(cout << tag << "bNow = " << bNow << endl);
-  if (bNow == 0) {
-    NewRank = 1;
-    logDebug(cout << tag << "Calculate Hash (bNow = 0)" << endl);
-    Hash0 = Sol.Hash();
-    Add (Sol);
-    logDebug(cout << tag << "Finish" << endl);
-    log_depth--;
-    return true;
-  }
-  else {
-    if (E0 >= worst() && bNow == bMax) {
-      logDebug(cout << tag << "Finish" << endl);
-      log_depth--;
-      return false;
-    }
-    logDebug(cout << tag << "Calculate Hash (bNow > 0)" << endl);
-    Hash0 = Sol.Hash();
-
-    if (E0 < best()) {
-      NewRank = 1;
-    }
-    else {
-      for (int i = bNow-1;i >= 0; i--) {
-	if (E[loc[i]] == E0) {
-	  DupCheck++;
-	  if (Hash[loc[i]] == Hash0) {
-	    FullDupCheck++;
-	    if (Sol == *Solutions[i-1]) {
-	      FullDupFound++;
-	      logDebug(cout << tag << "Finish" << endl);
-	      log_depth--;
-	      return false;
-	    }
-	  }
-	}
-	else if (E[loc[i]] < E0){
-	  NewRank = i+2;
-	  Add (Sol);
-	  logDebug(cout << tag << "Finish" << endl);
-	  log_depth--;
-	  return true;
-	}
-      }
-    }
-    Add (Sol);
-  }
-  logDebug(cout << tag << "Finish" << endl);
-  log_depth--;
-  return true;
-}
-
-void RefSet::SubsetControl () {
-  /* Initialization */
-  int iLoc;
-
-  for (iLoc = 0;iLoc < bMax;iLoc++)
-    LastChange[iLoc] = 0;
-  SubsetType = invalid_subset;
-  do {
-    LastRunTime[++SubsetType] = 0;
-  } while (SubsetType != invalid_subset);
-  NowTime = 0;
-  StopCondition = best_i;
-  SubsetType = invalid_subset;
-  LocNew = new int [bMax];
-  LocOld = new int [bMax];
-  while (StopCondition == 0) {
-
-    ++SubsetType;
-    NowTime++;
-
-    iNew = 0;
-    jOld = 0;
-    for (int i = 0;i < bNow;i++) {
-      iLoc = loc[i];
-      if (LastChange[iLoc] >= LastRunTime[SubsetType]) {
-	iNew++;
-	LocNew[iNew] = iLoc;
-      }
-      else {
-	jOld++;
-	LocOld[jOld] = iLoc;
-      }
-    }
-
-    if (iNew == 0) {
-      delete [] LocNew;
-      delete [] LocOld;
-      return;
-    }
-
-    switch (SubsetType) {
-    case two_element: /* Call Algorithm 1 Subrutine */
-      break;
-    case three_element: /* Call Algorithm 2 Subrutine */
-      break;
-    case four_element: /* Call Algorithm 3 Subrutine */
-      break;
-    case best_i: /* Call Algorithm 4 Subrutine */
-      break;
-    }
-
-    if (StopCondition > 0) {
-      
-    }
-    LastRunTime[SubsetType] = NowTime;
-  }
-}
-
-void RefSet::algorithm_for_SubsetType1 () {
-  int iLoc,jLoc;
-  list<SQM_solution*> X;
-  if (iNew > 1) 
-    for (int i = 0;i < iNew;i++) {
-      iLoc = LocNew[i];
-      if (LastChange[iLoc] < NowTime) {
-	X.push_back(Solutions[iLoc]);
-	for (int j = i+1;j < iNew;j++) {
-	  jLoc = LocNew[j];
-	  if (LastChange[jLoc] < NowTime) {
-	    X.push_back(Solutions[jLoc]);
-	    /* Create C(X) and execute improvement method */
-	    X.pop_back();
-	    /* Optional Check: if LastChange[iLoc] == NowTime, 
-	       then can jump to the end of "i loop" to pick up the next i,
-	       and generate fewer solutions. */
-	  }
-	}
-	X.pop_back();
-      }
-    }
-  if (jOld > 0)
-    for (int i = 0;i < iNew;i++) {
-      iLoc = LocNew[i];
-      if (LastChange[iLoc] < NowTime) {
-	X.push_back(Solutions[iLoc]);
-	for (int j = 0;j < jOld;j++) {
-	  jLoc = LocOld[j];
-	  if (LastChange[jLoc] < NowTime) {
-	    X.push_back(Solutions[jLoc]);
-	    /* Create C(X) and execute improvement method */
-	    X.pop_back();
-	    /* Optional Check: if LastChange[iLoc] == NowTime, 
-	       then can jump to the end of "i loop" to pick up the next i,
-	       and generate fewer solutions. */
-	  }
-	}
-	X.pop_back();
-      }
-    }
-}
-
-
-void RefSet::algorithm_for_SubsetType2 () {
-  int loc1,iLoc,jLoc;
-  list<SQM_solution*> X;
-  loc1 = loc[0];
-  X.push_back(Solutions[loc1]);
-  if (LastChange[loc1] >= LastRunTime[SubsetType]) {
-    for (int i = 1;i < bNow;i++) {
-      iLoc = loc[i];
-      if (LastChange[iLoc] < NowTime) {
-	X.push_back(Solutions[iLoc]);
-	for (int j = i+1;j < bNow;j++) {
-	  jLoc = loc[j];
-	  if (LastChange[jLoc] < NowTime) {
-	    X.push_back(Solutions[jLoc]);
-	    /* Create C(X) and execute improvement method */
-	    X.pop_back();
-	    /* Optional Check: if LastChange[iLoc] == NowTime, 
-	       then can jump to the end of "i loop" to pick up the next i,
-	       and generate fewer solutions. */
-	  }
-	}
-	X.pop_back();
-      }
-    }
-  }
-  else {
-    if (iNew > 1) 
-      for (int i = 0;i < iNew;i++) {
-	iLoc = LocNew[i];
-	if (LastChange[iLoc] < NowTime) {
-	  X.push_back(Solutions[iLoc]);
-	  for (int j = i+1;j < iNew;j++) {
-	    jLoc = LocNew[j];
-	    if (LastChange[jLoc] < NowTime) {
-	      X.push_back(Solutions[jLoc]);
-	      /* Create C(X) and execute improvement method */
-	      X.pop_back();
-	      /* Optional Check: if LastChange[iLoc] == NowTime, 
-		 then can jump to the end of "i loop" to pick up the next i,
-		 and generate fewer solutions. */
-	    }
-	  }
-	  X.pop_back();
-	}
-      }
-    if (jOld > 0)
-      for (int i = 0;i < iNew;i++) {
-	iLoc = LocNew[i];
-	if (LastChange[iLoc] < NowTime) {
-	  X.push_back(Solutions[iLoc]);
-	  for (int j = 0;j < jOld;j++) {
-	    jLoc = LocOld[j];
-	    if (LastChange[jLoc] < NowTime) {
-	      X.push_back(Solutions[jLoc]);
-	      /* Create C(X) and execute improvement method */
-	      X.pop_back();
-	      /* Optional Check: if LastChange[iLoc] == NowTime, 
-		 then can jump to the end of "I loop" to pick up the next I,
-		 and generate fewer solutions. */
-	    }
-	  }
-	  X.pop_back();
-	}
-      }
-  }
-}
-
-void RefSet::algorithm_for_SubsetType3 () {
-  int loc1,loc2,iLoc,jLoc;
-  list<SQM_solution*> X;
-  loc1 = loc[0];
-  loc2 = loc[1];
-  X.push_back(Solutions[loc1]);
-  X.push_back(Solutions[loc2]);
-  if (LastChange[loc1] >= LastRunTime[SubsetType] || 
-      LastChange[loc2] >= LastRunTime[SubsetType]) {
-    for (int i = 2;i < bNow;i++) {
-      iLoc = loc[i];
-      if (LastChange[iLoc] < NowTime) {
-	X.push_back(Solutions[iLoc]);
-	for (int j = i+1;j < bNow;j++) {
-	  jLoc = loc[j];
-	  if (LastChange[jLoc] < NowTime) {
-	    X.push_back(Solutions[jLoc]);
-	    /* Create C(X) and execute improvement method */
-	    X.pop_back();
-	  }
-	}
-	X.pop_back();
-      }
-    }
-  }
-  else {
-    if (iNew > 1) 
-      for (int i = 0;i < iNew;i++) {
-	iLoc = LocNew[i];
-	if (LastChange[iLoc] < NowTime) {
-	  X.push_back(Solutions[iLoc]);
-	  for (int j = i+1;j < iNew;j++) {
-	    jLoc = LocNew[j];
-	    if (LastChange[jLoc] < NowTime) {
-	      X.push_back(Solutions[jLoc]);
-	      /* Create C(X) and execute improvement method */
-	      X.pop_back();
-	    }
-	  }
-	  X.pop_back();
-	}
-      }
-    if (jOld > 0)
-      for (int i = 0;i < iNew;i++) {
-	iLoc = LocNew[i];
-	if (LastChange[iLoc] < NowTime) {
-	  X.push_back(Solutions[iLoc]);
-	  for (int j = 0;j < jOld;j++) {
-	    jLoc = LocOld[j];
-	    if (LastChange[jLoc] < NowTime) {
-	      X.push_back(Solutions[jLoc]);
-	      /* Create C(X) and execute improvement method */
-	      X.pop_back();
-	    }
-	  }
-	  X.pop_back();
-	}
-      }
-  }
-}
-
-void RefSet::algorithm_for_SubsetType4 () {
-  int iLoc;
-  bool new_subset = false;
-  list<SQM_solution*> X;
-  for (int i = 0;i < 4;i++) {
-    iLoc = loc[i];
-    X.push_back(Solutions[iLoc]);
-    if (LastChange[iLoc] >= LastRunTime[SubsetType]) new_subset = true;
-  }
-  for (int i = 4;i < bNow;i++) {
-    iLoc = loc[i];
-    if (LastChange[iLoc] >= LastRunTime[SubsetType]) new_subset = true;
-    if (LastChange[iLoc] < NowTime) {
-      X.push_back(Solutions[iLoc]);
-      if (new_subset) {
-	/* Create C(X) and execute improvement method */
-      }
-    }
-  }
 }
