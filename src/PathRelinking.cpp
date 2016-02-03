@@ -405,6 +405,7 @@ void RefSet::Add (SQM_solution &Sol) {
     for (int i = bNow - 1;i >= NewRank;i--)
       loc[i] = loc[i-1];
   }
+
   Solutions[loc0] = &Sol;
   loc[NewRank-1] = loc0;
   Hash[loc0] = Hash0;
@@ -440,7 +441,7 @@ bool RefSet::Update (SQM_solution &Sol) {
     logDebug(cout << tag << "Calculate Hash (bNow > 0)" << endl);
     Hash0 = Sol.Hash();
 
-    if (Sol < *best_sol()) {
+    if (E0 < best()) {
       NewRank = 1;
     }
     else {
@@ -458,14 +459,13 @@ bool RefSet::Update (SQM_solution &Sol) {
 	  }
 	}
 	else if (E[loc[i]] < E0){
-	  NewRank = i+1;
+	  NewRank = i+2;
 	  Add (Sol);
 	  logDebug(cout << tag << "Finish" << endl);
 	  log_depth--;
 	  return true;
 	}
       }
-      NewRank = 1;
     }
     Add (Sol);
   }
