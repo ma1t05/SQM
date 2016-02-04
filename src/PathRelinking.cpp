@@ -12,6 +12,7 @@ list<SQM_solution*>* Path_Relinking (SQM_solution *X,SQM_solution *Y) {
   logDebug(cout << tag << "Start" << endl);
   if (incompatible_solutions(X,Y)) {
     logError(cerr << tag << "Call with incompatible solutions" << endl);
+    log_depth--;
     return NULL;
   }
 
@@ -254,7 +255,7 @@ void SQM_path_relinking(RefSet &EliteSols,list<SQM_solution*> &Solutions) {
       }
     }
   }
-
+  EliteSols.clean_garbage();
   logInfo(cout << tag << "Finish" << endl);
 }
 

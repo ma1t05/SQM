@@ -42,7 +42,8 @@ void RefSet::Add (SQM_solution &Sol) {
     loc[bNow-1] = bNow-1;
   }
   else {
-    delete Solutions[loc[bNow-1]];
+    /* To avoid segmentation default, DO NOT DELETE the sol, send to grabage */
+    garbage.push_back(Solutions[loc[bNow-1]]);
   }
   loc0 = loc[bNow-1];
   if (NewRank < bNow) {
@@ -174,6 +175,13 @@ void RefSet::SubsetControl () {
       /* Actually no StopCondition while new solutions were found */
     }
     LastRunTime[SubsetType] = NowTime;
+  }
+}
+
+void RefSet::clean_garbage () {
+  while (!garbage.empty()) {
+    delete garbage.back();
+    garbage.pop_back();
   }
 }
 
