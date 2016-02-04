@@ -94,7 +94,7 @@ bool RefSet::Update (SQM_solution &Sol) {
 	  DupCheck++;
 	  if (Hash[loc[i]] == Hash0) {
 	    FullDupCheck++;
-	    if (Sol == *Solutions[i-1]) {
+	    if (Sol == *Solutions[loc[i]]) {
 	      FullDupFound++;
 	      logDebug(cout << tag << "Finish" << endl);
 	      log_depth--;
@@ -141,14 +141,10 @@ void RefSet::SubsetControl () {
     jOld = 0;
     for (int i = 0;i < bNow;i++) {
       iLoc = loc[i];
-      if (LastChange[iLoc] >= LastRunTime[SubsetType]) {
-	iNew++;
-	LocNew[iNew] = iLoc;
-      }
-      else {
-	jOld++;
-	LocOld[jOld] = iLoc;
-      }
+      if (LastChange[iLoc] >= LastRunTime[SubsetType])
+	LocNew[iNew++] = iLoc;
+      else
+	LocOld[jOld++] = iLoc;
     }
 
     if (iNew == 0) {
