@@ -534,6 +534,12 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
   Solutions *misc_sols;
   RefSet elite_sols(num_elite);
 
+  /* Determine methods to use in Path_Relinking */
+  /* PR_{perfect|random|workload}_matching */
+  matching_function = PR_perfect_matching; 
+  /* PR_processing_order_{random|nf|ff} */
+  order_function = PR_processing_order_nf;
+
   beginning = clock();
   for (int r = 0;r < N;r++) {
     X = new SQM_solution(Inst,p);
