@@ -1,6 +1,7 @@
 #!/bin/bash
 
-SQM=./../git/SQM/bin/SQM
+cd ./../bin
+SQM=./SQM
 
 prefix=Test_01
 M=50
@@ -11,12 +12,11 @@ l=6
 m=3
 s=500.0
 
-options="-f$prefix -M$M -N$N -p$p -k$k -l$l -m$m -s$s"
 
 # Model
-for command in Local_Search; do
-    echo "Test $command"
-    $SQM $options --brief $command
+for prefix in Test_01 Test_02; do
+    options="-f$prefix -M$M -N$N -p$p -k$k -l$l -m$m -s$s"
+    $SQM $options --brief Path_Relinking
 done
 
 exit
