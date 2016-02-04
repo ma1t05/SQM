@@ -59,7 +59,7 @@ list<SQM_solution*>* Path_Relinking (SQM_solution *X,SQM_solution *Y) {
 }
 
 bool incompatible_solutions(SQM_solution *X,SQM_solution *Y) {
-  if (LogDebug) {
+  if (LogInfo) {
     if (X->get_servers() != Y->get_servers())
       cout << "/* No Same number of servers */" << endl;
     if (X->get_instance() != Y->get_instance())
