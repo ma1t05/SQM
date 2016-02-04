@@ -75,7 +75,7 @@ matching_type& operator++(matching_type &target) {
 }
 
 /* Create distances matrix and call Perfect_Matching procedure */
-int* PR_run_perfect_matching(SQM_solution *X,SQM_solution *Y) {
+int* PR_perfect_matching(SQM_solution *X,SQM_solution *Y) {
   int p = X->get_servers();
   int *pm;
   double **distances;

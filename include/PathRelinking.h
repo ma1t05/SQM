@@ -19,7 +19,7 @@ enum matching_type {perfect_matching,workload_matching,random_matching,
 matching_type& operator++(matching_type&);
 extern int* (*matching_function)(SQM_solution*,SQM_solution*);
 matching_type& operator++(matching_type& target);
-int* PR_run_perfect_matching(SQM_solution*,SQM_solution*);
+int* PR_perfect_matching(SQM_solution*,SQM_solution*);
 int* PR_random_matching(SQM_solution*,SQM_solution*);
 int* PR_workload_matching(SQM_solution*,SQM_solution*);
 
