@@ -547,7 +547,8 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
     /*SQM_heuristic(X);*/
     if (!elite_sols.Update(*X)) delete X;
   }
-  
+  elite_sols.clean_garbage();
+
   if (LogInfo) {
     now = clock();
     cout << "After " << (double)(now - beginning)/CLOCKS_PER_SEC << " seconds"
@@ -591,6 +592,7 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
     SQM_heuristic(*it);
     if (!elite_sols.Update(**it)) delete *it;
   }
+  elite_sols.clean_garbage();
   elite_sols.SubsetControl();
 }
 
