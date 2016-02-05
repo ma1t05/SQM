@@ -46,13 +46,12 @@ void RefSet::Add (SQM_solution &Sol) {
     garbage.push_back(Solutions[loc[bNow-1]]);
   }
   loc0 = loc[bNow-1];
-  if (NewRank < bNow) {
+  if (NewRank < bNow)
     for (int i = bNow - 1;i >= NewRank;i--)
       loc[i] = loc[i-1];
-  }
+  loc[NewRank-1] = loc0;
 
   Solutions[loc0] = &Sol;
-  loc[NewRank-1] = loc0;
   Hash[loc0] = Hash0;
   E[loc0] = E0;
   LastChange[loc0] = NowTime;
@@ -111,6 +110,8 @@ bool RefSet::Update (SQM_solution &Sol) {
 	  return true;
 	}
       }
+      NewRank = 1; /* This case is when the solution gives the same evaluation 
+		      as the best solution */
     }
     Add (Sol);
   }
@@ -122,7 +123,7 @@ bool RefSet::Update (SQM_solution &Sol) {
 void RefSet::SubsetControl () {
   /* Initialization */
   int iLoc;
-  logInfo(cout << "RefSet::SubsetControl: Start" << endl);
+  logDebug(cout << "RefSet::SubsetControl: Start" << endl);
   for (iLoc = 0;iLoc < bMax;iLoc++)
     LastChange[iLoc] = 0;
   SubsetType = invalid_subset;
@@ -130,12 +131,12 @@ void RefSet::SubsetControl () {
     LastRunTime[i] = 0;
   NowTime = 0;
   StopCondition = 0;
-  SubsetType = invalid_subset;
+  SubsetType = two_element;
   LocNew = new int [bMax];
   LocOld = new int [bMax];
   while (StopCondition == 0) {
 
-    ++SubsetType;
+    /*++SubsetType;*/
     NowTime++;
 
     iNew = 0;
@@ -153,8 +154,8 @@ void RefSet::SubsetControl () {
       delete [] LocOld;
       return;
     }
-    logInfo(cout << "Continue SubsetControl with " << 100 * iNew / bNow
-	    << "% of new solutions" << endl);
+    logDebug(cout << "Continue SubsetControl with " << 100 * iNew / bNow
+	     << "% of new solutions" << endl);
 
     switch (SubsetType) {
     case two_element: /* Call Algorithm 1 Subrutine */
@@ -179,6 +180,7 @@ void RefSet::SubsetControl () {
 }
 
 void RefSet::clean_garbage () {
+  logDebug(cout << "Clean garbage: " << garbage.size() << endl);
   while (!garbage.empty()) {
     delete garbage.back();
     garbage.pop_back();
@@ -188,7 +190,7 @@ void RefSet::clean_garbage () {
 void RefSet::algorithm_for_SubsetType1 () {
   int iLoc,jLoc;
   list<SQM_solution*> X;
-  logInfo(cout << "Start algorithm for SubsetType1" << endl);
+  logDebug(cout << "Start algorithm for SubsetType1" << endl);
   if (iNew > 1) 
     for (int i = 0;i < iNew;i++) {
       iLoc = LocNew[i];
@@ -204,9 +206,12 @@ void RefSet::algorithm_for_SubsetType1 () {
 	    /* Optional Check: if LastChange[iLoc] == NowTime, 
 	       then can jump to the end of "i loop" to pick up the next i,
 	       and generate fewer solutions. */
+	    if (LastChange[iLoc] == NowTime)
+	      break;
 	  }
 	}
 	X.pop_back();
+	clean_garbage();
       }
     }
   if (jOld > 0)
@@ -224,9 +229,12 @@ void RefSet::algorithm_for_SubsetType1 () {
 	    /* Optional Check: if LastChange[iLoc] == NowTime, 
 	       then can jump to the end of "i loop" to pick up the next i,
 	       and generate fewer solutions. */
+	    if (LastChange[iLoc] == NowTime)
+	      break;
 	  }
 	}
 	X.pop_back();
+	clean_garbage();
       }
     }
 }
@@ -235,7 +243,7 @@ void RefSet::algorithm_for_SubsetType1 () {
 void RefSet::algorithm_for_SubsetType2 () {
   int loc1,iLoc,jLoc;
   list<SQM_solution*> X;
-  logInfo(cout << "Start algorithm for SubsetType2" << endl);
+  logDebug(cout << "Start algorithm for SubsetType2" << endl);
   loc1 = loc[0];
   X.push_back(Solutions[loc1]);
   if (LastChange[loc1] >= LastRunTime[SubsetType]) {
@@ -249,6 +257,7 @@ void RefSet::algorithm_for_SubsetType2 () {
 	    X.push_back(Solutions[jLoc]);
 	    /* Create C(X) and execute improvement method */
 	    SQM_path_relinking(*this,X);
+	    clean_garbage();
 	    X.pop_back();
 	    /* Optional Check: if LastChange[iLoc] == NowTime, 
 	       then can jump to the end of "i loop" to pick up the next i,
@@ -271,6 +280,7 @@ void RefSet::algorithm_for_SubsetType2 () {
 	      X.push_back(Solutions[jLoc]);
 	      /* Create C(X) and execute improvement method */
 	      SQM_path_relinking(*this,X);
+	      clean_garbage();
 	      X.pop_back();
 	      /* Optional Check: if LastChange[iLoc] == NowTime, 
 		 then can jump to the end of "i loop" to pick up the next i,
@@ -291,6 +301,7 @@ void RefSet::algorithm_for_SubsetType2 () {
 	      X.push_back(Solutions[jLoc]);
 	      /* Create C(X) and execute improvement method */
 	      SQM_path_relinking(*this,X);
+	      clean_garbage();
 	      X.pop_back();
 	      /* Optional Check: if LastChange[iLoc] == NowTime, 
 		 then can jump to the end of "I loop" to pick up the next I,
@@ -306,7 +317,7 @@ void RefSet::algorithm_for_SubsetType2 () {
 void RefSet::algorithm_for_SubsetType3 () {
   int loc1,loc2,iLoc,jLoc;
   list<SQM_solution*> X;
-  logInfo(cout << "Start algorithm for SubsetType3" << endl);
+  logDebug(cout << "Start algorithm for SubsetType3" << endl);
   loc1 = loc[0];
   loc2 = loc[1];
   X.push_back(Solutions[loc1]);
@@ -323,6 +334,7 @@ void RefSet::algorithm_for_SubsetType3 () {
 	    X.push_back(Solutions[jLoc]);
 	    /* Create C(X) and execute improvement method */
 	    SQM_path_relinking(*this,X);
+	    clean_garbage();
 	    X.pop_back();
 	  }
 	}
@@ -342,6 +354,7 @@ void RefSet::algorithm_for_SubsetType3 () {
 	      X.push_back(Solutions[jLoc]);
 	      /* Create C(X) and execute improvement method */
 	      SQM_path_relinking(*this,X);
+	      clean_garbage();
 	      X.pop_back();
 	    }
 	  }
@@ -359,6 +372,7 @@ void RefSet::algorithm_for_SubsetType3 () {
 	      X.push_back(Solutions[jLoc]);
 	      /* Create C(X) and execute improvement method */
 	      SQM_path_relinking(*this,X);
+	      clean_garbage();
 	      X.pop_back();
 	    }
 	  }
@@ -372,7 +386,7 @@ void RefSet::algorithm_for_SubsetType4 () {
   int iLoc;
   bool new_subset = false;
   list<SQM_solution*> X;
-  logInfo(cout << "Start algorithm for SubsetType4" << endl);
+  logDebug(cout << "Start algorithm for SubsetType4" << endl);
   for (int i = 0;i < 4;i++) {
     iLoc = loc[i];
     X.push_back(Solutions[iLoc]);
@@ -386,6 +400,7 @@ void RefSet::algorithm_for_SubsetType4 () {
       if (new_subset) {
 	/* Create C(X) and execute improvement method */
 	SQM_path_relinking(*this,X);
+	clean_garbage();
       }
     }
   }
