@@ -61,9 +61,9 @@ list<SQM_solution*>* Path_Relinking (SQM_solution *X,SQM_solution *Y) {
 bool incompatible_solutions(SQM_solution *X,SQM_solution *Y) {
   if (LogInfo) {
     if (X->get_servers() != Y->get_servers())
-      cout << "/* No Same number of servers */" << endl;
+      logError(cerr << "Error:No Same number of servers" << endl);
     if (X->get_instance() != Y->get_instance())
-      cout << "/* No Same instance */" << endl;
+      logError(cerr << "Error:No Same instance" << endl);
   }
   return ((X->get_instance() != Y->get_instance()) || /* Same instance */
 	  (X->get_servers() != Y->get_servers()) /* Same number of servers */
@@ -235,7 +235,7 @@ void SQM_path_relinking(RefSet &EliteSols,list<SQM_solution*> &Solutions) {
   int N;
   string tag = "SQM_path_relinking: ";
 
-  logInfo(cout << tag << "Start" << endl);
+  logDebug(cout << tag << "Start" << endl);
   it1 = Solutions.begin();
   end = Solutions.end();
   while (it1 != end) {
@@ -255,8 +255,7 @@ void SQM_path_relinking(RefSet &EliteSols,list<SQM_solution*> &Solutions) {
       }
     }
   }
-  EliteSols.clean_garbage();
-  logInfo(cout << tag << "Finish" << endl);
+  logDebug(cout << tag << "Finish" << endl);
 }
 
 SQM_solution* SQM_best_solution(list<SQM_solution*>* Solutions) {
