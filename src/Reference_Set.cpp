@@ -65,7 +65,7 @@ bool RefSet::Update (SQM_solution &Sol) {
   logDebug(cout << tag << "Start" << endl);
   RefSetCall++;
   NewRank = 0;
-  E0 = Sol.get_response_time();
+  E0 = Sol.get_response_time(); /* Evaluation Method */
   logDebug(cout << tag << "bNow = " << bNow << endl);
   if (bNow == 0) {
     NewRank = 1;

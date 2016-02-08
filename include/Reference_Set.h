@@ -68,6 +68,9 @@ protected:
   int get_bNow () const {return bNow;};
 };
 
+extern double (Improvement_Method)(SQM_solution*);
+extern double (Evaluation_Method)(SQM_solution&);
+
 #endif
 
 /* eof */
