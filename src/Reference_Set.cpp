@@ -19,6 +19,7 @@ RefSet::RefSet (int Max) {
 }
 
 RefSet::~RefSet () {
+  clean_garbage();
   for (int i = 0;i < bNow;i++) {
     delete Solutions[loc[i]];
   }
@@ -65,7 +66,7 @@ bool RefSet::Update (SQM_solution &Sol) {
   logDebug(cout << tag << "Start" << endl);
   RefSetCall++;
   NewRank = 0;
-  E0 = Sol.get_response_time(); /* Evaluation Method */
+  E0 = Evaluation_Method(Sol); /* Evaluation Method */
   logDebug(cout << tag << "bNow = " << bNow << endl);
   if (bNow == 0) {
     NewRank = 1;
@@ -412,4 +413,12 @@ Subset& operator++(Subset &target) {
   if (target == invalid_subset)
     target = static_cast<Subset>(0);
   return target;
+}
+
+double get_response_time (SQM_solution &Sol) {
+  return Sol.get_response_time();
+}
+
+double get_perfect_matching_cost (SQM_solution &Sol) {
+  return Sol.pm_cost;
 }
