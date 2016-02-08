@@ -87,9 +87,12 @@ void plot_solution_allocation(SQM_solution *X,double **f,string output,string su
     j = X->get_server_location(i);
     for (int k = 0;k < m;k++) {
       if (100 * f[i][j] > 1)
-	edges_file << I->site(j)->x << " " << I->site(j)->y << " "
-		   << I->demand(k)->x << " " << I->demand(k)->y << " "
-		   << ceil(sqrt(f[i][k]) * 100) << endl;
+	edges_file 
+	  << I->site(j)->x << " " 
+	  << I->site(j)->y << " "
+	  << I->demand(k)->x << " " 
+	  << I->demand(k)->y << " "
+	  << ceil(f[i][k] * 100) << endl;
     }
     edges_file.close();
   }
@@ -111,19 +114,9 @@ void plot_solution_allocation(SQM_solution *X,double **f,string output,string su
   fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ps variable lc rgb 'dark-grey' title 'Opened'",centers_output);
   fprintf(gnuPipe,"\n");
 
-  /*
-  for (int i = 0;i < p;i++) {
-    sprintf(edges_output,"Tmp_edges_center_%d_%d.dat",i+1,edge_key);
-    fprintf(gnuPipe,"set output '%s_center_%02d_%s.jpeg'\n",output.c_str(),i+1,suffix.c_str()); 
-    fprintf(gnuPipe,"plot ");
-    fprintf(gnuPipe,"'%s' using 1:2:($3-$1):($4-$2):5 with vectors arrowstyle variable",edges_output);
-    fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ps variable lc rgb 'dark-grey' title 'Opened'",centers_output);
-    fprintf(gnuPipe,", '%s' using 1:2 w p lt 2 pt 7 lc rgb 'blue' title 'Demand'",demand_output);
-    fprintf(gnuPipe,"\n");
-  }
-  */
-
   pclose(gnuPipe);
+
+  /* Remove temp files */
   for (int i = 0;i < p;i++) {
     sprintf(edges_output,"Tmp_edges_center_%d_%d.dat",i+1,edge_key);
     remove(edges_output);
