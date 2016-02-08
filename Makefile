@@ -1,11 +1,33 @@
+UNAME_P := $(shell uname -p)
+ifeq ($(UNAME_P),x86_64)
+SYSTEM     = x86-64_linux
+#------------------------------------------------------------
+# Cplex Directorys
+#------------------------------------------------------------
+CPLEX         = /opt/ibm/ILOG/CPLEX_Studio1261
+# ---------------------------------------------------------------------
+# Compiler options 
+# ---------------------------------------------------------------------
+CCOPT = -m64 -O -fPIC -fno-strict-aliasing -fexceptions -DNDEBUG -DIL_STD
+CCLNFLAGS = -lconcert -lilocplex -lcplex -m64 -lm -lpthread -lgmp
+else
 SYSTEM     = x86_linux
+#------------------------------------------------------------
+# Cplex Directorys
+#------------------------------------------------------------
+CPLEX         = /opt/ibm/ILOG/CPLEX_Studio126
+# ---------------------------------------------------------------------
+# Compiler options 
+# ---------------------------------------------------------------------
+CCOPT = -m32 -O -fPIC -fno-strict-aliasing -fexceptions -DNDEBUG -DIL_STD
+CCLNFLAGS = -lconcert -lilocplex -lcplex -m32 -lm -lpthread -lgmp
+endif
 LIBFORMAT  = static_pic
 
 #------------------------------------------------------------
 # Cplex & Concert Directorys
 #------------------------------------------------------------
 
-CPLEX         = /opt/ibm/ILOG/CPLEX_Studio126
 CPLEXDIR      = $(CPLEX)/cplex
 CONCERTDIR    = $(CPLEX)/concert
 
@@ -16,12 +38,6 @@ CONCERTDIR    = $(CPLEX)/concert
 CCC = g++ -O0
 
 # ---------------------------------------------------------------------
-# Compiler options 
-# ---------------------------------------------------------------------
-
-CCOPT = -m32 -O -fPIC -fno-strict-aliasing -fexceptions -DNDEBUG -DIL_STD
-
-# ---------------------------------------------------------------------
 # Link options and libraries
 # ---------------------------------------------------------------------
 
@@ -29,8 +45,6 @@ CPLEXLIBDIR   = $(CPLEXDIR)/lib/$(SYSTEM)/$(LIBFORMAT)
 CONCERTLIBDIR = $(CONCERTDIR)/lib/$(SYSTEM)/$(LIBFORMAT)
 
 CCLNDIRS  = -L$(CPLEXLIBDIR) -L$(CONCERTLIBDIR)
-CCLNFLAGS = -lconcert -lilocplex -lcplex -m32 -lm -lpthread -lgmp
-#CCLNFLAGS = -m32 -lm -lpthread -lgmp
 
 CONCERTINCDIR	:= $(CONCERTDIR)/include
 CPLEXINCDIR	:= $(CPLEXDIR)/include
