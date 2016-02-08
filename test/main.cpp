@@ -564,7 +564,9 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
     X = new SQM_solution(Inst,p);
     X->set_speed(v,BETA);
     X->pm_cost = SQM_min_cost_pm(elite_sols,X);
-    if (misc_sols->size() > 0) {
+    if (misc_sols->empty())
+      misc_sols->push_back(X);
+    else {
       Solutions::iterator it;
       for (it = misc_sols->begin();it != misc_sols->end();it++)
 	if ((*it)->pm_cost < X->pm_cost) {
@@ -579,7 +581,6 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
 	misc_sols->pop_back();
       }
     }
-    else misc_sols->push_back(X);
   }
   
   if (LogInfo) {
@@ -594,6 +595,7 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
   }
   elite_sols.clean_garbage();
   elite_sols.SubsetControl();
+  cout << "The best response time is: " << elite_sols.best() << endl;
 }
 
 void Test_SQM_Local_Search(SQM_instance &Inst,int p,double v) {
