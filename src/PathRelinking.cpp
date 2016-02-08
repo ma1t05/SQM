@@ -246,7 +246,7 @@ void SQM_path_relinking(RefSet &EliteSols,list<SQM_solution*> &Solutions) {
       pr_sols = Path_Relinking(X,Y);
       if (pr_sols != NULL) {
 	for (Z = pr_sols->begin();Z != pr_sols->end();Z++) {
-	  SQM_heuristic(*Z); /* Improvement method */
+	  Improvement_Method(*Z); /* Improvement method */
 	  if (EliteSols.Update(**Z))
 	    total_improved_solutions++;
 	  else delete *Z;

@@ -29,6 +29,7 @@ extern int* (*order_function)(SQM_solution*,int*,SQM_solution*);
 int* PR_processing_order_random(SQM_solution*,int*,SQM_solution*);
 int* PR_processing_order_nf(SQM_solution*,int*,SQM_solution*);
 int* PR_processing_order_ff(SQM_solution*,int*,SQM_solution*);
+extern void (*Improvement_Method)(SQM_solution*);
 
 #endif
 
