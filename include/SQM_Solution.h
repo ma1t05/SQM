@@ -39,6 +39,7 @@ class SQM_solution {
   double get_server_rate (int i) const;
   double get_arrival_rate () const;
   double get_non_travel_time () const;
+  double Hash() const;
   double get_response_time ();
   double* get_workload ();
   server* get_Servers();
@@ -46,6 +47,7 @@ class SQM_solution {
   int ** preferred_servers () const;
   bool operator<(SQM_solution&);
   bool operator>(SQM_solution&);
+  bool operator==(SQM_solution&);
 };
 
 ostream& operator<<(ostream&,SQM_solution*);

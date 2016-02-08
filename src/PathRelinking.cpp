@@ -12,6 +12,7 @@ list<SQM_solution*>* Path_Relinking (SQM_solution *X,SQM_solution *Y) {
   logDebug(cout << tag << "Start" << endl);
   if (incompatible_solutions(X,Y)) {
     logError(cerr << tag << "Call with incompatible solutions" << endl);
+    log_depth--;
     return NULL;
   }
 
@@ -58,11 +59,11 @@ list<SQM_solution*>* Path_Relinking (SQM_solution *X,SQM_solution *Y) {
 }
 
 bool incompatible_solutions(SQM_solution *X,SQM_solution *Y) {
-  if (LogDebug) {
+  if (LogInfo) {
     if (X->get_servers() != Y->get_servers())
-      cout << "/* No Same number of servers */" << endl;
+      logError(cerr << "Error:No Same number of servers" << endl);
     if (X->get_instance() != Y->get_instance())
-      cout << "/* No Same instance */" << endl;
+      logError(cerr << "Error:No Same instance" << endl);
   }
   return ((X->get_instance() != Y->get_instance()) || /* Same instance */
 	  (X->get_servers() != Y->get_servers()) /* Same number of servers */
@@ -75,7 +76,7 @@ matching_type& operator++(matching_type &target) {
 }
 
 /* Create distances matrix and call Perfect_Matching procedure */
-int* PR_run_perfect_matching(SQM_solution *X,SQM_solution *Y) {
+int* PR_perfect_matching(SQM_solution *X,SQM_solution *Y) {
   int p = X->get_servers();
   int *pm;
   double **distances;
@@ -225,76 +226,36 @@ int* PR_processing_order_ff(SQM_solution *X,int *pm,SQM_solution *Y) {
   return order;
 }
 
-SQM_solution* SQM_path_relinking(list<SQM_solution*>* Solutions) {
+void SQM_path_relinking(RefSet &EliteSols,list<SQM_solution*> &Solutions) {
   int total_improved_solutions = 0;
-  double Tr_x,Tr_y,Best_TR,TR;
-  list<SQM_solution*>::iterator X,Y,Z;
-  list<SQM_solution*> *path_relinking_sols,*improved_solutions;
+  SQM_solution *X,*Y;
+  list<SQM_solution*>::iterator it1,it2,end,Z;
+  list<SQM_solution*> *pr_sols;
   SQM_solution *Best,*Best_input;
-  clock_t beginning,now;
-  double best_rt,avg_rt,worst_rt;
   int N;
   string tag = "SQM_path_relinking: ";
 
-  logLevel = LOG_DEBUG;
   logDebug(cout << tag << "Start" << endl);
-  beginning = clock();
-  improved_solutions = new list<SQM_solution*>;
-  best_rt = 100.0,worst_rt = 0.0,avg_rt = 0.0, N = 0;
-  for (X = Solutions->begin();X != Solutions->end();X++) {
-    Tr_x = (*X)->get_response_time(); 
-    Y = X;
-    Y++;
-    for (;Y != Solutions->end();Y++) {
-      Tr_y = (*Y)->get_response_time();
-      Best_TR = (Tr_x > Tr_y ? Tr_y : Tr_x);
-      path_relinking_sols = Path_Relinking(*X,*Y);
-      if (path_relinking_sols != NULL) {
-	for (Z = path_relinking_sols->begin();Z != path_relinking_sols->end();Z++) {
-	  SQM_heuristic(*Z);
-	  TR = (*Z)->get_response_time();
-	  avg_rt += TR; N++;
-	  if (best_rt > TR) best_rt = TR;
-	  if (worst_rt < TR) worst_rt = TR;
-	  if (TR < Best_TR) {
+  it1 = Solutions.begin();
+  end = Solutions.end();
+  while (it1 != end) {
+    X = *it1;
+    it2 = ++it1;
+    while (it2 != end) {
+      Y = *it2; it2++;
+      pr_sols = Path_Relinking(X,Y);
+      if (pr_sols != NULL) {
+	for (Z = pr_sols->begin();Z != pr_sols->end();Z++) {
+	  Improvement_Method(*Z); /* Improvement method */
+	  if (EliteSols.Update(**Z))
 	    total_improved_solutions++;
-	    improved_solutions->push_back(*Z);
-	  }
 	  else delete *Z;
 	}
-	delete path_relinking_sols;
+	delete pr_sols;
       }
     }
   }
-  now = clock();
-
-  logInfo
-    (cout
-     << "\t***\tPath Relinking results\t***" << endl
-     << "   Best Response time :\t" << best_rt << endl
-     << "Average Response time :\t" << avg_rt / N << endl
-     << "  Worst Response time :\t" << worst_rt << endl
-     << "           time (sec) :\t" << (double)(now - beginning)/CLOCKS_PER_SEC << endl
-     << "   Improved solutions :\t" << total_improved_solutions 
-     << " (" << N << ")" << endl
-     );
-
-  results << N << "," << total_improved_solutions << "," 
-	  << best_rt << "," << avg_rt << "," << worst_rt << ",";
-
-  Best_input = SQM_best_solution(Solutions);
-  /* Clears Solutions */
-  Best = SQM_leave_only_the_best(improved_solutions);
-  logDebug(cout << tag << "Improved solutions deleted" << endl);
-
-  logInfo
-    (cout << tag << "Diference between best input and best output :\t"
-     << 100 * (Best_input->get_response_time() - Best->get_response_time()) /
-     Best_input->get_response_time() << " %" << endl
-     );
   logDebug(cout << tag << "Finish" << endl);
-  logLevel = LOG_INFO;
-  return Best;
 }
 
 SQM_solution* SQM_best_solution(list<SQM_solution*>* Solutions) {
@@ -331,15 +292,14 @@ void SQM_delete_sols(list<SQM_solution*>* Solutions) {
   delete Solutions;
 }
 
-double SQM_min_cost_pm(list<SQM_solution*> *Sols,SQM_solution *Sol) {
+double SQM_min_cost_pm(RefSet &Sols,SQM_solution *Sol) {
   double cost,min_cost;
-  list<SQM_solution*>::iterator it = Sols->begin();
+  int bNow = Sols.get_elements();
 
-  min_cost = PR_perfect_matching_cost(*it,Sol);
-  while (it != Sols->end()) {
-    cost = PR_perfect_matching_cost(*it,Sol);
+  min_cost = PR_perfect_matching_cost(Sols.get_sol(0),Sol);
+  for (int i = 1;i < bNow;i++) {
+    cost = PR_perfect_matching_cost(Sols.get_sol(i),Sol);
     if (min_cost > cost) min_cost = cost;
-    it++;
   }
 
   return min_cost;
