@@ -35,30 +35,38 @@ void plot_instance_solution(SQM_instance &Inst,int *Sol,string output) {
 
   fprintf(gnuPipe,"plot ");
   fprintf(gnuPipe,"'%s' using 1:2 w p pt 10 title 'Facility'",facility_output);
-  fprintf(gnuPipe,", '%s' using 1:2 w p pt 7 lc rgb 'blue' title 'Demand'",demand_output);
-  fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ps variable lc rgb 'dark-grey' title 'Opened'",centers_output);
+  fprintf(gnuPipe,", '%s' using 1:2 w p pt 7 lc rgb 'blue' title 'Demand'",
+	  demand_output);
+  fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ",centers_output);
+  fprintf(gnuPipe,"ps variable lc rgb 'dark-grey' title 'Opened'");
   fprintf(gnuPipe,"\n");
 
   /*
   fprintf(gnuPipe,"'%s' using 1:2 with points title 'Demand'",demand_output);
-  fprintf(gnuPipe,", '%s' using 1:2 with points title 'Facility'",facility_output);
-  fprintf(gnuPipe,", '%s' using 1:2:($3*0.1) with circles title 'Opened'",centers_output);
+  fprintf(gnuPipe,", '%s' using 1:2 with points title 'Facility'",
+	  facility_output);
+  fprintf(gnuPipe,", '%s' using 1:2:($3*0.1) with circles title 'Opened'",
+	  centers_output);
   fprintf(gnuPipe,"\n");
   */
+
   pclose(gnuPipe);
   remove(demand_output);
   remove(facility_output);
   remove(centers_output);
 }
 
-void plot_solution_allocation(SQM_solution *X,double **f,string output,string suffix) {
+void plot_solution_allocation(SQM_solution *X,double **f,string output,
+			      string suffix)
+{
   SQM_instance *I = X->get_instance();
   int n = I->potential_sites(),m = I->demand_points();
   int p = X->get_servers ();
   int j,r;
   int edge_key;
   fstream centersfile,edges_file;
-  char demand_output[32],facility_output[32],centers_output[32],edges_output[32];
+  char demand_output[32],facility_output[32],centers_output[32],
+    edges_output[32];
   
   sprintf(demand_output,"Tmp_demand_%d.dat",rand());
   gnuplot_write_points_file(demand_output,I->demand(0),m);
@@ -97,28 +105,39 @@ void plot_solution_allocation(SQM_solution *X,double **f,string output,string su
   FILE *gnuPipe = popen("gnuplot","w");
   gnuplot_sets(gnuPipe);
   gnuplot_unsets(gnuPipe);
-  for (int i = 1;i < 10;i++)
-    fprintf(gnuPipe,"set for [i=%d:%d] style arrow i nohead lt %d lc 3 lw sqrt(i-%d)/3\n",11*(i-1)+1,11*i,10-i,11*(i-1));
-
+  for (int i = 1;i < 10;i++) {
+    fprintf(gnuPipe,"set for [i=%d:%d] style arrow i nohead ",11*(i-1)+1,11*i);
+    fprintf(gnuPipe,"lt %d lc 3 lw sqrt(i-%d)/3",10-i,11*(i-1));
+    fprintf(gnuPipe,"\n");
+  }
   fprintf(gnuPipe,"set output '%s_%s.jpeg'\n",output.c_str(),suffix.c_str());
   fprintf(gnuPipe,"plot ");
-  fprintf(gnuPipe,"'%s' using 1:2 w p lt 2 pt 10 title 'Facility'",facility_output);
+  fprintf(gnuPipe,"'%s' using 1:2 w p lt 2 pt 10 title 'Facility'",
+	  facility_output);
   for (int i = 0;i < p;i++) {
     sprintf(edges_output,"Tmp_edges_center_%d_%d.dat",i+1,edge_key);
-    fprintf(gnuPipe,", '%s' using 1:2:($3-$1):($4-$2):5 with vectors arrowstyle variable",edges_output);
+    fprintf(gnuPipe,", '%s' using 1:2:($3-$1):($4-$2):5 ",edges_output);
+    fprintf(gnuPipe,"with vectors arrowstyle variable");
   }
-  fprintf(gnuPipe,", '%s' using 1:2 w p lt 2 pt 7 lc rgb 'blue' title 'Demand'",demand_output);
-  fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ps variable lc rgb 'dark-grey' title 'Opened'",centers_output);
+  fprintf(gnuPipe,", '%s' using 1:2 w p lt 2 pt 7 lc rgb 'blue' title 'Demand'",
+	  demand_output);
+  fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ",centers_output);
+  fprintf(gnuPipe,"ps variable lc rgb 'dark-grey' title 'Opened'");
   fprintf(gnuPipe,"\n");
 
+  
   /*
   for (int i = 0;i < p;i++) {
     sprintf(edges_output,"Tmp_edges_center_%d_%d.dat",i+1,edge_key);
-    fprintf(gnuPipe,"set output '%s_center_%02d_%s.jpeg'\n",output.c_str(),i+1,suffix.c_str()); 
+    fprintf(gnuPipe,"set output '%s_center_%02d_%s.jpeg'\n",output.c_str(),i+1,
+	    suffix.c_str()); 
     fprintf(gnuPipe,"plot ");
-    fprintf(gnuPipe,"'%s' using 1:2:($3-$1):($4-$2):5 with vectors arrowstyle variable",edges_output);
-    fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ps variable lc rgb 'dark-grey' title 'Opened'",centers_output);
-    fprintf(gnuPipe,", '%s' using 1:2 w p lt 2 pt 7 lc rgb 'blue' title 'Demand'",demand_output);
+    fprintf(gnuPipe,"'%s' using 1:2:($3-$1):($4-$2):5 ",edges_output);
+    fprintf(gnuPipe,"with vectors arrowstyle variable");
+    fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ",centers_output);
+    fprintf(gnuPipe,"ps variable lc rgb 'dark-grey' title 'Opened'");
+    fprintf(gnuPipe,", '%s' using 1:2 w p lt 2 pt 7 ",demand_output);
+    fprintf(gnuPipe,"lc rgb 'blue' title 'Demand'");
     fprintf(gnuPipe,"\n");
   }
   */
@@ -181,7 +200,8 @@ void gnuplot_GRASP(char *filename) {
 void gnuplot_solution(SQM_solution *X,int sub) {
   FILE *gnuPipe;
   fstream centersfile;
-  char demand_output[32],facility_output[32],centers_output[32],edges_output[32];
+  char demand_output[32],facility_output[32],centers_output[32],
+    edges_output[32];
   int key;
   SQM_instance *I = X->get_instance();
   int m = I->demand_points();
@@ -215,10 +235,14 @@ void gnuplot_solution(SQM_solution *X,int sub) {
   gnuplot_unsets(gnuPipe);
 
   fprintf(gnuPipe,"plot ");
-  fprintf(gnuPipe,"'%s' using 1:2 w p lt 2 pt 10 title 'Facility'",facility_output);
-  fprintf(gnuPipe,", '%s' using 1:2:3 w labels point offset character 0,character 1",facility_output);
-  fprintf(gnuPipe,", '%s' using 1:2 w p lt 2 pt 7 lc rgb 'blue' title 'Demand'",demand_output);
-  fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ps variable lc rgb 'dark-grey' title 'Opened'",centers_output);
+  fprintf(gnuPipe,"'%s' using 1:2 ",facility_output);
+  fprintf(gnuPipe,"w p lt 2 pt 10 title 'Facility'");
+  fprintf(gnuPipe,", '%s' using 1:2:3 ",facility_output);
+  fprintf(gnuPipe,"w labels point offset character 0,character 1");
+  fprintf(gnuPipe,", '%s' using 1:2 ",demand_output);
+  fprintf(gnuPipe,"w p lt 2 pt 7 lc rgb 'blue' title 'Demand'");
+  fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ",centers_output);
+  fprintf(gnuPipe,"ps variable lc rgb 'dark-grey' title 'Opened'");
   fprintf(gnuPipe,"\n");
 
   pclose(gnuPipe);
