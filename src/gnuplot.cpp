@@ -96,9 +96,12 @@ void plot_solution_allocation(SQM_solution *X,double **f,string output,
     j = X->get_server_location(i);
     for (int k = 0;k < m;k++) {
       if (100 * f[i][j] > 1)
-	edges_file << I->site(j)->x << " " << I->site(j)->y << " "
-		   << I->demand(k)->x << " " << I->demand(k)->y << " "
-		   << ceil(sqrt(f[i][k]) * 100) << endl;
+	edges_file 
+	  << I->site(j)->x << " " 
+	  << I->site(j)->y << " "
+	  << I->demand(k)->x << " " 
+	  << I->demand(k)->y << " "
+	  << ceil(f[i][k] * 100) << endl;
     }
     edges_file.close();
   }
@@ -122,7 +125,6 @@ void plot_solution_allocation(SQM_solution *X,double **f,string output,
   fprintf(gnuPipe,"ps variable lc rgb 'dark-grey' title 'Opened'");
   fprintf(gnuPipe,"\n");
 
-  
   /*
   for (int i = 0;i < p;i++) {
     sprintf(edges_output,"Tmp_edges_center_%d_%d.dat",i+1,edge_key);
@@ -140,6 +142,8 @@ void plot_solution_allocation(SQM_solution *X,double **f,string output,
   */
 
   pclose(gnuPipe);
+
+  /* Remove temp files */
   for (int i = 0;i < p;i++) {
     sprintf(edges_output,"Tmp_edges_center_%d_%d.dat",i+1,edge_key);
     remove(edges_output);
