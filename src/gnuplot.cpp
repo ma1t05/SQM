@@ -5,6 +5,7 @@ using namespace std;
 
 void gnuplot_sets(FILE*);
 void gnuplot_unsets(FILE*);
+void gnuplot_set_arrow_styles(FILE*);
 void gnuplot_write_points_file(char*,point*,int);
 
 void plot_instance_solution(SQM_instance &Inst,int *Sol,string output) {
@@ -105,11 +106,7 @@ void plot_solution_allocation(SQM_solution *X,double **f,string output,
   FILE *gnuPipe = popen("gnuplot","w");
   gnuplot_sets(gnuPipe);
   gnuplot_unsets(gnuPipe);
-  for (int i = 1;i < 10;i++) {
-    fprintf(gnuPipe,"set for [i=%d:%d] style arrow i nohead ",11*(i-1)+1,11*i);
-    fprintf(gnuPipe,"lt %d lc 3 lw sqrt(i-%d)/3",10-i,11*(i-1));
-    fprintf(gnuPipe,"\n");
-  }
+  gnuplot_set_arrow_styles(gnuPipe);
   fprintf(gnuPipe,"set output '%s_%s.jpeg'\n",output.c_str(),suffix.c_str());
   fprintf(gnuPipe,"plot ");
   fprintf(gnuPipe,"'%s' using 1:2 w p lt 2 pt 10 title 'Facility'",
@@ -169,6 +166,14 @@ void gnuplot_unsets(FILE *gnuPipe) {
   fprintf(gnuPipe,"unset ztics\n");*/
 }
 
+void gnuplot_set_arrow_styles(FILE *gnuPipe) {
+  for (int i = 1;i < 10;i++) {
+    fprintf(gnuPipe,"set for [i=%d:%d] style arrow i nohead ",11*(i-1)+1,11*i);
+    fprintf(gnuPipe,"lt %d lc 3 lw sqrt(i-%d)/3",10-i,11*(i-1));
+    fprintf(gnuPipe,"\n");
+  }
+}
+
 void gnuplot_write_points_file(char *output,point *Set,int k) {
   fstream outputfile;
   outputfile.open(output,fstream::out);
@@ -200,8 +205,7 @@ void gnuplot_GRASP(char *filename) {
 void gnuplot_solution(SQM_solution *X,int sub) {
   FILE *gnuPipe;
   fstream centersfile;
-  char demand_output[32],facility_output[32],centers_output[32],
-    edges_output[32];
+  char demand_output[32],facility_output[32],centers_output[32];
   int key;
   SQM_instance *I = X->get_instance();
   int m = I->demand_points();
@@ -249,4 +253,93 @@ void gnuplot_solution(SQM_solution *X,int sub) {
   remove(demand_output);
   remove(facility_output);
   remove(centers_output);
+}
+
+void gnuplot_Path_Relinking
+(SQM_solution &A,int *match,SQM_solution &B,string filename) {
+  FILE *gnuPipe;
+  fstream centersfile,edgesfile;
+  char demand_output[32],facility_output[32],edges_output[32],
+    centersA_output[32],centersB_output[32];
+  int p = A.get_servers();
+  SQM_instance *I = A.get_instance();
+  int m = I->demand_points();
+  int n = I->potential_sites();
+  int key;
+  
+  key = rand();
+  sprintf(demand_output,"Tmp_demand_%d.dat",key);
+  gnuplot_write_points_file(demand_output,I->demand(0),m);
+
+  sprintf(facility_output,"Tmp_facility_%d.dat",key);
+  gnuplot_write_points_file(facility_output,I->site(0),n);
+
+  sprintf(centersA_output,"Tmp_centersA_%d.dat",key);
+  centersfile.open(centersA_output,fstream::out);
+  for (int j = 0;j < n;j++) {
+    int r = 0;
+    for (int i = 0;i < p;i++) 
+      if (A.get_server_location(i) == j)
+	r++;
+    if (r > 0)
+      centersfile << I->site(j)->x << " "
+		  << I->site(j)->y << " "
+		  << r << endl;
+  }
+  centersfile.close();
+  sprintf(centersB_output,"Tmp_centersB_%d.dat",key);
+  centersfile.open(centersB_output,fstream::out);
+  for (int j = 0;j < n;j++) {
+    int r = 0;
+    for (int i = 0;i < p;i++) 
+      if (B.get_server_location(i) == j)
+	r++;
+    if (r > 0)
+      centersfile
+	<< I->site(j)->x << " " << I->site(j)->y << " "
+	<< r << endl;
+  }
+  centersfile.close();
+  
+  sprintf(edges_output,"Tmp_edges_%d.dat",key);
+  edgesfile.open(edges_output,fstream::out);
+  for (int i = 0;i < p;i++) {
+    int loc_a = A.get_server_location(i);
+    int loc_b = B.get_server_location(match[i]);
+    if (loc_a != loc_b)
+      edgesfile
+	<<  I->site(loc_a)->x << " " << I->site(loc_a)->y << " "
+	<<  I->site(loc_b)->x << " " << I->site(loc_b)->y
+	<< endl;
+  }
+  edgesfile.close();
+
+  gnuPipe = popen("gnuplot","w");
+  gnuplot_sets(gnuPipe);
+  fprintf(gnuPipe,"set output './plots/PR_%s.jpeg'\n",filename.c_str());
+  gnuplot_unsets(gnuPipe);
+
+  fprintf(gnuPipe,"plot ");
+  fprintf(gnuPipe,"'%s' using 1:2 ",facility_output);
+  fprintf(gnuPipe,"w p lt 2 pt 10 title 'Facility'");
+  /*
+  fprintf(gnuPipe,", '%s' using 1:2:3 ",facility_output);
+  fprintf(gnuPipe,"w labels point offset character 0,character 1");
+  */
+  fprintf(gnuPipe,", '%s' using 1:2 ",demand_output);
+  fprintf(gnuPipe,"w p lt 2 pt 7 lc rgb 'blue' title 'Demand'");
+  fprintf(gnuPipe,", '%s' using 1:2:($3-$1):($4-$2) ",edges_output);
+  fprintf(gnuPipe,"with vectors");
+  fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ",centersA_output);
+  fprintf(gnuPipe,"ps variable lc rgb 'dark-grey' title 'Servers A'");
+  fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ",centersB_output);
+  fprintf(gnuPipe,"ps variable lc rgb 'red' title 'Servers B'");
+  fprintf(gnuPipe,"\n");
+
+  pclose(gnuPipe);
+  remove(demand_output);
+  remove(facility_output);
+  remove(centersA_output);
+  remove(centersB_output);
+  remove(edges_output);
 }

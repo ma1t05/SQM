@@ -12,6 +12,7 @@ void plot_instance_solution(SQM_instance&,int*,string);
 void plot_solution_allocation(SQM_solution*,double**,string,string);
 void gnuplot_GRASP(char *filename);
 void gnuplot_solution(SQM_solution*,int);
+void gnuplot_Path_Relinking(SQM_solution&,int*,SQM_solution&,string);
 
 #endif
 
