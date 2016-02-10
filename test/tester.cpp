@@ -63,8 +63,10 @@ int main(int argc,char *argv[]) {
 
   read_config_file("SQM.conf");
   filename = "Test";
-  M_clients = 50; N_sites = 50;
-  p = 10; l = 10;
+  M_clients = 50; 
+  N_sites = 30;
+  p = 6; 
+  l = 3;
   Mu_NT = MINS_PER_BLOCK * 3 / 60.0;
   lambda = MINS_PER_BLOCK * 6 / 60.0;
   v = 500.0;
@@ -162,17 +164,21 @@ void Test_Path_Relinking(SQM_instance &I,int p,double v) {
   SQM_solution *X,*Y;
   int *match,*order;
   X = new SQM_solution(I,p);
-  Y = new SQM_solution(I,p);
+  X->set_speed(v,BETA);
+  Y = X->clone();
+  SQM_heuristic(Y);
   match = PR_perfect_matching(X,Y);
   order = PR_processing_order_nf(X,match,Y);
+  X->update_preferred_servers ();
   gnuplot_Path_Relinking(*X,match,*Y,"step_00");
-  for (int step = 0;step < p - 1;step++) {
+  for (int step = 0;step < p;step++) {
     int x = order[step];
     int y = match[x];
     int loc_x = X->get_server_location(x);
     int loc_y = Y->get_server_location(y);
     if (loc_x != loc_y) {
       X->set_server_location(x,loc_y);
+      X->update_preferred_servers ();
       char step_file[8];
       sprintf(step_file,"step_%02d",step);
       gnuplot_Path_Relinking(*X,match,*Y,string(step_file));
