@@ -17,7 +17,7 @@ enum Subset {two_element,   /* all 2-element subsets. */
 Subset& operator++(Subset&);
 
 class RefSet {
- private:
+private:
   int bMax;
   int bNow;
   int NewRank;
@@ -45,7 +45,8 @@ protected:
   int iNew,jOld;
   int *LocNew;
   int *LocOld;
- public:
+  double (*Evaluation_Method)(SQM_solution&);
+public:
   RefSet (int);
   ~RefSet ();
   bool Update (SQM_solution&);
@@ -68,7 +69,12 @@ protected:
   int get_bNow () const {return bNow;};
 };
 
-extern double (*Evaluation_Method)(SQM_solution&);
+class RefSet_2 : public RefSet {
+private:
+  SQM_solution **quality;
+  SQM_solution **diverse;
+};
+
 double get_response_time (SQM_solution&);
 double get_perfect_matching_cost (SQM_solution&);
 
