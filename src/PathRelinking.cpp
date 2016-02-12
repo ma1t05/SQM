@@ -258,6 +258,26 @@ void SQM_path_relinking(RefSet &EliteSols,list<SQM_solution*> &Solutions) {
   logDebug(cout << tag << "Finish" << endl);
 }
 
+void Path_Relinking(RefSet &EliteSols,SQM_solution &X,SQM_solution &Y) {
+  list<SQM_solution*>::iterator Z;
+  list<SQM_solution*> *pr_sols;
+  SQM_solution *Best,*Best_input;
+  int N;
+  string tag = "RefSet::Path_Relinking: ";
+
+  logDebug(cout << tag << "Start" << endl);
+  pr_sols = Path_Relinking(X,Y);
+  if (pr_sols != NULL) {
+    for (Z = pr_sols->begin();Z != pr_sols->end();Z++) {
+      Improvement_Method(*Z); /* Improvement method */
+      if (!EliteSols.Update(**Z))
+	delete *Z;
+    }
+    delete pr_sols;
+  }
+  logDebug(cout << tag << "Finish" << endl);
+}
+
 SQM_solution* SQM_best_solution(list<SQM_solution*>* Solutions) {
   SQM_solution *Best;
   list<SQM_solution*>::iterator X;
