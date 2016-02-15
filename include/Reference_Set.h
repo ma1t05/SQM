@@ -54,6 +54,7 @@ public:
   RefSet (int,ImprovementMethod,EvaluationMethod);
   ~RefSet ();
   bool Update (SQM_solution&);
+  void Call_Improvement(SQM_solution&);
   void SubsetControl ();
   void clean_garbage ();
   double best () const {return E[loc[0]];};

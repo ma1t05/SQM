@@ -124,6 +124,10 @@ bool RefSet::Update (SQM_solution &Sol) {
   return true;
 }
 
+void RefSet::Call_Improvement (SQM_solution &Sol) {
+  Improvement(Sol);
+}
+
 void RefSet::SubsetControl () {
   /* Initialization */
   int iLoc;
