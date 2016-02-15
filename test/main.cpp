@@ -313,17 +313,19 @@ void Test_SQM_model(SQM_instance &Inst,int p,double v) {
 }
 
 void Test_SQM_multistart(SQM_instance &Inst,int p,double v) {
-  int N = 5000;
+  int N = 5000,step = 100;
   SQM_solution *Sol;
   RefSet Top(10,SQM_heuristic,get_response_time);
 
-  for (int i = 1;i <= N;i++) {
-    if (i%100 == 0) 
-      cout << "The best solution at iteration " << i << " is: " << Top.best()
-	   << endl;
-    Sol = new SQM_solution (Inst,p);
-    Sol->set_speed(v,BETA);
-    if (!Top.Update(*Sol)) delete Sol;
+  for (int i = step;i <= N;i+=step) {
+    for (int j = 0;j < step;j++) {
+      Sol = new SQM_solution (Inst,p);
+      Sol->set_speed(v,BETA);
+      if (!Top.Update(*Sol)) delete Sol;
+    }
+    Top.clean_garbage();
+    cout << "The best solution at iteration " << i << " is: " << Top.best()
+	 << endl;
   }
   cout << "  RefSetCall:" << Top.get_Calls() << endl
        << "   RefSetAdd:" << Top.get_Adds() << endl
