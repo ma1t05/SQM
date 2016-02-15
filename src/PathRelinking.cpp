@@ -243,10 +243,10 @@ void SQM_path_relinking(RefSet &EliteSols,list<SQM_solution*> &Solutions) {
     it2 = ++it1;
     while (it2 != end) {
       Y = *it2; it2++;
-      pr_sols = Path_Relinking(X,Y);
+      pr_sols = Path_Relinking(*X,*Y);
       if (pr_sols != NULL) {
 	for (Z = pr_sols->begin();Z != pr_sols->end();Z++) {
-	  Improvement_Method(**Z); /* Improvement method */
+	  EliteSols.Call_Improvement(**Z); /* Improvement method */
 	  if (EliteSols.Update(**Z))
 	    total_improved_solutions++;
 	  else delete *Z;
@@ -269,7 +269,7 @@ void Path_Relinking(RefSet &EliteSols,SQM_solution &X,SQM_solution &Y) {
   pr_sols = Path_Relinking(X,Y);
   if (pr_sols != NULL) {
     for (Z = pr_sols->begin();Z != pr_sols->end();Z++) {
-      Improvement_Method(**Z); /* Improvement method */
+      EliteSols.Call_Improvement(**Z); /* Improvement method */
       if (!EliteSols.Update(**Z))
 	delete *Z;
     }
