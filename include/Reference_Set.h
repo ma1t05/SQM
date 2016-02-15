@@ -16,6 +16,9 @@ enum Subset {two_element,   /* all 2-element subsets. */
 	     invalid_subset};
 Subset& operator++(Subset&);
 
+typedef double (*EvaluationMethod)(SQM_solution&);
+typedef void (*ImprovementMethod)(SQM_solution&);
+
 class RefSet {
 private:
   int bMax;
@@ -45,9 +48,10 @@ protected:
   int iNew,jOld;
   int *LocNew;
   int *LocOld;
-  double (*Evaluation_Method)(SQM_solution&);
+  ImprovementMethod Improvement;
+  EvaluationMethod Evaluation;
 public:
-  RefSet (int);
+  RefSet (int,ImprovementMethod,EvaluationMethod);
   ~RefSet ();
   bool Update (SQM_solution&);
   void SubsetControl ();

@@ -2,7 +2,8 @@
 #include "Reference_Set.h"
 #include "PathRelinking.h"
 
-RefSet::RefSet (int Max) {
+RefSet::RefSet (int Max,ImprovementMethod ImprovementFunction,
+		EvaluationMethod EvaluationFunction) {
   bMax = Max;
   bNow = 0;
   RefSetCall = 0;
@@ -16,6 +17,8 @@ RefSet::RefSet (int Max) {
   Solutions = new SQM_solution*[bMax];
   LastChange = new int [bMax];
   LastRunTime = new int [invalid_subset];
+  Improvement = ImprovementFunction;
+  Evaluation = EvaluationFunction;
 }
 
 RefSet::~RefSet () {
@@ -66,7 +69,7 @@ bool RefSet::Update (SQM_solution &Sol) {
   logDebug(cout << tag << "Start" << endl);
   RefSetCall++;
   NewRank = 0;
-  E0 = Evaluation_Method(Sol); /* Evaluation Method */
+  E0 = Evaluation(Sol); /* Evaluation Method */
   logDebug(cout << tag << "bNow = " << bNow << endl);
   if (bNow == 0) {
     NewRank = 1;
@@ -190,20 +193,19 @@ void RefSet::clean_garbage () {
 
 void RefSet::algorithm_for_SubsetType1 () {
   int iLoc,jLoc;
-  list<SQM_solution*> X;
+  SQM_solution *X,*Y;
   logDebug(cout << "Start algorithm for SubsetType1" << endl);
   if (iNew > 1) 
     for (int i = 0;i < iNew;i++) {
       iLoc = LocNew[i];
       if (LastChange[iLoc] < NowTime) {
-	X.push_back(Solutions[iLoc]);
+	X = Solutions[iLoc];
 	for (int j = i+1;j < iNew;j++) {
 	  jLoc = LocNew[j];
 	  if (LastChange[jLoc] < NowTime) {
-	    X.push_back(Solutions[jLoc]);
+	    Y = Solutions[jLoc];
 	    /* Create C(X) and execute improvement method */
-	    SQM_path_relinking(*this,X);
-	    X.pop_back();
+	    /* SQM_path_relinking(*this,X,Y); */
 	    /* Optional Check: if LastChange[iLoc] == NowTime, 
 	       then can jump to the end of "i loop" to pick up the next i,
 	       and generate fewer solutions. */
@@ -211,7 +213,6 @@ void RefSet::algorithm_for_SubsetType1 () {
 	      break;
 	  }
 	}
-	X.pop_back();
 	clean_garbage();
       }
     }
@@ -219,14 +220,13 @@ void RefSet::algorithm_for_SubsetType1 () {
     for (int i = 0;i < iNew;i++) {
       iLoc = LocNew[i];
       if (LastChange[iLoc] < NowTime) {
-	X.push_back(Solutions[iLoc]);
+	X = Solutions[iLoc];
 	for (int j = 0;j < jOld;j++) {
 	  jLoc = LocOld[j];
 	  if (LastChange[jLoc] < NowTime) {
-	    X.push_back(Solutions[jLoc]);
+	    Y = Solutions[jLoc];
 	    /* Create C(X) and execute improvement method */
-	    SQM_path_relinking(*this,X);
-	    X.pop_back();
+	    /* SQM_path_relinking(*this,X); */
 	    /* Optional Check: if LastChange[iLoc] == NowTime, 
 	       then can jump to the end of "i loop" to pick up the next i,
 	       and generate fewer solutions. */
@@ -234,7 +234,6 @@ void RefSet::algorithm_for_SubsetType1 () {
 	      break;
 	  }
 	}
-	X.pop_back();
 	clean_garbage();
       }
     }
