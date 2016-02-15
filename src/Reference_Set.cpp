@@ -2,6 +2,53 @@
 #include "Reference_Set.h"
 #include "PathRelinking.h"
 
+bool Reference_Set::EqualSol (SQM_solution &Sol,int i) {
+  /* Objective value check */
+  if (E[loc[i]] != E0)
+    return false;
+  DupCheck++;
+
+  /* Hash value check */
+  if (Hash[loc[i]] != Hash0)
+    return false;
+  FullDupCheck++;
+
+  /* Full duplication check */
+  if (Sol != *Solutions[loc[i]])
+    return false;
+  FullDupFound++;
+  return true;
+}
+
+void Reference_Set::Add (SQM_solution &Sol) {
+  log_depth++;
+  string tag = log_tag("Reference_Set::Add: ");
+ 
+  logDebug(cout << tag << "Start" << endl);
+  int loc0;
+  RefSetAdd++;
+  if (bNow < bMax) {
+    bNow++;
+    loc[bNow-1] = bNow-1;
+  }
+  else {
+    /* To avoid segmentation default, DO NOT DELETE the sol, send to grabage */
+    garbage.push_back(Solutions[loc[bNow-1]]);
+  }
+  loc0 = loc[bNow-1];
+  if (NewRank < bNow)
+    for (int i = bNow - 1;i >= NewRank;i--)
+      loc[i] = loc[i-1];
+  loc[NewRank-1] = loc0;
+
+  Solutions[loc0] = &Sol;
+  Hash[loc0] = Hash0;
+  E[loc0] = E0;
+  LastChange[loc0] = NowTime;
+  logDebug(cout << tag << "Finish" << endl);
+  log_depth--;
+}
+
 RefSet::RefSet (int Max,ImprovementMethod ImprovementFunction,
 		EvaluationMethod EvaluationFunction) {
   bMax = Max;
@@ -32,35 +79,6 @@ RefSet::~RefSet () {
   delete [] Hash;
   delete [] E;
   delete [] loc;
-}
-
-void RefSet::Add (SQM_solution &Sol) {
-  log_depth++;
-  string tag = log_tag("RefSet::Add: ");
- 
-  logDebug(cout << tag << "Start" << endl);
-  int loc0;
-  RefSetAdd++;
-  if (bNow < bMax) {
-    bNow++;
-    loc[bNow-1] = bNow-1;
-  }
-  else {
-    /* To avoid segmentation default, DO NOT DELETE the sol, send to grabage */
-    garbage.push_back(Solutions[loc[bNow-1]]);
-  }
-  loc0 = loc[bNow-1];
-  if (NewRank < bNow)
-    for (int i = bNow - 1;i >= NewRank;i--)
-      loc[i] = loc[i-1];
-  loc[NewRank-1] = loc0;
-
-  Solutions[loc0] = &Sol;
-  Hash[loc0] = Hash0;
-  E[loc0] = E0;
-  LastChange[loc0] = NowTime;
-  logDebug(cout << tag << "Finish" << endl);
-  log_depth--;
 }
 
 bool RefSet::Update (SQM_solution &Sol) {

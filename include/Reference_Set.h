@@ -19,22 +19,29 @@ Subset& operator++(Subset&);
 typedef double (*EvaluationMethod)(SQM_solution&);
 typedef void (*ImprovementMethod)(SQM_solution&);
 
-class RefSet {
-private:
-  int bMax;
-  int bNow;
-  int NewRank;
+class Reference_Set {
+protected:
   int RefSetCall;
   int RefSetAdd;
   int DupCheck;
   int FullDupCheck;
   int FullDupFound;
-  int *loc;
   double E0,Hash0;
+  void Add(SQM_solution&);
+  bool EqualSol(SQM_solution&,int);
+public:
+  virtual void Update () = 0;
+};
+
+class RefSet {
+private:
+  int bMax;
+  int bNow;
+  int NewRank;
+  int *loc;
   double *E,*Hash;
   SQM_solution **Solutions;
   list<SQM_solution*> garbage;
-  void Add(SQM_solution&);
   void algorithm_for_SubsetType1 ();
   void algorithm_for_SubsetType2 ();
   void algorithm_for_SubsetType3 ();
@@ -59,7 +66,9 @@ public:
   void clean_garbage ();
   double best () const {return E[loc[0]];};
   double worst () const {return E[loc[bNow-1]];};
-  double evaluation (int i) const {return ((i >= 0 && i < bNow) ? E[loc[i]] : -1);};
+  double evaluation (int i) const {
+    return ((i >= 0 && i < bNow) ? E[loc[i]] : -1);
+  };
   SQM_solution* best_sol () const {return Solutions[loc[0]];};
   SQM_solution* worst_sol () const {return Solutions[loc[bNow-1]];};
   SQM_solution* get_sol (int i) const {
@@ -74,10 +83,17 @@ public:
   int get_bNow () const {return bNow;};
 };
 
+typedef double (*DiversificationMethod)(RefSet&,SQM_solution&);
+
 class RefSet_2 : public RefSet {
 private:
   SQM_solution **quality;
   SQM_solution **diverse;
+  DiversificationMethod Diversification;
+public:
+  RefSet_2 (int,int,ImprovementMethod,EvaluationMethod,DiversificationMethod);
+  ~RefSet_2 ();
+  
 };
 
 double get_response_time (SQM_solution&);
