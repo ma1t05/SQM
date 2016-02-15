@@ -175,6 +175,7 @@ void Test_Path_Relinking(SQM_instance &I,int p,double v) {
       gnuplot_Path_Relinking(*X,match,*Y,string(step_file));
     }
   }
+  delete [] order;
   delete [] match;
   delete Y;
   delete X;
