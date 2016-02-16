@@ -18,30 +18,48 @@ Subset& operator++(Subset&);
 
 typedef double (*EvaluationMethod)(SQM_solution&);
 typedef void (*ImprovementMethod)(SQM_solution&);
+typedef std::list<SQM_solution*> SolList;
 
 class Reference_Set {
-protected:
-  int RefSetCall;
-  int RefSetAdd;
-  int DupCheck;
-  int FullDupCheck;
-  int FullDupFound;
-  double E0,Hash0;
-  void Add(SQM_solution&);
-  bool EqualSol(SQM_solution&,int);
-public:
-  virtual void Update () = 0;
-};
-
-class RefSet {
 private:
   int bMax;
   int bNow;
-  int NewRank;
+  int Adds; /* Count the additions to Reference Set */
+  /* Count the Checks */
+  int DupCheck;
+  int FullDupCheck;
+  int FullDupFound;
   int *loc;
   double *E,*Hash;
+  SolList garbage;
+protected:
+  int NewRank;
+  int RefSetCall;
+  double E0,Hash0;
   SQM_solution **Solutions;
-  list<SQM_solution*> garbage;
+  int Add(SQM_solution&);
+  bool EqualSol(SQM_solution&,int);
+public:
+  Reference_Set (int);
+  ~Reference_Set ();
+  virtual bool Update (SQM_solution&) = 0;
+  void clean_garbage ();
+  bool it_is_full () {return bNow == bMax;};
+  int get_Adds () const {return Adds;};
+  int get_Checks () const {return DupCheck;};
+  int get_FullCheck () const {return FullDupCheck;};
+  int get_DupFound () const {return FullDupFound;};
+  int get_elements () const {return bNow;};
+  int location (int i) const {
+    return ((i >= 0 && i < bNow) ? loc[i] : -1);
+  };
+  double evaluation (int i) const {
+    return ((i >= 0 && i < bNow) ? E[loc[i]] : -1);
+  };
+};
+
+class RefSet : public Reference_Set {
+private:
   void algorithm_for_SubsetType1 ();
   void algorithm_for_SubsetType2 ();
   void algorithm_for_SubsetType3 ();
@@ -63,24 +81,17 @@ public:
   bool Update (SQM_solution&);
   void Call_Improvement(SQM_solution&);
   void SubsetControl ();
-  void clean_garbage ();
-  double best () const {return E[loc[0]];};
-  double worst () const {return E[loc[bNow-1]];};
-  double evaluation (int i) const {
-    return ((i >= 0 && i < bNow) ? E[loc[i]] : -1);
+  double best () const {return evaluation(location(0));};
+  double worst () const {return evaluation(location(get_elements()-1));};
+  SQM_solution* best_sol () const {return Solutions[location(0)];};
+  SQM_solution* worst_sol () const {
+    return Solutions[location(get_elements()-1)];
   };
-  SQM_solution* best_sol () const {return Solutions[loc[0]];};
-  SQM_solution* worst_sol () const {return Solutions[loc[bNow-1]];};
   SQM_solution* get_sol (int i) const {
-    return ((i >= 0 && i < bNow) ? Solutions[loc[i]] : NULL);
+    return ((i >= 0 && i < get_elements()) ? Solutions[location(i)] : NULL);
   };
-  int get_elements () const {return bNow;};
   int get_Calls () const {return RefSetCall;};
-  int get_Adds () const {return RefSetAdd;};
-  int get_Checks () const {return DupCheck;};
-  int get_FullCheck () const {return FullDupCheck;};
-  int get_DupFound () const {return FullDupFound;};
-  int get_bNow () const {return bNow;};
+  /*int get_bNow () const {return bNow;};*/
 };
 
 typedef double (*DiversificationMethod)(RefSet&,SQM_solution&);

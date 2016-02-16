@@ -2,31 +2,59 @@
 #include "Reference_Set.h"
 #include "PathRelinking.h"
 
+Reference_Set::Reference_Set (int Max) : bMax(Max) {
+  bNow = 0;
+
+  DupCheck = 0;
+  FullDupCheck = 0;
+  FullDupFound = 0;
+
+  RefSetCall = 0;
+  Adds = 0;
+
+  loc = new int [bMax];
+  E = new double [bMax];
+  Hash = new double [bMax];
+  Solutions = new SQM_solution*[bMax];
+}
+
+Reference_Set::~Reference_Set () {
+  cout << "Delete Reference_Set arrays!" << endl;
+  for (int i = 0;i < bNow;i++) {
+    delete Solutions[loc[i]];
+  }
+  delete [] Solutions;
+  delete [] Hash;
+  delete [] E;
+  delete [] loc;
+}
+
 bool Reference_Set::EqualSol (SQM_solution &Sol,int i) {
+  int iLoc = location(i);
   /* Objective value check */
-  if (E[loc[i]] != E0)
+  if (E[iLoc] != E0)
     return false;
-  DupCheck++;
 
   /* Hash value check */
-  if (Hash[loc[i]] != Hash0)
+  DupCheck++;
+  if (Hash[iLoc] != Hash0)
     return false;
-  FullDupCheck++;
 
   /* Full duplication check */
-  if (Sol != *Solutions[loc[i]])
+  FullDupCheck++;
+  if (Sol != *Solutions[iLoc])
     return false;
   FullDupFound++;
   return true;
 }
 
-void Reference_Set::Add (SQM_solution &Sol) {
+int Reference_Set::Add (SQM_solution &Sol) {
   log_depth++;
   string tag = log_tag("Reference_Set::Add: ");
  
   logDebug(cout << tag << "Start" << endl);
   int loc0;
-  RefSetAdd++;
+  Adds++;
   if (bNow < bMax) {
     bNow++;
     loc[bNow-1] = bNow-1;
@@ -44,25 +72,23 @@ void Reference_Set::Add (SQM_solution &Sol) {
   Solutions[loc0] = &Sol;
   Hash[loc0] = Hash0;
   E[loc0] = E0;
-  LastChange[loc0] = NowTime;
+  /* LastChange[loc0] = NowTime; */
   logDebug(cout << tag << "Finish" << endl);
   log_depth--;
+  return loc0;
+}
+
+void Reference_Set::clean_garbage () {
+  logDebug(cout << "Clean garbage: " << garbage.size() << endl);
+  while (!garbage.empty()) {
+    delete garbage.back();
+    garbage.pop_back();
+  }
 }
 
 RefSet::RefSet (int Max,ImprovementMethod ImprovementFunction,
-		EvaluationMethod EvaluationFunction) {
-  bMax = Max;
-  bNow = 0;
-  RefSetCall = 0;
-  RefSetAdd = 0;
-  DupCheck = 0;
-  FullDupCheck = 0;
-  FullDupFound = 0;
-  loc = new int [bMax];
-  E = new double [bMax];
-  Hash = new double [bMax];
-  Solutions = new SQM_solution*[bMax];
-  LastChange = new int [bMax];
+		EvaluationMethod EvaluationFunction) : Reference_Set(Max) {
+  LastChange = new int [Max];
   LastRunTime = new int [invalid_subset];
   Improvement = ImprovementFunction;
   Evaluation = EvaluationFunction;
@@ -70,36 +96,31 @@ RefSet::RefSet (int Max,ImprovementMethod ImprovementFunction,
 
 RefSet::~RefSet () {
   clean_garbage();
-  for (int i = 0;i < bNow;i++) {
-    delete Solutions[loc[i]];
-  }
   delete [] LastRunTime;
   delete [] LastChange;
-  delete [] Solutions;
-  delete [] Hash;
-  delete [] E;
-  delete [] loc;
 }
 
 bool RefSet::Update (SQM_solution &Sol) {
+  int loc0;
   log_depth++;
   string tag = log_tag("RefSet::Update: ");
   logDebug(cout << tag << "Start" << endl);
   RefSetCall++;
   NewRank = 0;
   E0 = Evaluation(Sol); /* Evaluation Method */
-  logDebug(cout << tag << "bNow = " << bNow << endl);
-  if (bNow == 0) {
+  logDebug(cout << tag << "bNow = " << get_elements() << endl);
+  if (get_elements() == 0) {
     NewRank = 1;
     logDebug(cout << tag << "Calculate Hash (bNow = 0)" << endl);
     Hash0 = Sol.Hash();
-    Add (Sol);
+    loc0 = Add (Sol);
+    LastChange[loc0] = NowTime;
     logDebug(cout << tag << "Finish" << endl);
     log_depth--;
     return true;
   }
   else {
-    if (E0 >= worst() && bNow == bMax) {
+    if (E0 >= worst() && it_is_full ()) {
       logDebug(cout << tag << "Finish" << endl);
       log_depth--;
       return false;
@@ -111,22 +132,16 @@ bool RefSet::Update (SQM_solution &Sol) {
       NewRank = 1;
     }
     else {
-      for (int i = bNow-1;i >= 0; i--) {
-	if (E[loc[i]] == E0) {
-	  DupCheck++;
-	  if (Hash[loc[i]] == Hash0) {
-	    FullDupCheck++;
-	    if (Sol == *Solutions[loc[i]]) {
-	      FullDupFound++;
-	      logDebug(cout << tag << "Finish" << endl);
-	      log_depth--;
-	      return false;
-	    }
-	  }
+      for (int i = get_elements()-1;i >= 0; i--) {
+	if (EqualSol(Sol,i)) {
+	  logDebug(cout << tag << "Finish" << endl);
+	  log_depth--;
+	  return false;
 	}
-	else if (E[loc[i]] < E0){
+	else if (evaluation(i) < E0){
 	  NewRank = i+2;
-	  Add (Sol);
+	  loc0 = Add (Sol);
+	  LastChange[loc0] = NowTime;
 	  logDebug(cout << tag << "Finish" << endl);
 	  log_depth--;
 	  return true;
@@ -135,7 +150,8 @@ bool RefSet::Update (SQM_solution &Sol) {
       NewRank = 1; /* This case is when the solution gives the same evaluation 
 		      as the best solution */
     }
-    Add (Sol);
+    loc0 = Add (Sol);
+    LastChange[loc0] = NowTime;
   }
   logDebug(cout << tag << "Finish" << endl);
   log_depth--;
@@ -150,7 +166,7 @@ void RefSet::SubsetControl () {
   /* Initialization */
   int iLoc;
   logDebug(cout << "RefSet::SubsetControl: Start" << endl);
-  for (iLoc = 0;iLoc < bMax;iLoc++)
+  for (iLoc = 0;iLoc < get_elements();iLoc++)
     LastChange[iLoc] = 0;
   SubsetType = invalid_subset;
   for (int i = 0;i < invalid_subset;i++)
@@ -158,8 +174,8 @@ void RefSet::SubsetControl () {
   NowTime = 0;
   StopCondition = 0;
   SubsetType = two_element;
-  LocNew = new int [bMax];
-  LocOld = new int [bMax];
+  LocNew = new int [get_elements()];
+  LocOld = new int [get_elements()];
   while (StopCondition == 0) {
 
     /*++SubsetType;*/
@@ -167,8 +183,8 @@ void RefSet::SubsetControl () {
 
     iNew = 0;
     jOld = 0;
-    for (int i = 0;i < bNow;i++) {
-      iLoc = loc[i];
+    for (int i = 0;i < get_elements();i++) {
+      iLoc = location(i);
       if (LastChange[iLoc] >= LastRunTime[SubsetType])
 	LocNew[iNew++] = iLoc;
       else
@@ -180,7 +196,8 @@ void RefSet::SubsetControl () {
       delete [] LocOld;
       return;
     }
-    logDebug(cout << "Continue SubsetControl with " << 100 * iNew / bNow
+    logDebug(cout << "Continue SubsetControl with "
+	     << 100 * iNew / get_elements()
 	     << "% of new solutions" << endl);
 
     switch (SubsetType) {
@@ -202,14 +219,6 @@ void RefSet::SubsetControl () {
       /* Actually no StopCondition while new solutions were found */
     }
     LastRunTime[SubsetType] = NowTime;
-  }
-}
-
-void RefSet::clean_garbage () {
-  logDebug(cout << "Clean garbage: " << garbage.size() << endl);
-  while (!garbage.empty()) {
-    delete garbage.back();
-    garbage.pop_back();
   }
 }
 
@@ -266,15 +275,15 @@ void RefSet::algorithm_for_SubsetType2 () {
   int loc1,iLoc,jLoc;
   list<SQM_solution*> X;
   logDebug(cout << "Start algorithm for SubsetType2" << endl);
-  loc1 = loc[0];
+  loc1 = location(0);
   X.push_back(Solutions[loc1]);
   if (LastChange[loc1] >= LastRunTime[SubsetType]) {
-    for (int i = 1;i < bNow;i++) {
-      iLoc = loc[i];
+    for (int i = 1;i < get_elements();i++) {
+      iLoc = location(i);
       if (LastChange[iLoc] < NowTime) {
 	X.push_back(Solutions[iLoc]);
-	for (int j = i+1;j < bNow;j++) {
-	  jLoc = loc[j];
+	for (int j = i+1;j < get_elements();j++) {
+	  jLoc = location(j);
 	  if (LastChange[jLoc] < NowTime) {
 	    X.push_back(Solutions[jLoc]);
 	    /* Create C(X) and execute improvement method */
@@ -340,18 +349,18 @@ void RefSet::algorithm_for_SubsetType3 () {
   int loc1,loc2,iLoc,jLoc;
   list<SQM_solution*> X;
   logDebug(cout << "Start algorithm for SubsetType3" << endl);
-  loc1 = loc[0];
-  loc2 = loc[1];
+  loc1 = location(0);
+  loc2 = location(1);
   X.push_back(Solutions[loc1]);
   X.push_back(Solutions[loc2]);
   if (LastChange[loc1] >= LastRunTime[SubsetType] || 
       LastChange[loc2] >= LastRunTime[SubsetType]) {
-    for (int i = 2;i < bNow;i++) {
-      iLoc = loc[i];
+    for (int i = 2;i < get_elements();i++) {
+      iLoc = location(i);
       if (LastChange[iLoc] < NowTime) {
 	X.push_back(Solutions[iLoc]);
-	for (int j = i+1;j < bNow;j++) {
-	  jLoc = loc[j];
+	for (int j = i+1;j < get_elements();j++) {
+	  jLoc = location(j);
 	  if (LastChange[jLoc] < NowTime) {
 	    X.push_back(Solutions[jLoc]);
 	    /* Create C(X) and execute improvement method */
@@ -410,12 +419,12 @@ void RefSet::algorithm_for_SubsetType4 () {
   list<SQM_solution*> X;
   logDebug(cout << "Start algorithm for SubsetType4" << endl);
   for (int i = 0;i < 4;i++) {
-    iLoc = loc[i];
+    iLoc = location(i);
     X.push_back(Solutions[iLoc]);
     if (LastChange[iLoc] >= LastRunTime[SubsetType]) new_subset = true;
   }
-  for (int i = 4;i < bNow;i++) {
-    iLoc = loc[i];
+  for (int i = 4;i < get_elements();i++) {
+    iLoc = location(i);
     if (LastChange[iLoc] >= LastRunTime[SubsetType]) new_subset = true;
     if (LastChange[iLoc] < NowTime) {
       X.push_back(Solutions[iLoc]);
