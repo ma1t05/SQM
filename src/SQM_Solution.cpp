@@ -257,6 +257,9 @@ bool SQM_solution::operator==(SQM_solution& X) {
   return they_are_equal;
 }
 
+bool SQM_solution::operator!=(SQM_solution& X) {
+  return !(*this == X);
+}
 ostream& operator<<(ostream& os, SQM_solution *X) {
   SQM_instance *I = X->get_instance();
   int m = I->demand_points();

@@ -48,6 +48,7 @@ class SQM_solution {
   bool operator<(SQM_solution&);
   bool operator>(SQM_solution&);
   bool operator==(SQM_solution&);
+  bool operator!=(SQM_solution&);
 };
 
 ostream& operator<<(ostream&,SQM_solution*);
