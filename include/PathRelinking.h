@@ -6,7 +6,7 @@
 #include "PerfectMatching.h"
 #include "SQM_heuristic.h"
 
-list<SQM_solution*>* Path_Relinking (SQM_solution*,SQM_solution*);
+list<SQM_solution*>* Path_Relinking (SQM_solution&,SQM_solution&);
 void SQM_path_relinking(RefSet&,list<SQM_solution*>&);
 SQM_solution* SQM_best_solution(list<SQM_solution*>* Solutions);
 SQM_solution* SQM_leave_only_the_best(list<SQM_solution*>* Solutions);
