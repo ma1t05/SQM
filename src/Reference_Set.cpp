@@ -9,7 +9,7 @@ Reference_Set::Reference_Set (int Max) : bMax(Max) {
   FullDupCheck = 0;
   FullDupFound = 0;
 
-  RefSetCall = 0;
+  Calls = 0;
   Adds = 0;
 
   loc = new int [bMax];
@@ -19,7 +19,6 @@ Reference_Set::Reference_Set (int Max) : bMax(Max) {
 }
 
 Reference_Set::~Reference_Set () {
-  cout << "Delete Reference_Set arrays!" << endl;
   for (int i = 0;i < bNow;i++) {
     delete Solutions[loc[i]];
   }
@@ -101,11 +100,11 @@ RefSet::~RefSet () {
 }
 
 bool RefSet::Update (SQM_solution &Sol) {
-  int loc0;
   log_depth++;
   string tag = log_tag("RefSet::Update: ");
   logDebug(cout << tag << "Start" << endl);
-  RefSetCall++;
+  int loc0;
+  Calls++;
   NewRank = 0;
   E0 = Evaluation(Sol); /* Evaluation Method */
   logDebug(cout << tag << "bNow = " << get_elements() << endl);
@@ -156,6 +155,18 @@ bool RefSet::Update (SQM_solution &Sol) {
   logDebug(cout << tag << "Finish" << endl);
   log_depth--;
   return true;
+}
+
+void RefSet::Update (SolList *Solutions) {
+  if (Solutions == NULL) return;
+  SQM_solution *Y;
+  while (!Solutions->empty()) {
+    Y = Solutions->front();
+    Solutions->pop_front();
+    Improvement(*Y);
+    if (!Update(*Y)) delete Y;
+  }
+  delete Solutions;
 }
 
 void RefSet::Call_Improvement (SQM_solution &Sol) {
@@ -222,9 +233,22 @@ void RefSet::SubsetControl () {
   }
 }
 
+double RefSet::min_cost_pm (SQM_solution &Sol) {
+  double cost,min_cost;
+
+  min_cost = PR_perfect_matching_cost(*Sols.get_sol(0),Sol);
+  for (int i = 1;i < get_elements();i++) {
+    cost = PR_perfect_matching_cost(*Sols.get_sol(i),Sol);
+    if (min_cost > cost) min_cost = cost;
+  }
+
+  return min_cost;
+}
+
 void RefSet::algorithm_for_SubsetType1 () {
   int iLoc,jLoc;
   SQM_solution *X,*Y;
+  SolList *Combined_Solutions;
   logDebug(cout << "Start algorithm for SubsetType1" << endl);
   if (iNew > 1) 
     for (int i = 0;i < iNew;i++) {
@@ -236,7 +260,8 @@ void RefSet::algorithm_for_SubsetType1 () {
 	  if (LastChange[jLoc] < NowTime) {
 	    Y = Solutions[jLoc];
 	    /* Create C(X) and execute improvement method */
-	    /* SQM_path_relinking(*this,X,Y); */
+	    Combined_Solutions = Combine_Solutions(*X,*Y);
+	    Update(Combined_Solutions);
 	    /* Optional Check: if LastChange[iLoc] == NowTime, 
 	       then can jump to the end of "i loop" to pick up the next i,
 	       and generate fewer solutions. */
@@ -257,7 +282,8 @@ void RefSet::algorithm_for_SubsetType1 () {
 	  if (LastChange[jLoc] < NowTime) {
 	    Y = Solutions[jLoc];
 	    /* Create C(X) and execute improvement method */
-	    /* SQM_path_relinking(*this,X); */
+	    Combined_Solutions = Combine_Solutions(*X,*Y);
+	    Update(Combined_Solutions);
 	    /* Optional Check: if LastChange[iLoc] == NowTime, 
 	       then can jump to the end of "i loop" to pick up the next i,
 	       and generate fewer solutions. */

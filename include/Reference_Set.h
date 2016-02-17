@@ -19,6 +19,7 @@ Subset& operator++(Subset&);
 typedef double (*EvaluationMethod)(SQM_solution&);
 typedef void (*ImprovementMethod)(SQM_solution&);
 typedef std::list<SQM_solution*> SolList;
+extern SolList* (*Combine_Solutions)(SQM_solution&,SQM_solution&);
 
 class Reference_Set {
 private:
@@ -34,17 +35,22 @@ private:
   SolList garbage;
 protected:
   int NewRank;
-  int RefSetCall;
+  int Calls;
   double E0,Hash0;
   SQM_solution **Solutions;
+  /* Pass evaluation and hash in E0 & Hash0 */
   int Add(SQM_solution&);
   bool EqualSol(SQM_solution&,int);
 public:
   Reference_Set (int);
   ~Reference_Set ();
   virtual bool Update (SQM_solution&) = 0;
+  virtual void Update (SolList*) = 0;
+  virtual void SubsetControl () = 0;
+  virtual double min_cost_pm (SQM_solution&);
   void clean_garbage ();
   bool it_is_full () {return bNow == bMax;};
+  int get_Calls () const {return Calls;};
   int get_Adds () const {return Adds;};
   int get_Checks () const {return DupCheck;};
   int get_FullCheck () const {return FullDupCheck;};
@@ -56,6 +62,8 @@ public:
   double evaluation (int i) const {
     return ((i >= 0 && i < bNow) ? E[loc[i]] : -1);
   };
+  double best () const {return evaluation(0);};
+  double worst () const {return evaluation(get_elements()-1);};
 };
 
 class RefSet : public Reference_Set {
@@ -79,10 +87,10 @@ public:
   RefSet (int,ImprovementMethod,EvaluationMethod);
   ~RefSet ();
   bool Update (SQM_solution&);
-  void Call_Improvement(SQM_solution&);
+  void Update (SolList*);
   void SubsetControl ();
-  double best () const {return evaluation(location(0));};
-  double worst () const {return evaluation(location(get_elements()-1));};
+  double min_cost_pm (SQM_Solution&);
+  void Call_Improvement(SQM_solution&); /* Is required? */
   SQM_solution* best_sol () const {return Solutions[location(0)];};
   SQM_solution* worst_sol () const {
     return Solutions[location(get_elements()-1)];
@@ -90,7 +98,6 @@ public:
   SQM_solution* get_sol (int i) const {
     return ((i >= 0 && i < get_elements()) ? Solutions[location(i)] : NULL);
   };
-  int get_Calls () const {return RefSetCall;};
   /*int get_bNow () const {return bNow;};*/
 };
 
