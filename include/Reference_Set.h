@@ -41,11 +41,13 @@ protected:
   /* Pass evaluation and hash in E0 & Hash0 */
   int Add(SQM_solution&);
   bool EqualSol(SQM_solution&,int);
+  ImprovementMethod Improvement;
+  EvaluationMethod Evaluation;
 public:
   Reference_Set (int);
   ~Reference_Set ();
   virtual bool Update (SQM_solution&) = 0;
-  virtual void Update (SolList*) = 0;
+  void Update (SolList*);
   virtual void SubsetControl () = 0;
   virtual double min_cost_pm (SQM_solution&);
   void clean_garbage ();
@@ -81,13 +83,10 @@ protected:
   int iNew,jOld;
   int *LocNew;
   int *LocOld;
-  ImprovementMethod Improvement;
-  EvaluationMethod Evaluation;
 public:
   RefSet (int,ImprovementMethod,EvaluationMethod);
   ~RefSet ();
   bool Update (SQM_solution&);
-  void Update (SolList*);
   void SubsetControl ();
   double min_cost_pm (SQM_Solution&);
   void Call_Improvement(SQM_solution&); /* Is required? */
@@ -101,17 +100,24 @@ public:
   /*int get_bNow () const {return bNow;};*/
 };
 
-typedef double (*DiversificationMethod)(RefSet&,SQM_solution&);
-
-class RefSet_2 : public RefSet {
+class RefSet_2Tier : public Reference_Set {
 private:
-  SQM_solution **quality;
-  SQM_solution **diverse;
-  DiversificationMethod Diversification;
+  int bMax2;
+  int bNow2;
+  int Adds2;
+  int *loc;
+  double *D,*Hash2;
+protected:
+  SQM_solution **Diverse;
+  void reorder_diverse_set ();
+  bool quality_update (SQM_solution&);
+  bool diverse_update (SQM_solution&)
 public:
-  RefSet_2 (int,int,ImprovementMethod,EvaluationMethod,DiversificationMethod);
-  ~RefSet_2 ();
-  
+  RefSet_2Tier (int,int,ImprovementMethod,EvaluationMethod)
+  ~RefSet_2Tier ();
+  bool Update (SQM_solution&);
+  void SubsetControl ();
+  double min_cost_pm (SQM_solution&);
 };
 
 double get_response_time (SQM_solution&);

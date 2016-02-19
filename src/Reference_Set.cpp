@@ -28,6 +28,18 @@ Reference_Set::~Reference_Set () {
   delete [] loc;
 }
 
+void Reference_Set::Update (SolList *Sols) {
+  if (Sols == NULL) return;
+  SQM_solution *Y;
+  while (!Sols->empty()) {
+    Y = Sols->front();
+    Sols->pop_front();
+    Improvement(*Y);
+    if (!Update(*Y)) delete Y;
+  }
+  delete Sols;
+}
+
 bool Reference_Set::EqualSol (SQM_solution &Sol,int i) {
   int iLoc = location(i);
   /* Objective value check */
@@ -155,18 +167,6 @@ bool RefSet::Update (SQM_solution &Sol) {
   logDebug(cout << tag << "Finish" << endl);
   log_depth--;
   return true;
-}
-
-void RefSet::Update (SolList *Solutions) {
-  if (Solutions == NULL) return;
-  SQM_solution *Y;
-  while (!Solutions->empty()) {
-    Y = Solutions->front();
-    Solutions->pop_front();
-    Improvement(*Y);
-    if (!Update(*Y)) delete Y;
-  }
-  delete Solutions;
 }
 
 void RefSet::Call_Improvement (SQM_solution &Sol) {
@@ -469,6 +469,46 @@ Subset& operator++(Subset &target) {
   if (target == invalid_subset)
     target = static_cast<Subset>(0);
   return target;
+}
+
+RefSet_2Tier::RefSet_2Tier 
+(int quality,int diverse,
+ ImprovementMethod ImprovementFunction,
+ EvaluationMethod EvaluationFunction) : Reference_Set(quality) {
+  bNow2 = 0;
+
+  Adds2 = 0;
+  loc2 = new int [diverse];
+  D = new double [diverse];
+  Hash2 = new double [diverse];
+  Diverse = new SQM_solution*[diverse];
+
+  Improvement = ImprovementFunction;
+  Evaluation = EvaluationFunction;
+}
+
+RefSet_2Tier::~RefSet_2Tier () {
+  delete [] Diverse;
+  delete [] Hash2;
+  delete [] D;
+  delete [] loc2;
+}
+
+
+bool RefSet_2Tier::Update (SQM_solution &Sol) {
+  if (quality_update(Sol)) {
+
+    return true;
+  }
+  else if (diverse_update(Sol)) {
+
+    return true;
+  }
+  return false;
+}
+
+void SubsetControl () {
+  
 }
 
 double get_response_time (SQM_solution &Sol) {
