@@ -471,6 +471,8 @@ Subset& operator++(Subset &target) {
   return target;
 }
 
+/****************************** RefSet_2Tier **********************************/
+
 RefSet_2Tier::RefSet_2Tier 
 (int quality,int diverse,
  ImprovementMethod ImprovementFunction,
@@ -507,7 +509,49 @@ bool RefSet_2Tier::Update (SQM_solution &Sol) {
   return false;
 }
 
-void SubsetControl () {
+void RefSet_2Tier::SubsetControl () {
+  /* Initialization */
+  int iLoc;
+  logDebug(cout << "RefSet::SubsetControl: Start" << endl);
+  for (iLoc = 0;iLoc < get_elements();iLoc++)
+    LastChange[iLoc] = 0;
+  SubsetType = invalid_subset;
+  for (int i = 0;i < invalid_subset;i++)
+    LastRunTime[i] = 0;
+  NowTime = 0;
+  StopCondition = 0;
+  LocNew = new int [get_elements()];
+  LocOld = new int [get_elements()];
+  while (StopCondition == 0) {
+
+    NowTime++;
+
+    iNew = 0;
+    jOld = 0;
+    for (int i = 0;i < get_elements();i++) {
+      iLoc = location(i);
+      if (LastChange[iLoc] >= LastRunTime[SubsetType])
+	LocNew[iNew++] = iLoc;
+      else
+	LocOld[jOld++] = iLoc;
+    }
+
+    if (iNew == 0) {
+      delete [] LocNew;
+      delete [] LocOld;
+      return;
+    }
+    logDebug(cout << "Continue SubsetControl with "
+	     << 100 * iNew / get_elements()
+	     << "% of new solutions" << endl);
+
+    algorithm_for_SubsetType1 ();
+
+    if (StopCondition > 0) {
+      /* Actually no StopCondition while new solutions were found */
+    }
+    LastRunTime[SubsetType] = NowTime;
+  }
   
 }
 
