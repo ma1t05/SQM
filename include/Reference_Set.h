@@ -56,6 +56,15 @@ extern void (*Improvement_Method)(SQM_solution&);
 extern SolList* (*Combine_Solutions)(SQM_solution&,SQM_solution&);
 double min_cost_pm (RefSet&,SQM_solution&);
 
+class Static_SubsetControl {
+private:
+  int Iter;
+  
+public:
+  Static_SubsetControl (RefSet&);
+  ~Static_SubsetControl ();
+};
+
 class Dynamic_SubsetControl {
 private:
   void algorithm_for_SubsetType1 (RefSet&);
