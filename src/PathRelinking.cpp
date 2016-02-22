@@ -226,58 +226,6 @@ int* PR_processing_order_ff(SQM_solution &X,int *pm,SQM_solution &Y) {
   return order;
 }
 
-void SQM_path_relinking(RefSet &EliteSols,list<SQM_solution*> &Solutions) {
-  int total_improved_solutions = 0;
-  SQM_solution *X,*Y;
-  list<SQM_solution*>::iterator it1,it2,end,Z;
-  list<SQM_solution*> *pr_sols;
-  SQM_solution *Best,*Best_input;
-  int N;
-  string tag = "SQM_path_relinking: ";
-
-  logDebug(cout << tag << "Start" << endl);
-  it1 = Solutions.begin();
-  end = Solutions.end();
-  while (it1 != end) {
-    X = *it1;
-    it2 = ++it1;
-    while (it2 != end) {
-      Y = *it2; it2++;
-      pr_sols = Path_Relinking(*X,*Y);
-      if (pr_sols != NULL) {
-	for (Z = pr_sols->begin();Z != pr_sols->end();Z++) {
-	  EliteSols.Call_Improvement(**Z); /* Improvement method */
-	  if (EliteSols.Update(**Z))
-	    total_improved_solutions++;
-	  else delete *Z;
-	}
-	delete pr_sols;
-      }
-    }
-  }
-  logDebug(cout << tag << "Finish" << endl);
-}
-
-void Path_Relinking(RefSet &EliteSols,SQM_solution &X,SQM_solution &Y) {
-  list<SQM_solution*>::iterator Z;
-  list<SQM_solution*> *pr_sols;
-  SQM_solution *Best,*Best_input;
-  int N;
-  string tag = "RefSet::Path_Relinking: ";
-
-  logDebug(cout << tag << "Start" << endl);
-  pr_sols = Path_Relinking(X,Y);
-  if (pr_sols != NULL) {
-    for (Z = pr_sols->begin();Z != pr_sols->end();Z++) {
-      EliteSols.Call_Improvement(**Z); /* Improvement method */
-      if (!EliteSols.Update(**Z))
-	delete *Z;
-    }
-    delete pr_sols;
-  }
-  logDebug(cout << tag << "Finish" << endl);
-}
-
 SQM_solution* SQM_best_solution(list<SQM_solution*>* Solutions) {
   SQM_solution *Best;
   list<SQM_solution*>::iterator X;
@@ -314,11 +262,11 @@ void SQM_delete_sols(list<SQM_solution*>* Solutions) {
 
 double SQM_min_cost_pm(RefSet &Sols,SQM_solution &Sol) {
   double cost,min_cost;
-  int bNow = Sols.get_elements();
+  int bNow = Sols.elements();
 
-  min_cost = PR_perfect_matching_cost(*Sols.get_sol(0),Sol);
+  min_cost = PR_perfect_matching_cost(*Sols[0],Sol);
   for (int i = 1;i < bNow;i++) {
-    cost = PR_perfect_matching_cost(*Sols.get_sol(i),Sol);
+    cost = PR_perfect_matching_cost(*Sols[i],Sol);
     if (min_cost > cost) min_cost = cost;
   }
 
