@@ -21,11 +21,8 @@ int log_depth;
 std::ofstream Log_Simulation;
 
 /* PathRelinking extern variables */
-int* (*matching_function)(SQM_solution*,SQM_solution*); /* function for match */
-int* (*order_function)(SQM_solution*,int*,SQM_solution*); /* function for proccess */
-void (*Improvement_Method)(SQM_solution*);
-/* RefSet extern variables */
-double (*Evaluation_Method)(SQM_solution&);
+int* (*matching_function)(SQM_solution&,SQM_solution&); /* function for match */
+int* (*order_function)(SQM_solution&,int*,SQM_solution&); /* function for proccess */
 
 /* Global extern variables read from config */
 int MINS_PER_BLOCK;
@@ -163,8 +160,8 @@ void Test_Path_Relinking(SQM_instance &I,int p,double v) {
   int *match,*order;
   X = new SQM_solution(I,p);
   Y = new SQM_solution(I,p);
-  match = PR_perfect_matching(X,Y);
-  order = PR_processing_order_nf(X,match,Y);
+  match = PR_perfect_matching(*X,*Y);
+  order = PR_processing_order_nf(*X,match,*Y);
   gnuplot_Path_Relinking(*X,match,*Y,"step_00");
   for (int step = 0;step < p - 1;step++) {
     int x = order[step];
@@ -178,6 +175,7 @@ void Test_Path_Relinking(SQM_instance &I,int p,double v) {
       gnuplot_Path_Relinking(*X,match,*Y,string(step_file));
     }
   }
+  delete [] order;
   delete [] match;
   delete Y;
   delete X;

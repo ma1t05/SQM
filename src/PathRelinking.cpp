@@ -3,10 +3,10 @@
 
 using namespace std;
 
-bool incompatible_solutions(SQM_solution*,SQM_solution*);
-double** PR_distances_matrix(SQM_solution*,SQM_solution*);
+bool incompatible_solutions(SQM_solution&,SQM_solution&);
+double** PR_distances_matrix(SQM_solution&,SQM_solution&);
 
-list<SQM_solution*>* Path_Relinking (SQM_solution *X,SQM_solution *Y) {
+list<SQM_solution*>* Path_Relinking (SQM_solution &X,SQM_solution &Y) {
   log_depth++;
   string tag = log_tag("Path_Relinking: ");
   logDebug(cout << tag << "Start" << endl);
@@ -23,7 +23,7 @@ list<SQM_solution*>* Path_Relinking (SQM_solution *X,SQM_solution *Y) {
 
   /* Determine order of change */
   logDebug(cout << tag << "Determine order of change" << endl);
-  int p = X->get_servers();
+  int p = X.get_servers();
   int *order = order_function(X,pm,Y);
 
   logDebug(cout << tag << "Create solutions" << endl);
@@ -33,21 +33,21 @@ list<SQM_solution*>* Path_Relinking (SQM_solution *X,SQM_solution *Y) {
 
   Solutions = new list<SQM_solution*>;
   logDebug(cout << tag << "Create list to store solutions" << endl);
+  Z = &X;
   for (int step = 0;step < p - 1;step++) {
     x = order[step];
     y = pm[x];
-    loc_x = X->get_server_location(x);
-    loc_y = Y->get_server_location(y);
+    loc_x = Z->get_server_location(x);
+    loc_y = Y.get_server_location(y);
     if (loc_x != loc_y) {
       logDebug
 	(cout << tag << "Step " << step+1 << " change server " << x 
 	 << ", with srever " << y << " with locations " << loc_x << " and " 
 	 << loc_y << endl
 	 );
-      Z = X->clone();
+      Z = Z->clone();
       Z->set_server_location(x,loc_y);
       Solutions->push_back(Z);
-      X = Z;
     }
   }
   
@@ -58,15 +58,15 @@ list<SQM_solution*>* Path_Relinking (SQM_solution *X,SQM_solution *Y) {
   return Solutions;
 }
 
-bool incompatible_solutions(SQM_solution *X,SQM_solution *Y) {
+bool incompatible_solutions(SQM_solution &X,SQM_solution &Y) {
   if (LogInfo) {
-    if (X->get_servers() != Y->get_servers())
+    if (X.get_servers() != Y.get_servers())
       logError(cerr << "Error:No Same number of servers" << endl);
-    if (X->get_instance() != Y->get_instance())
+    if (X.get_instance() != Y.get_instance())
       logError(cerr << "Error:No Same instance" << endl);
   }
-  return ((X->get_instance() != Y->get_instance()) || /* Same instance */
-	  (X->get_servers() != Y->get_servers()) /* Same number of servers */
+  return ((X.get_instance() != Y.get_instance()) || /* Same instance */
+	  (X.get_servers() != Y.get_servers()) /* Same number of servers */
 	  );
 }
 
@@ -76,8 +76,8 @@ matching_type& operator++(matching_type &target) {
 }
 
 /* Create distances matrix and call Perfect_Matching procedure */
-int* PR_perfect_matching(SQM_solution *X,SQM_solution *Y) {
-  int p = X->get_servers();
+int* PR_perfect_matching(SQM_solution &X,SQM_solution &Y) {
+  int p = X.get_servers();
   int *pm;
   double **distances;
   distances = PR_distances_matrix(X,Y);
@@ -87,15 +87,15 @@ int* PR_perfect_matching(SQM_solution *X,SQM_solution *Y) {
   return pm;
 }
 
-int* PR_workload_matching(SQM_solution *X,SQM_solution *Y) {
-  int p = X->get_servers();
+int* PR_workload_matching(SQM_solution &X,SQM_solution &Y) {
+  int p = X.get_servers();
   int *pm;
   int *a,*b;
   double *wl_x,*wl_y;
 
   pm = new int [p];
-  wl_x = X->get_workload();
-  wl_y = Y->get_workload();
+  wl_x = X.get_workload();
+  wl_y = Y.get_workload();
   a = new int [p];
   b = new int [p];
   sort_dist(p,wl_x,a);
@@ -109,8 +109,8 @@ int* PR_workload_matching(SQM_solution *X,SQM_solution *Y) {
   return pm;
 }
 
-int* PR_random_matching(SQM_solution *X,SQM_solution *Y) {
-  int p = X->get_servers();
+int* PR_random_matching(SQM_solution &X,SQM_solution &Y) {
+  int p = X.get_servers();
   int *pm,pos;
   bool *used;
 
@@ -136,8 +136,8 @@ order_type& operator++(order_type &target) {
   return target;
 }
 
-double PR_perfect_matching_cost(SQM_solution *X,SQM_solution *Y) {
-  int p = X->get_servers();
+double PR_perfect_matching_cost(SQM_solution &X,SQM_solution &Y) {
+  int p = X.get_servers();
   double cost;
   double **distances;
   distances = PR_distances_matrix(X,Y);
@@ -148,10 +148,10 @@ double PR_perfect_matching_cost(SQM_solution *X,SQM_solution *Y) {
 }
 
 /* Create distances matrix  */
-double** PR_distances_matrix(SQM_solution *X,SQM_solution *Y) {
-  int p = X->get_servers();
-  int q = Y->get_servers();
-  SQM_instance *I = X->get_instance();
+double** PR_distances_matrix(SQM_solution &X,SQM_solution &Y) {
+  int p = X.get_servers();
+  int q = Y.get_servers();
+  SQM_instance *I = X.get_instance();
   point *site = I->site(0);
   double **distances;
   int loc_x,loc_y;
@@ -159,17 +159,17 @@ double** PR_distances_matrix(SQM_solution *X,SQM_solution *Y) {
   distances = new double*[p];
   for (int i = 0;i < p;i++) distances[i] = new double[q];
   for (int i = 0;i < p;i++) {
-    loc_x = X->get_server_location(i);
+    loc_x = X.get_server_location(i);
     for (int l = 0;l < q;l++) {
-      loc_y = Y->get_server_location(l);
+      loc_y = Y.get_server_location(l);
       distances[i][l] = dist(&(site[loc_x]),&(site[loc_y]));
     }
   }
   return distances;
 }
 
-int* PR_processing_order_random(SQM_solution *X,int *pm,SQM_solution *Y) {
-  int p = X->get_servers(),pos;
+int* PR_processing_order_random(SQM_solution &X,int *pm,SQM_solution &Y) {
+  int p = X.get_servers(),pos;
   int *order = new int [p];
   bool *used = new bool [p];
   for (int i = 0;i < p;i++) used[i] = false;
@@ -189,18 +189,18 @@ int* PR_processing_order_random(SQM_solution *X,int *pm,SQM_solution *Y) {
 }
 
 /* nearest first */
-int* PR_processing_order_nf(SQM_solution *X,int *pm,SQM_solution *Y) {
+int* PR_processing_order_nf(SQM_solution &X,int *pm,SQM_solution &Y) {
   int *order,loc_x,loc_y;
-  int p = X->get_servers();
+  int p = X.get_servers();
   double *d;
-  SQM_instance *I = X->get_instance();
+  SQM_instance *I = X.get_instance();
   point *site = I->site(0);
 
   order = new int [p];
   d = new double [p];
   for (int i = 0;i < p;i++) {
-    loc_x = X->get_server_location(i);
-    loc_y = Y->get_server_location(pm[i]);
+    loc_x = X.get_server_location(i);
+    loc_y = Y.get_server_location(pm[i]);
     d[i] = dist(&(site[loc_x]),&(site[loc_y]));
   }
   sort_dist(p,d,order);
@@ -208,54 +208,22 @@ int* PR_processing_order_nf(SQM_solution *X,int *pm,SQM_solution *Y) {
 }
 
 /* farthest first */
-int* PR_processing_order_ff(SQM_solution *X,int *pm,SQM_solution *Y) {
+int* PR_processing_order_ff(SQM_solution &X,int *pm,SQM_solution &Y) {
   int *order,loc_x,loc_y;
-  int p = X->get_servers();
+  int p = X.get_servers();
   double *d;
-  SQM_instance *I = X->get_instance();
+  SQM_instance *I = X.get_instance();
   point *site = I->site(0);
 
   order = new int [p];
   d = new double [p];
   for (int i = 0;i < p;i++) {
-    loc_x = X->get_server_location(i);
-    loc_y = Y->get_server_location(pm[i]);
+    loc_x = X.get_server_location(i);
+    loc_y = Y.get_server_location(pm[i]);
     d[i] = -dist(&(site[loc_x]),&(site[loc_y]));
   }
   sort_dist(p,d,order);
   return order;
-}
-
-void SQM_path_relinking(RefSet &EliteSols,list<SQM_solution*> &Solutions) {
-  int total_improved_solutions = 0;
-  SQM_solution *X,*Y;
-  list<SQM_solution*>::iterator it1,it2,end,Z;
-  list<SQM_solution*> *pr_sols;
-  SQM_solution *Best,*Best_input;
-  int N;
-  string tag = "SQM_path_relinking: ";
-
-  logDebug(cout << tag << "Start" << endl);
-  it1 = Solutions.begin();
-  end = Solutions.end();
-  while (it1 != end) {
-    X = *it1;
-    it2 = ++it1;
-    while (it2 != end) {
-      Y = *it2; it2++;
-      pr_sols = Path_Relinking(X,Y);
-      if (pr_sols != NULL) {
-	for (Z = pr_sols->begin();Z != pr_sols->end();Z++) {
-	  Improvement_Method(*Z); /* Improvement method */
-	  if (EliteSols.Update(**Z))
-	    total_improved_solutions++;
-	  else delete *Z;
-	}
-	delete pr_sols;
-      }
-    }
-  }
-  logDebug(cout << tag << "Finish" << endl);
 }
 
 SQM_solution* SQM_best_solution(list<SQM_solution*>* Solutions) {
@@ -292,13 +260,13 @@ void SQM_delete_sols(list<SQM_solution*>* Solutions) {
   delete Solutions;
 }
 
-double SQM_min_cost_pm(RefSet &Sols,SQM_solution *Sol) {
+double SQM_min_cost_pm(RefSet &Sols,SQM_solution &Sol) {
   double cost,min_cost;
-  int bNow = Sols.get_elements();
+  int bNow = Sols.elements();
 
-  min_cost = PR_perfect_matching_cost(Sols.get_sol(0),Sol);
+  min_cost = PR_perfect_matching_cost(*Sols[0],Sol);
   for (int i = 1;i < bNow;i++) {
-    cost = PR_perfect_matching_cost(Sols.get_sol(i),Sol);
+    cost = PR_perfect_matching_cost(*Sols[i],Sol);
     if (min_cost > cost) min_cost = cost;
   }
 

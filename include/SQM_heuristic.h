@@ -6,7 +6,7 @@
 #include "SQM_Solution.h"
 #include "gnuplot.h"
 
-void SQM_heuristic(SQM_solution*);
+void SQM_heuristic(SQM_solution&);
 
 #endif
 
