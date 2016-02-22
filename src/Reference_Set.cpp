@@ -209,6 +209,111 @@ int RefSet::get_DupFound () const {
 }
 
 /*******************************************************************************
+ * Static_SubsetControl
+ ******************************************************************************/
+Static_SubsetControl::Static_SubsetControl (int size,SolList &P) {
+  SQM_solution *X;
+  int iLoc;
+
+  /* Pool list is sorted */
+  pool = &P;
+
+  LastChange = new int [size];
+  for (iLoc = 0;iLoc < size;iLoc++)
+    LastChange[iLoc] = 0;
+  LocNew = new int [size];
+  LocOld = new int [size];
+  CurrentIter = 0;
+
+  rs = new RefSet (size);
+
+  do {
+
+    /* Transfer elements of the pool to the RefSet */
+    while (!pool->empty()) {
+      X = pool->front();
+      pool->pop_front();
+      iLoc = rs->TryAdd(*X,X->get_response_time());
+      if (iLoc > 0)
+	LastChange[iLoc] = CurrentIter;
+      else delete X;
+    } while (!rs->is_full());
+
+    /* Divide RefSet in New and Old Solutions */
+    iNew = 0;
+    jOld = 0;
+    for (int i = 0;i < size;i++) {
+      iLoc = rs->location(i);
+      if (LastChange[iLoc] >= CurrentIter)
+	LocNew[iNew++] = iLoc;
+      else
+	LocOld[jOld++] = iLoc;
+    }
+
+    if (iNew == 0) break;
+    Generate_Subsets ();
+    
+    
+    CurrentIter++;
+  } while (CurrentIter < MAX_ITER);
+  if (CurrentIter == MAX_ITER)
+    logInfo(cout << "Static_SubsetControl: Finish by MAX_ITER" << endl);
+  else
+    logInfo(cout << "Static_SubsetControl: Finish by no new solutions" << endl);
+
+  delete [] LocNew;
+  delete [] LocOld;
+  delete [] LastChange;
+}
+
+void Static_SubsetControl::Generate_Subsets () {
+  int iLoc,jLoc;
+  SQM_solution *X,*Y;
+  SolList *Combined_Solutions;
+  logDebug(cout << "Start algorithm for Subsets" << endl);
+
+  if (iNew > 1) 
+    for (int i = 0;i < iNew;i++) {
+      iLoc = LocNew[i];
+      X = (*rs)[iLoc];
+      for (int j = i+1;j < iNew;j++) {
+	jLoc = LocNew[j];
+	Y = (*rs)[jLoc];
+	Combined_Solutions = Combine_Solutions(*X,*Y);
+	Update(Combined_Solutions);
+      }
+    }
+
+  if (jOld > 0)
+    for (int i = 0;i < iNew;i++) {
+      iLoc = LocNew[i];
+      X = (*rs)[iLoc];
+      for (int j = 0;j < jOld;j++) {
+	jLoc = LocOld[j];
+	Y = (*rs)[jLoc];
+	Combined_Solutions = Combine_Solutions(*X,*Y);
+	Update(Combined_Solutions);
+      }
+    }
+  
+}
+
+void Static_SubsetControl::Update (SolList *Sols) {
+  SQM_solution *X;
+  if (Sols == NULL) return;
+  while (!Sols->empty()) {
+    X = Sols->front();
+    Sols->pop_front();
+    Improvement_Method(*X);
+    if (X->get_response_time() < rs->worst())
+      pool->push_back(X);
+    else
+      delete X;
+  }
+  delete Sols;
+}
+
+/*******************************************************************************
  * Dynamic_SubsetControl
  ******************************************************************************/
 

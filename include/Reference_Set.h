@@ -56,12 +56,20 @@ extern void (*Improvement_Method)(SQM_solution&);
 extern SolList* (*Combine_Solutions)(SQM_solution&,SQM_solution&);
 double min_cost_pm (RefSet&,SQM_solution&);
 
+#define MAX_ITER 1000
+
 class Static_SubsetControl {
 private:
-  int Iter;
-  
+  int CurrentIter;
+  RefSet *rs;
+  SolList *pool;
+  int *LastChange;
+  int iNew,jOld;
+  int *LocNew,*LocOld;
+  void Generate_Subsets ();
+  void Update(SolList*);
 public:
-  Static_SubsetControl (RefSet&);
+  Static_SubsetControl (int,SolList&);
   ~Static_SubsetControl ();
 };
 
