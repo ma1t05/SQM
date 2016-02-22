@@ -2,6 +2,174 @@
 #include "Reference_Set.h"
 #include "PathRelinking.h"
 
+RefSet::RefSet (int Max) {
+  bMax = Max;
+  bNow = 0;
+
+  Solutions = new SQM_solution*[bMax];
+  for (int i = 0;i < bMax;i++)
+    Solutions[i] = NULL;
+  loc = new int [bMax];
+  ObjVal = new double [bMax];
+  DivVal = new double [bMax];
+  Hash = new double [bMax];
+  NewSolutions = false;
+
+  Calls = 0;
+  Adds = 0;
+  DupCheck = 0;
+  FullDupCheck = 0;
+  FullDupFound = 0;
+}
+
+RefSet::~RefSet () {
+  delete [] Hash;
+  delete [] DivVal;
+  delete [] ObjVal;
+  delete [] loc;
+  for (int i = 0;i < bMax;i++)
+    if (Solutions[i] != NULL)
+      delete Solutions[i];
+  delete [] Solutions;
+}
+
+int RefSet::Add (SQM_solution &Sol) {
+  log_depth++;
+  string tag = log_tag("Reference_Set::Add: ");
+  logDebug(cout << tag << "Start" << endl);
+
+  int loc0;
+  Adds++;
+  if (bNow < bMax) {
+    bNow++;
+    loc[bNow-1] = bNow-1;
+  }
+  else {
+    /* To avoid segmentation default, DO NOT DELETE the sol, send to grabage */
+    garbage.push_back(Solutions[loc[bNow-1]]);
+  }
+  loc0 = loc[bNow-1];
+  Solutions[loc0] = &Sol;
+
+  if (NewRank < bNow)
+    for (int i = bNow - 1;i >= NewRank;i--)
+      loc[i] = loc[i-1];
+  loc[NewRank-1] = loc0;
+
+  ObjVal[loc0] = NewObjVal;
+  DivVal[loc0] = NewDivVal;
+  Hash[loc0] = NewHash;
+
+  logDebug(cout << tag << "Finish" << endl);
+  log_depth--;
+  return loc0;
+}
+
+bool RefSet::EqualSol (SQM_solution &Sol,int i) {
+  int iLoc = loc[i];
+  /* Objective value check */
+  if (ObjVal[iLoc] != NewObjVal)
+    return false;
+
+  /* Hash value check */
+  DupCheck++;
+  if (Hash[iLoc] != NewHash)
+    return false;
+
+  /* Full duplication check */
+  FullDupCheck++;
+  if (Sol != *Solutions[iLoc])
+    return false;
+  FullDupFound++;
+  return true;
+}
+
+int RefSet::TryAdd (SQM_solution &Sol,double value) {
+  log_depth++;
+  string tag = log_tag("RefSet_Dynamic::Update: ");
+  logDebug(cout << tag << "Start" << endl);
+
+  int loc0;
+  Calls++;
+  NewRank = 0;
+  NewObjVal = value;
+  /*NewDivVal = Evaluation(Sol); /* Diversification Method */
+  Val = NewObjVal;
+  logDebug(cout << tag << "bNow = " << bNow << endl);
+  if (bNow == 0) {
+    NewRank = 1;
+    logDebug(cout << tag << "Calculate Hash (bNow = 0)" << endl);
+    NewDivVal = -1;
+    NewHash = Sol.Hash();
+    loc0 = Add (Sol);
+    
+    logDebug(cout << tag << "Finish" << endl);
+    log_depth--;
+    return 0;
+  }
+  else {
+    if (Val >= worst() && is_full ()) {
+      logDebug(cout << tag << "Finish" << endl);
+      log_depth--;
+      return -1;
+    }
+    logDebug(cout << tag << "Calculate Hash (bNow > 0)" << endl);
+    NewHash = Sol.Hash();
+
+    if (Val < best()) {
+      NewRank = 1;
+    }
+    else {
+      for (int i = bNow-1;i >= 0; i--) {
+	if (EqualSol(Sol,i)) {
+	  logDebug(cout << tag << "Finish" << endl);
+	  log_depth--;
+	  return -1;
+	}
+	else if (value(i) < Val){
+	  NewRank = i+2;
+	  loc0 = Add (Sol);
+	  logDebug(cout << tag << "Finish" << endl);
+	  log_depth--;
+	  return NewRank;
+	}
+      }
+      NewRank = 1; /* This case is when the solution gives the same evaluation 
+		      as the best solution */
+    }
+    loc0 = Add (Sol);
+    LastChange[loc0] = NowTime;
+  }
+  logDebug(cout << tag << "Finish" << endl);
+  log_depth--;
+  return NewRank;
+}
+
+void RefSet::clean_garbage () {
+  logDebug(cout << "Clean garbage: " << garbage.size() << endl);
+  while (!garbage.empty()) {
+    delete garbage.back();
+    garbage.pop_back();
+  }
+}
+
+SQM_solution* RefSet::operator[] (int idx) {
+  if (idx < 0 || idx >= bNow) return NULL;
+  return Solutions[idx];
+}
+
+double RefSet::best () const {
+  return ObjVal[loc[0]];
+}
+
+double RefSet::worst () const {
+  return ObjVal[loc[bNow-1]];
+}
+
+bool RefSet::is_full () const {
+  return (bNow == bMax);
+}
+
 Reference_Set::Reference_Set (int Max) : bMax(Max) {
   bNow = 0;
 
@@ -40,55 +208,6 @@ void Reference_Set::Update (SolList *Sols) {
   delete Sols;
 }
 
-bool Reference_Set::EqualSol (SQM_solution &Sol,int i) {
-  int iLoc = location(i);
-  /* Objective value check */
-  if (E[iLoc] != E0)
-    return false;
-
-  /* Hash value check */
-  DupCheck++;
-  if (Hash[iLoc] != Hash0)
-    return false;
-
-  /* Full duplication check */
-  FullDupCheck++;
-  if (Sol != *Solutions[iLoc])
-    return false;
-  FullDupFound++;
-  return true;
-}
-
-int Reference_Set::Add (SQM_solution &Sol) {
-  log_depth++;
-  string tag = log_tag("Reference_Set::Add: ");
- 
-  logDebug(cout << tag << "Start" << endl);
-  int loc0;
-  Adds++;
-  if (bNow < bMax) {
-    bNow++;
-    loc[bNow-1] = bNow-1;
-  }
-  else {
-    /* To avoid segmentation default, DO NOT DELETE the sol, send to grabage */
-    garbage.push_back(Solutions[loc[bNow-1]]);
-  }
-  loc0 = loc[bNow-1];
-  if (NewRank < bNow)
-    for (int i = bNow - 1;i >= NewRank;i--)
-      loc[i] = loc[i-1];
-  loc[NewRank-1] = loc0;
-
-  Solutions[loc0] = &Sol;
-  Hash[loc0] = Hash0;
-  E[loc0] = E0;
-  /* LastChange[loc0] = NowTime; */
-  logDebug(cout << tag << "Finish" << endl);
-  log_depth--;
-  return loc0;
-}
-
 void Reference_Set::clean_garbage () {
   logDebug(cout << "Clean garbage: " << garbage.size() << endl);
   while (!garbage.empty()) {
@@ -97,7 +216,7 @@ void Reference_Set::clean_garbage () {
   }
 }
 
-RefSet::RefSet (int Max,ImprovementMethod ImprovementFunction,
+RefSet_Dynamic::RefSet_Dynamic (int Max,ImprovementMethod ImprovementFunction,
 		EvaluationMethod EvaluationFunction) : Reference_Set(Max) {
   LastChange = new int [Max];
   LastRunTime = new int [invalid_subset];
@@ -105,15 +224,15 @@ RefSet::RefSet (int Max,ImprovementMethod ImprovementFunction,
   Evaluation = EvaluationFunction;
 }
 
-RefSet::~RefSet () {
+RefSet_Dynamic::~RefSet_Dynamic () {
   clean_garbage();
   delete [] LastRunTime;
   delete [] LastChange;
 }
 
-bool RefSet::Update (SQM_solution &Sol) {
+bool RefSet_Dynamic::Update (SQM_solution &Sol) {
   log_depth++;
-  string tag = log_tag("RefSet::Update: ");
+  string tag = log_tag("RefSet_Dynamic::Update: ");
   logDebug(cout << tag << "Start" << endl);
   int loc0;
   Calls++;
@@ -169,14 +288,14 @@ bool RefSet::Update (SQM_solution &Sol) {
   return true;
 }
 
-void RefSet::Call_Improvement (SQM_solution &Sol) {
+void RefSet_Dynamic::Call_Improvement (SQM_solution &Sol) {
   Improvement(Sol);
 }
 
-void RefSet::SubsetControl () {
+void RefSet_Dynamic::SubsetControl () {
   /* Initialization */
   int iLoc;
-  logDebug(cout << "RefSet::SubsetControl: Start" << endl);
+  logDebug(cout << "RefSet_Dynamic::SubsetControl: Start" << endl);
   for (iLoc = 0;iLoc < get_elements();iLoc++)
     LastChange[iLoc] = 0;
   SubsetType = invalid_subset;
@@ -233,7 +352,7 @@ void RefSet::SubsetControl () {
   }
 }
 
-double RefSet::min_cost_pm (SQM_solution &Sol) {
+double RefSet_Dynamic::min_cost_pm (SQM_solution &Sol) {
   double cost,min_cost;
 
   min_cost = PR_perfect_matching_cost(*Sols.get_sol(0),Sol);
@@ -245,7 +364,7 @@ double RefSet::min_cost_pm (SQM_solution &Sol) {
   return min_cost;
 }
 
-void RefSet::algorithm_for_SubsetType1 () {
+void RefSet_Dynamic::algorithm_for_SubsetType1 () {
   int iLoc,jLoc;
   SQM_solution *X,*Y;
   SolList *Combined_Solutions;
@@ -297,7 +416,7 @@ void RefSet::algorithm_for_SubsetType1 () {
 }
 
 
-void RefSet::algorithm_for_SubsetType2 () {
+void RefSet_Dynamic::algorithm_for_SubsetType2 () {
   int loc1,iLoc,jLoc;
   list<SQM_solution*> X;
   logDebug(cout << "Start algorithm for SubsetType2" << endl);
@@ -371,7 +490,7 @@ void RefSet::algorithm_for_SubsetType2 () {
   }
 }
 
-void RefSet::algorithm_for_SubsetType3 () {
+void RefSet_Dynamic::algorithm_for_SubsetType3 () {
   int loc1,loc2,iLoc,jLoc;
   list<SQM_solution*> X;
   logDebug(cout << "Start algorithm for SubsetType3" << endl);
@@ -439,7 +558,7 @@ void RefSet::algorithm_for_SubsetType3 () {
   }
 }
 
-void RefSet::algorithm_for_SubsetType4 () {
+void RefSet_Dynamic::algorithm_for_SubsetType4 () {
   int iLoc;
   bool new_subset = false;
   list<SQM_solution*> X;

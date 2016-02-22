@@ -4,53 +4,52 @@
 #include <list>
 #include "SQM_Solution.h"
 
-enum Subset {two_element,   /* all 2-element subsets. */
-	     three_element, /* 3-element subsets derived from the 2-element 
-			       subsets by augmenting each 2-element subset to 
-			       include the best solution not in this subset */
-	     four_element,  /* 4-element subsets derived from the 3-element 
-			       subsets by augmenting each 3-element subset to
-			       include the best solution not in this subset */
-	     best_i,        /* the subsets consisting in the best i elements,
-			       for i = 5 to bNow */
-	     invalid_subset};
-Subset& operator++(Subset&);
-
-typedef double (*EvaluationMethod)(SQM_solution&);
-typedef void (*ImprovementMethod)(SQM_solution&);
 typedef std::list<SQM_solution*> SolList;
-extern SolList* (*Combine_Solutions)(SQM_solution&,SQM_solution&);
 
-class Reference_Set {
+class RefSet {
 private:
   int bMax;
   int bNow;
-  int Adds; /* Count the additions to Reference Set */
-  /* Count the Checks */
+  SQM_solution **Solutions;
+  int *loc;
+  double *ObjVal;
+  double *DivVal;
+  double *Hash;
+  SolList garbage;
+  bool NewSolutions;
+protected:
+  int Calls;
+  int Adds;
   int DupCheck;
   int FullDupCheck;
   int FullDupFound;
-  int *loc;
-  double *E,*Hash;
-  SolList garbage;
-protected:
+
   int NewRank;
-  int Calls;
-  double E0,Hash0;
-  SQM_solution **Solutions;
-  /* Pass evaluation and hash in E0 & Hash0 */
+  double NewObjVal;
+  double NewDivVal;
+  double NewHash;
+  /* Pass evaluation and hash in NewObjVal & NewHash */
   int Add(SQM_solution&);
   bool EqualSol(SQM_solution&,int);
-  ImprovementMethod Improvement;
-  EvaluationMethod Evaluation;
 public:
-  Reference_Set (int);
-  ~Reference_Set ();
-  virtual bool Update (SQM_solution&) = 0;
+  RefSet (int);
+  ~RefSet ();
+  int TryAdd (SQM_solution&,double);
+  void clean_garbage ();
+  SQM_solution* operator[](int) const;
+  double best () const;
+  double worst () const;
+  bool is_full () const;
+};
+
+typedef double (*EvaluationMethod)(SQM_solution&);
+typedef void (*ImprovementMethod)(SQM_solution&);
+extern SolList* (*Combine_Solutions)(SQM_solution&,SQM_solution&);
+class Reference_Set {
+public:
   void Update (SolList*);
   virtual void SubsetControl () = 0;
   virtual double min_cost_pm (SQM_solution&);
-  void clean_garbage ();
   bool it_is_full () {return bNow == bMax;};
   int get_Calls () const {return Calls;};
   int get_Adds () const {return Adds;};
@@ -68,12 +67,26 @@ public:
   double worst () const {return evaluation(get_elements()-1);};
 };
 
-class RefSet : public Reference_Set {
+enum Subset {two_element,   /* all 2-element subsets. */
+	     three_element, /* 3-element subsets derived from the 2-element 
+			       subsets by augmenting each 2-element subset to 
+			       include the best solution not in this subset */
+	     four_element,  /* 4-element subsets derived from the 3-element 
+			       subsets by augmenting each 3-element subset to
+			       include the best solution not in this subset */
+	     best_i,        /* the subsets consisting in the best i elements,
+			       for i = 5 to bNow */
+	     invalid_subset};
+Subset& operator++(Subset&);
+
+class RefSet_dynamic : public Reference_Set {
 private:
   void algorithm_for_SubsetType1 ();
   void algorithm_for_SubsetType2 ();
   void algorithm_for_SubsetType3 ();
   void algorithm_for_SubsetType4 ();
+  ImprovementMethod Improvement;
+  EvaluationMethod Evaluation;
 protected:
   int NowTime;
   Subset SubsetType;
@@ -84,8 +97,8 @@ protected:
   int *LocNew;
   int *LocOld;
 public:
-  RefSet (int,ImprovementMethod,EvaluationMethod);
-  ~RefSet ();
+  RefSet_dynamic (int,ImprovementMethod,EvaluationMethod);
+  ~RefSet_dynamic ();
   bool Update (SQM_solution&);
   void SubsetControl ();
   double min_cost_pm (SQM_Solution&);
