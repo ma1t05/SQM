@@ -51,6 +51,7 @@ int log_depth;
 std::ofstream Log_Simulation;
 
 /* RefSet extern variables */
+void (*Improvement_Method)(SQM_solution&);
 SolList* (*Combine_Solutions)(SQM_solution&,SQM_solution&);
 /* PathRelinking extern variables */
 int* (*matching_function)(SQM_solution&,SQM_solution&); /* function for match */
@@ -317,13 +318,13 @@ void Test_SQM_model(SQM_instance &Inst,int p,double v) {
 void Test_SQM_multistart(SQM_instance &Inst,int p,double v) {
   int N = 5000,step = 100;
   SQM_solution *Sol;
-  RefSet Top(10,SQM_heuristic,get_response_time);
+  RefSet Top(10);
 
   for (int i = step;i <= N;i+=step) {
     for (int j = 0;j < step;j++) {
       Sol = new SQM_solution (Inst,p);
       Sol->set_speed(v,BETA);
-      if (!Top.Update(*Sol)) delete Sol;
+      if (!Top.TryAdd(*Sol,Sol->get_response_time())) delete Sol;
     }
     Top.clean_garbage();
     cout << "The best solution at iteration " << i << " is: " << Top.best()
@@ -535,10 +536,11 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
   double rt,worst_rt;
   clock_t beginning,now;
   SQM_solution *X;
-  Reference_Set *elite_sols,*misc_sols;
+  RefSet *elite_sols,*misc_sols;
 
   /* Determine combination method */
   Combine_Solutions = Path_Relinking;
+  Improvement_Method = SQM_heuristic;
   /* Determine methods to use in Path_Relinking */
   /* PR_{perfect|random|workload}_matching */
   matching_function = PR_perfect_matching; 
@@ -546,12 +548,12 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
   order_function = PR_processing_order_nf;
 
   beginning = clock();
-  elite_sols = new RefSet (num_elite,SQM_heuristic,get_response_time);
+  elite_sols = new RefSet (num_elite);
   for (int r = 0;r < N;r++) {
     X = new SQM_solution(Inst,p);
     X->set_speed(v,BETA);
     /*SQM_heuristic(*X);*/
-    if (!elite_sols->Update(*X)) delete X;
+    if (!elite_sols->TryAdd(*X,X->get_response_time())) delete X;
   }
   elite_sols->clean_garbage();
 
@@ -559,8 +561,8 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
     now = clock();
     cout << "After " << (double)(now - beginning)/CLOCKS_PER_SEC << " seconds"
 	 << endl << "The best " << num_elite << " response times:" << endl;
-    for (int i = 0; i < elite_sols->get_elements();i++) 
-      cout << elite_sols->evaluation(i) << endl;
+    for (int i = 0; i < elite_sols->elements();i++) 
+      cout << elite_sols->Obj(i) << endl;
   }
 
   double best_multistart_rt = elite_sols->best();
@@ -568,19 +570,19 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
   cout << "Best multistart rt: " << best_multistart_rt << endl;
   do {
 
-    misc_sols = new RefSet(num_elite,SQM_heuristic,get_perfect_matching_cost);
+    misc_sols = new RefSet(num_elite);
     for (int r = 0;r < 5*num_elite;r++) {
       X = new SQM_solution(Inst,p);
       X->set_speed(v,BETA);
-      X->pm_cost = - elite_sols->min_cost_pm(*X);
-      if (!misc_sols->Update(*X)) delete X;
+      X->pm_cost = - min_cost_pm(*elite_sols,*X);
+      if (!misc_sols->TryAdd(*X,X->pm_cost)) delete X;
     }
 
-    for (int i = 0;i < misc_sols->get_elements();i++) {
-      X = misc_sols->get_sol(i);
+    for (int i = 0;i < misc_sols->elements();i++) {
+      X = (*misc_sols)[i];
       X = X->clone();
-      SQM_heuristic(*X);
-      if (!elite_sols->Update(*X)) delete X;
+      Improvement_Method(*X);
+      if (!elite_sols->TryAdd(*X,X->get_response_time())) delete X;
     }
     delete misc_sols;
     elite_sols->clean_garbage();
@@ -591,11 +593,13 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
        << "the best response time is: " << best_rt << endl
        << " with an % improvement of: " << improvement << endl;
   
-  elite_sols->SubsetControl();
+  Dynamic_SubsetControl *SC;
+  SC = new Dynamic_SubsetControl (*elite_sols);
   best_rt = elite_sols->best();
   improvement = 100*(best_multistart_rt - best_rt) / best_multistart_rt;
   cout << "The best response time is: " << best_rt << endl
        << " with an % improvement of: " << improvement << endl;
+  delete SC;
   delete elite_sols;
 }
 
