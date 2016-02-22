@@ -557,7 +557,7 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
   }
   elite_sols->clean_garbage();
 
-  if (LogInfo) {
+  if (LogDebug) {
     now = clock();
     cout << "After " << (double)(now - beginning)/CLOCKS_PER_SEC << " seconds"
 	 << endl << "The best " << num_elite << " response times:" << endl;
