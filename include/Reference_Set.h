@@ -81,7 +81,7 @@ private:
   int *LastChange;
   int iNew,jOld;
   int *LocNew,*LocOld;
-  void algorithm_for_SubsetType1 ();
+  void Generate_Subsets ();
   void Update(SolList*);
 public:
   Dynamic_SubsetControl (int,SolList&);

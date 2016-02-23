@@ -1,7 +1,7 @@
 
 #include "Reference_Set.h"
 #include "PathRelinking.h"
-
+#define UNAGGREGATED -1
 
 RefSet::RefSet (int Max) {
   bMax = Max;
@@ -106,13 +106,13 @@ int RefSet::TryAdd (SQM_solution &Sol,double value) {
     
     logDebug(cout << tag << "Finish" << endl);
     log_depth--;
-    return 1;
+    return loc0;
   }
   else {
     if (NewObjVal >= worst() && is_full ()) {
       logDebug(cout << tag << "Finish" << endl);
       log_depth--;
-      return 0;
+      return UNAGGREGATED;
     }
     logDebug(cout << tag << "Calculate Hash (bNow > 0)" << endl);
     NewHash = Sol.Hash();
@@ -125,25 +125,24 @@ int RefSet::TryAdd (SQM_solution &Sol,double value) {
 	if (EqualSol(Sol,i)) {
 	  logDebug(cout << tag << "Finish" << endl);
 	  log_depth--;
-	  return 0;
+	  return UNAGGREGATED;
 	}
 	else if (Obj(i) < NewObjVal){
 	  NewRank = i+2;
 	  loc0 = Add (Sol);
 	  logDebug(cout << tag << "Finish" << endl);
 	  log_depth--;
-	  return NewRank;
+	  return loc0;
 	}
       }
       NewRank = 1; /* This case is when the solution gives the same evaluation 
 		      as the best solution */
     }
     loc0 = Add (Sol);
-    /*LastChange[loc0] = NowTime;*/
   }
   logDebug(cout << tag << "Finish" << endl);
   log_depth--;
-  return NewRank;
+  return loc0;
 }
 
 void RefSet::clean_garbage () {
@@ -398,7 +397,7 @@ Dynamic_SubsetControl::Dynamic_SubsetControl (int size,SolList &P) {
 	     << 100 * iNew / rs->elements()
 	     << "% of new solutions" << endl);
 
-    algorithm_for_SubsetType1 ();
+    Generate_Subsets ();
 
     if (StopCondition > 0) {
       /* Actually no StopCondition while new solutions were found */
@@ -426,20 +425,32 @@ double min_cost_pm (RefSet &Sols,SQM_solution &Sol) {
   return min_cost;
 }
 
-void Dynamic_SubsetControl::algorithm_for_SubsetType1 () {
+void Dynamic_SubsetControl::Generate_Subsets () {
   int iLoc,jLoc;
   SQM_solution *X,*Y;
   SolList *Combined_Solutions;
   logDebug(cout << "Start algorithm for SubsetType1" << endl);
+  if (LogDebug) {
+    cout << "LocNew :";
+    for (int i = 0;i < iNew;i++)
+      cout << " " << LocNew[i];
+    cout << endl;
+    cout << "LocOlc :";
+    for (int j = 0;j < jOld;j++)
+      cout << " " << LocOld[j];
+    cout << endl;
+  }
   if (iNew > 1) 
     for (int i = 0;i < iNew;i++) {
       iLoc = LocNew[i];
       if (LastChange[iLoc] < NowTime) {
 	X = (*rs)[iLoc];
+	logDebug(cout << "Combine " << iLoc << " :");
 	for (int j = i+1;j < iNew;j++) {
 	  jLoc = LocNew[j];
 	  if (LastChange[jLoc] < NowTime) {
 	    Y = (*rs)[jLoc];
+	    logDebug(cout << " " << jLoc);
 	    /* Create C(X) and execute improvement method */
 	    Combined_Solutions = Combine_Solutions(*X,*Y);
 	    Update(Combined_Solutions);
@@ -450,6 +461,7 @@ void Dynamic_SubsetControl::algorithm_for_SubsetType1 () {
 	      break;
 	  }
 	}
+	logDebug(cout << endl);
 	rs->clean_garbage();
       }
     }
@@ -458,10 +470,12 @@ void Dynamic_SubsetControl::algorithm_for_SubsetType1 () {
       iLoc = LocNew[i];
       if (LastChange[iLoc] < NowTime) {
 	X = (*rs)[iLoc];
+	logDebug(cout << "Combine " << iLoc << " :");
 	for (int j = 0;j < jOld;j++) {
 	  jLoc = LocOld[j];
 	  if (LastChange[jLoc] < NowTime) {
 	    Y = (*rs)[jLoc];
+	    logDebug(cout << " " << jLoc);
 	    /* Create C(X) and execute improvement method */
 	    Combined_Solutions = Combine_Solutions(*X,*Y);
 	    Update(Combined_Solutions);
@@ -472,12 +486,14 @@ void Dynamic_SubsetControl::algorithm_for_SubsetType1 () {
 	      break;
 	  }
 	}
+	logDebug(cout << endl);
 	rs->clean_garbage();
       }
     }
 }
 
 void Dynamic_SubsetControl::Update (SolList *NewSols) {
+  int iLoc;
   SolList::iterator Z;
   SQM_solution *X;
   if (NewSols == NULL) return;
@@ -485,7 +501,11 @@ void Dynamic_SubsetControl::Update (SolList *NewSols) {
     X = NewSols->front();
     NewSols->pop_front();
     Improvement_Method(*X);
-    if (!rs->TryAdd(*X,X->get_response_time())) delete X;
+    iLoc = rs->TryAdd(*X,X->get_response_time());
+    if (iLoc == UNAGGREGATED)
+      delete X;
+    else
+      LastChange[iLoc] = NowTime;
   }
 }
 
