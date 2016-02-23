@@ -209,14 +209,17 @@ int RefSet::get_DupFound () const {
 }
 
 /*******************************************************************************
- * Static_SubsetControl
+ * SubsetControl
  ******************************************************************************/
+
 RefSet* SubsetControl::get_RefSet () {
   return rs;
 }
+
 /*******************************************************************************
  * Static_SC
  ******************************************************************************/
+
 Static_SC::Static_SC (int size,SolList &P) {
   SQM_solution *X;
   int iLoc;
@@ -225,8 +228,6 @@ Static_SC::Static_SC (int size,SolList &P) {
   pool = &P;
 
   LastChange = new int [size];
-  for (iLoc = 0;iLoc < size;iLoc++)
-    LastChange[iLoc] = 0;
   LocNew = new int [size];
   LocOld = new int [size];
   CurrentIter = 0;
@@ -240,10 +241,11 @@ Static_SC::Static_SC (int size,SolList &P) {
       X = pool->front();
       pool->pop_front();
       iLoc = rs->TryAdd(*X,X->get_response_time());
-      if (iLoc > 0)
+      if (iLoc != UNAGGREGATED)
 	LastChange[iLoc] = CurrentIter;
       else delete X;
-    } while (!rs->is_full());
+    }
+    rs->clean_garbage();
 
     /* Divide RefSet in New and Old Solutions */
     iNew = 0;
@@ -258,15 +260,18 @@ Static_SC::Static_SC (int size,SolList &P) {
 
     if (iNew == 0) break;
     Generate_Subsets ();
-    
-    
-    CurrentIter++;
-  } while (CurrentIter < MAX_ITER);
+  } while (++CurrentIter < MAX_ITER);
+
   if (CurrentIter == MAX_ITER)
     logInfo(cout << "Static_SC: Finish by MAX_ITER" << endl);
   else
-    logInfo(cout << "Static_SC: Finish by no new solutions" << endl);
+    logInfo (cout << "Static_SC: Finish by no new solutions at " << CurrentIter
+	     << " iterations"  << endl);
 
+}
+
+Static_SC::~Static_SC () { 
+  delete rs;
   delete [] LocNew;
   delete [] LocOld;
   delete [] LastChange;
