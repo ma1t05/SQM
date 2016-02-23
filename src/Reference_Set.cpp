@@ -27,6 +27,7 @@ RefSet::~RefSet () {
   delete [] Hash;
   delete [] DivVal;
   delete [] ObjVal;
+  clean_garbage ();
   delete [] loc;
   for (int i = 0;i < bMax;i++)
     if (Solutions[i] != NULL)
