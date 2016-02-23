@@ -10,6 +10,7 @@ using namespace std;
 #include "SQM_model.h"
 #include "SQM_GRASP.h"
 #include "PathRelinking.h"
+#include "Reference_Set.h"
 #include "Local_Search.h"
 
 /* Global Variables */

@@ -6,7 +6,7 @@ using namespace std;
 bool incompatible_solutions(SQM_solution&,SQM_solution&);
 double** PR_distances_matrix(SQM_solution&,SQM_solution&);
 
-list<SQM_solution*>* Path_Relinking (SQM_solution &X,SQM_solution &Y) {
+SolList* Path_Relinking (SQM_solution &X,SQM_solution &Y) {
   log_depth++;
   string tag = log_tag("Path_Relinking: ");
   logDebug(cout << tag << "Start" << endl);
@@ -27,11 +27,11 @@ list<SQM_solution*>* Path_Relinking (SQM_solution &X,SQM_solution &Y) {
   int *order = order_function(X,pm,Y);
 
   logDebug(cout << tag << "Create solutions" << endl);
-  list<SQM_solution*> *Solutions;
+  SolList *Solutions;
   int x,y,loc_x,loc_y;
   SQM_solution *Z;
 
-  Solutions = new list<SQM_solution*>;
+  Solutions = new SolList;
   logDebug(cout << tag << "Create list to store solutions" << endl);
   Z = &X;
   for (int step = 0;step < p - 1;step++) {
@@ -226,9 +226,9 @@ int* PR_processing_order_ff(SQM_solution &X,int *pm,SQM_solution &Y) {
   return order;
 }
 
-SQM_solution* SQM_best_solution(list<SQM_solution*>* Solutions) {
+SQM_solution* SQM_best_solution(SolList* Solutions) {
   SQM_solution *Best;
-  list<SQM_solution*>::iterator X;
+  SolList::iterator X;
 
   Best = NULL;
   for (X = Solutions->begin();X != Solutions->end();X++) 
@@ -238,9 +238,9 @@ SQM_solution* SQM_best_solution(list<SQM_solution*>* Solutions) {
   return Best;
 }
 
-SQM_solution* SQM_leave_only_the_best(list<SQM_solution*>* Solutions) {
+SQM_solution* SQM_leave_only_the_best(SolList* Solutions) {
   SQM_solution *Best;
-  list<SQM_solution*>::iterator X;
+  SolList::iterator X;
 
   Best = NULL;
   for (X = Solutions->begin();X != Solutions->end();X++) 
@@ -253,22 +253,9 @@ SQM_solution* SQM_leave_only_the_best(list<SQM_solution*>* Solutions) {
   return Best;
 }
 
-void SQM_delete_sols(list<SQM_solution*>* Solutions) {
-  list<SQM_solution*>::iterator X;
+void SQM_delete_sols(SolList* Solutions) {
+  SolList::iterator X;
   for (X = Solutions->begin();X != Solutions->end();X++) 
     delete *X;
   delete Solutions;
-}
-
-double SQM_min_cost_pm(RefSet &Sols,SQM_solution &Sol) {
-  double cost,min_cost;
-  int bNow = Sols.elements();
-
-  min_cost = PR_perfect_matching_cost(*Sols[0],Sol);
-  for (int i = 1;i < bNow;i++) {
-    cost = PR_perfect_matching_cost(*Sols[i],Sol);
-    if (min_cost > cost) min_cost = cost;
-  }
-
-  return min_cost;
 }
