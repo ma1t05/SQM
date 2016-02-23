@@ -377,6 +377,12 @@ Dynamic_SC::Dynamic_SC (int size,SolList &P) {
 
   } while (true);
   
+  /* Clean pool */
+  while (!pool->empty()) {
+    delete pool->front();
+    pool->pop_front();
+  }
+
   LocNew = new int [rs->elements()];
   LocOld = new int [rs->elements()];
   StopCondition = 0;
