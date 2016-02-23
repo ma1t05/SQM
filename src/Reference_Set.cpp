@@ -1,7 +1,7 @@
 
 #include "Reference_Set.h"
 #include "PathRelinking.h"
-
+#define UNAGGREGATED -1
 
 RefSet::RefSet (int Max) {
   bMax = Max;
@@ -27,6 +27,7 @@ RefSet::~RefSet () {
   delete [] Hash;
   delete [] DivVal;
   delete [] ObjVal;
+  clean_garbage ();
   delete [] loc;
   for (int i = 0;i < bMax;i++)
     if (Solutions[i] != NULL)
@@ -105,13 +106,13 @@ int RefSet::TryAdd (SQM_solution &Sol,double value) {
     
     logDebug(cout << tag << "Finish" << endl);
     log_depth--;
-    return 1;
+    return loc0;
   }
   else {
     if (NewObjVal >= worst() && is_full ()) {
       logDebug(cout << tag << "Finish" << endl);
       log_depth--;
-      return 0;
+      return UNAGGREGATED;
     }
     logDebug(cout << tag << "Calculate Hash (bNow > 0)" << endl);
     NewHash = Sol.Hash();
@@ -124,25 +125,24 @@ int RefSet::TryAdd (SQM_solution &Sol,double value) {
 	if (EqualSol(Sol,i)) {
 	  logDebug(cout << tag << "Finish" << endl);
 	  log_depth--;
-	  return 0;
+	  return UNAGGREGATED;
 	}
 	else if (Obj(i) < NewObjVal){
 	  NewRank = i+2;
 	  loc0 = Add (Sol);
 	  logDebug(cout << tag << "Finish" << endl);
 	  log_depth--;
-	  return NewRank;
+	  return loc0;
 	}
       }
       NewRank = 1; /* This case is when the solution gives the same evaluation 
 		      as the best solution */
     }
     loc0 = Add (Sol);
-    /*LastChange[loc0] = NowTime;*/
   }
   logDebug(cout << tag << "Finish" << endl);
   log_depth--;
-  return NewRank;
+  return loc0;
 }
 
 void RefSet::clean_garbage () {
@@ -209,61 +209,230 @@ int RefSet::get_DupFound () const {
 }
 
 /*******************************************************************************
- * Dynamic_SubsetControl
+ * SubsetControl
  ******************************************************************************/
 
-Dynamic_SubsetControl::Dynamic_SubsetControl (RefSet &EliteSols) {
+RefSet* SubsetControl::get_RefSet () {
+  return rs;
+}
+
+/*******************************************************************************
+ * Static_SC
+ ******************************************************************************/
+
+Static_SC::Static_SC (int size,SolList &P) {
+  SQM_solution *X;
+  int iLoc;
+
+  /* Pool list is sorted */
+  pool = &P;
+
+  LastChange = new int [size];
+  LocNew = new int [size];
+  LocOld = new int [size];
+  CurrentIter = 0;
+
+  rs = new RefSet (size);
+
+  do {
+
+    /* Transfer elements of the pool to the RefSet */
+    while (!pool->empty()) {
+      X = pool->front();
+      pool->pop_front();
+      iLoc = rs->TryAdd(*X,X->get_response_time());
+      if (iLoc != UNAGGREGATED)
+	LastChange[iLoc] = CurrentIter;
+      else delete X;
+    }
+    rs->clean_garbage();
+
+    /* Divide RefSet in New and Old Solutions */
+    iNew = 0;
+    jOld = 0;
+    for (int i = 0;i < size;i++) {
+      iLoc = rs->location(i);
+      if (LastChange[iLoc] >= CurrentIter)
+	LocNew[iNew++] = iLoc;
+      else
+	LocOld[jOld++] = iLoc;
+    }
+
+    if (iNew == 0) break;
+    Generate_Subsets ();
+  } while (++CurrentIter < MAX_ITER);
+
+  if (CurrentIter == MAX_ITER)
+    logInfo(cout << "Static_SC: Finish by MAX_ITER" << endl);
+  else
+    logInfo (cout << "Static_SC: Finish by no new solutions at " << CurrentIter
+	     << " iterations"  << endl);
+
+}
+
+Static_SC::~Static_SC () { 
+  delete rs;
+  delete [] LocNew;
+  delete [] LocOld;
+  delete [] LastChange;
+}
+
+void Static_SC::Generate_Subsets () {
+  int iLoc,jLoc;
+  SQM_solution *X,*Y;
+  SolList *Combined_Solutions;
+  logDebug(cout << "Start algorithm for Subsets" << endl);
+
+  if (iNew > 1) 
+    for (int i = 0;i < iNew;i++) {
+      iLoc = LocNew[i];
+      X = (*rs)[iLoc];
+      for (int j = i+1;j < iNew;j++) {
+	jLoc = LocNew[j];
+	Y = (*rs)[jLoc];
+	Combined_Solutions = Combine_Solutions(*X,*Y);
+	Update(Combined_Solutions);
+      }
+    }
+
+  if (jOld > 0)
+    for (int i = 0;i < iNew;i++) {
+      iLoc = LocNew[i];
+      X = (*rs)[iLoc];
+      for (int j = 0;j < jOld;j++) {
+	jLoc = LocOld[j];
+	Y = (*rs)[jLoc];
+	Combined_Solutions = Combine_Solutions(*X,*Y);
+	Update(Combined_Solutions);
+      }
+    }
+  
+}
+
+void Static_SC::Update (SolList *Sols) {
+  SQM_solution *X;
+  if (Sols == NULL) return;
+  while (!Sols->empty()) {
+    X = Sols->front();
+    Sols->pop_front();
+    Improvement_Method(*X);
+    if (X->get_response_time() < rs->worst())
+      pool->push_back(X);
+    else
+      delete X;
+  }
+  delete Sols;
+}
+
+/*******************************************************************************
+ * Dynamic_SC
+ ******************************************************************************/
+
+Dynamic_SC::Dynamic_SC (int size,SolList &P) {
+  logDebug(cout << "RefSet_Dynamic::Dynamic_SC: Start" << endl);
   /* Initialization */
   int iLoc;
-  logDebug(cout << "RefSet_Dynamic::Dynamic_SubsetControl: Start" << endl);
-  LastChange = new int [EliteSols.size ()];
-  for (iLoc = 0;iLoc < EliteSols.size();iLoc++)
+  SolList::iterator Z,it;
+  SQM_solution *X,*Div;
+  pool = &P;
+
+  rs = new RefSet (size);
+  CurrentIter = 0;
+  LastChange = new int [size];
+  for (iLoc = 0;iLoc < size;iLoc++)
     LastChange[iLoc] = 0;
-  NowTime = 0;
+
+  /* Insert quality solutions */
+  do {
+    X = pool->front();
+    pool->pop_front();
+    rs->TryAdd(*X,X->get_response_time());
+  } while (rs->elements() < size/2);
+ 
+  /*rs->drop_garbage();*/
+  
+  /* Insert diverse solutions */
+  /* Determine min cost of pm */
+  for (Z = pool->begin();Z != pool->end();Z++) {
+    X = *Z;
+    X->pm_cost = min_cost_pm(*rs,*X);
+  }
+  
+  do {
+    Div = pool->front();
+    it = pool->begin();
+    for (Z = pool->begin();Z != pool->end();Z++)
+      if (Div->pm_cost < (**Z).pm_cost) {
+	Div = *Z;
+	it = Z;
+      }
+    pool->erase(it);
+    rs->TryAdd(*Div,Div->get_response_time());
+
+    if (rs->is_full()) break;
+
+    /* Update Diversity value */
+    double min_cost;
+    for (Z = pool->begin();Z != pool->end();Z++) {
+      X = *Z;
+      min_cost = PR_perfect_matching_cost(*Div,*X);
+      if (min_cost < X->pm_cost)
+	X->pm_cost = min_cost;
+    }
+
+  } while (true);
+  
+  /* Clean pool */
+  while (!pool->empty()) {
+    delete pool->front();
+    pool->pop_front();
+  }
+
+  LocNew = new int [rs->elements()];
+  LocOld = new int [rs->elements()];
   StopCondition = 0;
-  LocNew = new int [EliteSols.elements()];
-  LocOld = new int [EliteSols.elements()];
   LastRunTime = 0;
   while (StopCondition == 0) {
 
     /*++SubsetType;*/
-    NowTime++;
+    CurrentIter++;
 
     iNew = 0;
     jOld = 0;
-    for (int i = 0;i < EliteSols.elements();i++) {
-      iLoc = EliteSols.location(i);
+    for (int i = 0;i < rs->elements();i++) {
+      iLoc = rs->location(i);
       if (LastChange[iLoc] >= LastRunTime)
 	LocNew[iNew++] = iLoc;
       else
 	LocOld[jOld++] = iLoc;
     }
 
-    if (iNew == 0) {
-      delete [] LocNew;
-      delete [] LocOld;
-      return;
-    }
-    logDebug(cout << "Continue Dynamic_SubsetControl with "
-	     << 100 * iNew / EliteSols.elements()
+    if (iNew == 0)
+      break;
+
+    logDebug(cout << "Continue Dynamic_SC with "
+	     << 100 * iNew / rs->elements()
 	     << "% of new solutions" << endl);
 
-    algorithm_for_SubsetType1 (EliteSols);
+    Generate_Subsets ();
 
     if (StopCondition > 0) {
       /* Actually no StopCondition while new solutions were found */
     }
-    LastRunTime = NowTime;
+    LastRunTime = CurrentIter;
   }
 }
 
-Dynamic_SubsetControl::~Dynamic_SubsetControl () {
+Dynamic_SC::~Dynamic_SC () {
+  delete [] LocOld;
+  delete [] LocNew;
   delete [] LastChange;
+  delete rs;
 }
 
 double min_cost_pm (RefSet &Sols,SQM_solution &Sol) {
   double cost,min_cost;
-
+  
   min_cost = PR_perfect_matching_cost(*Sols[0],Sol);
   for (int i = 1;i < Sols.elements();i++) {
     cost = PR_perfect_matching_cost(*Sols[i],Sol);
@@ -273,64 +442,90 @@ double min_cost_pm (RefSet &Sols,SQM_solution &Sol) {
   return min_cost;
 }
 
-void Dynamic_SubsetControl::algorithm_for_SubsetType1 (RefSet &Solutions) {
+void Dynamic_SC::Generate_Subsets () {
   int iLoc,jLoc;
   SQM_solution *X,*Y;
   SolList *Combined_Solutions;
   logDebug(cout << "Start algorithm for SubsetType1" << endl);
+  if (LogDebug) {
+    cout << "LocNew :";
+    for (int i = 0;i < iNew;i++)
+      cout << " " << LocNew[i];
+    cout << endl;
+    cout << "LocOlc :";
+    for (int j = 0;j < jOld;j++)
+      cout << " " << LocOld[j];
+    cout << endl;
+  }
   if (iNew > 1) 
     for (int i = 0;i < iNew;i++) {
       iLoc = LocNew[i];
-      if (LastChange[iLoc] < NowTime) {
-	X = Solutions[iLoc];
+      if (LastChange[iLoc] < CurrentIter) {
+	X = (*rs)[iLoc];
+	logDebug(cout << "Combine " << iLoc << " :");
 	for (int j = i+1;j < iNew;j++) {
 	  jLoc = LocNew[j];
-	  if (LastChange[jLoc] < NowTime) {
-	    Y = Solutions[jLoc];
+	  if (LastChange[jLoc] < CurrentIter) {
+	    Y = (*rs)[jLoc];
+	    logDebug(cout << " " << jLoc);
 	    /* Create C(X) and execute improvement method */
 	    Combined_Solutions = Combine_Solutions(*X,*Y);
-	    Update(Combined_Solutions,Solutions);
-	    /* Optional Check: if LastChange[iLoc] == NowTime, 
+	    Update(Combined_Solutions);
+	    /* Optional Check: if LastChange[iLoc] == CurrentIter, 
 	       then can jump to the end of "i loop" to pick up the next i,
 	       and generate fewer solutions. */
-	    if (LastChange[iLoc] == NowTime)
+	    if (LastChange[iLoc] == CurrentIter)
 	      break;
 	  }
 	}
-	Solutions.clean_garbage();
+	logDebug(cout << endl);
+	rs->clean_garbage();
       }
     }
   if (jOld > 0)
     for (int i = 0;i < iNew;i++) {
       iLoc = LocNew[i];
-      if (LastChange[iLoc] < NowTime) {
-	X = Solutions[iLoc];
+      if (LastChange[iLoc] < CurrentIter) {
+	X = (*rs)[iLoc];
+	logDebug(cout << "Combine " << iLoc << " :");
 	for (int j = 0;j < jOld;j++) {
 	  jLoc = LocOld[j];
-	  if (LastChange[jLoc] < NowTime) {
-	    Y = Solutions[jLoc];
+	  if (LastChange[jLoc] < CurrentIter) {
+	    Y = (*rs)[jLoc];
+	    logDebug(cout << " " << jLoc);
 	    /* Create C(X) and execute improvement method */
 	    Combined_Solutions = Combine_Solutions(*X,*Y);
-	    Update(Combined_Solutions,Solutions);
-	    /* Optional Check: if LastChange[iLoc] == NowTime, 
+	    Update(Combined_Solutions);
+	    /* Optional Check: if LastChange[iLoc] == CurrentIter, 
 	       then can jump to the end of "i loop" to pick up the next i,
 	       and generate fewer solutions. */
-	    if (LastChange[iLoc] == NowTime)
+	    if (LastChange[iLoc] == CurrentIter)
 	      break;
 	  }
 	}
-	Solutions.clean_garbage();
+	logDebug(cout << endl);
+	rs->clean_garbage();
       }
     }
 }
 
-void Dynamic_SubsetControl::Update (SolList *NewSols,RefSet &Sols) {
+void Dynamic_SC::Update (SolList *NewSols) {
+  int iLoc;
   SolList::iterator Z;
   SQM_solution *X;
+  if (NewSols == NULL) return;
   while (!NewSols->empty()) {
     X = NewSols->front();
     NewSols->pop_front();
     Improvement_Method(*X);
-    if (!Sols.TryAdd(*X,X->get_response_time())) delete X;
+    iLoc = rs->TryAdd(*X,X->get_response_time());
+    if (iLoc == UNAGGREGATED)
+      delete X;
+    else
+      LastChange[iLoc] = CurrentIter;
   }
+}
+
+bool compare_SQMSols(SQM_solution *first,SQM_solution *second) {
+  return (first->get_response_time() < second->get_response_time());
 }

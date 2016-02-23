@@ -2,16 +2,17 @@
 #ifndef _PATH_RELINKING_H
 #define _PATH_RELINKING_H
 
-#include "Reference_Set.h"
+#include <list>
 #include "PerfectMatching.h"
 #include "SQM_heuristic.h"
 
-list<SQM_solution*>* Path_Relinking (SQM_solution&,SQM_solution&);
-SQM_solution* SQM_best_solution(list<SQM_solution*>* Solutions);
-SQM_solution* SQM_leave_only_the_best(list<SQM_solution*>* Solutions);
-void SQM_delete_sols(list<SQM_solution*>* Solutions);
+typedef std::list<SQM_solution*> SolList;
+
+SolList* Path_Relinking (SQM_solution&,SQM_solution&);
+SQM_solution* SQM_best_solution(SolList* Solutions);
+SQM_solution* SQM_leave_only_the_best(SolList* Solutions);
+void SQM_delete_sols(SolList* Solutions);
 double PR_perfect_matching_cost(SQM_solution&,SQM_solution&);
-double SQM_min_cost_pm(RefSet&,SQM_solution&);
 
 enum matching_type {perfect_matching,workload_matching,random_matching,
 		    invalid_matching};

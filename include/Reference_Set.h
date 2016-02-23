@@ -1,10 +1,8 @@
 #ifndef _REFERENCE_SET_H
 #define _REFERENCE_SET_H 1
 
-#include <list>
 #include "SQM_Solution.h"
-
-typedef std::list<SQM_solution*> SolList;
+#include "PathRelinking.h"
 
 class RefSet {
 private:
@@ -56,29 +54,47 @@ extern void (*Improvement_Method)(SQM_solution&);
 extern SolList* (*Combine_Solutions)(SQM_solution&,SQM_solution&);
 double min_cost_pm (RefSet&,SQM_solution&);
 
-class Static_SubsetControl {
-private:
-  int Iter;
-  
+#define MAX_ITER 1000
+
+class SubsetControl {
+protected:
+  int CurrentIter;
+  RefSet *rs;
+  SolList *pool;
+  virtual void Generate_Subsets () = 0;
+  virtual void Update(SolList*) = 0;
 public:
-  Static_SubsetControl (RefSet&);
-  ~Static_SubsetControl ();
+  RefSet* get_RefSet ();
 };
 
-class Dynamic_SubsetControl {
+class Static_SC : public SubsetControl {
 private:
-  void algorithm_for_SubsetType1 (RefSet&);
-  void Update(SolList*,RefSet&);
+  int LastRunTime;
+  int *LastChange;
+  int iNew,jOld;
+  int *LocNew,*LocOld;
+  void Generate_Subsets ();
+  void Update(SolList*);
 public:
-  Dynamic_SubsetControl(RefSet&);
-  ~Dynamic_SubsetControl();
-  int NowTime;
+  Static_SC (int,SolList&);
+  ~Static_SC ();
+};
+
+class Dynamic_SC : public SubsetControl {
+private:
   int StopCondition;
   int LastRunTime;
   int *LastChange;
   int iNew,jOld;
   int *LocNew,*LocOld;
+  void Generate_Subsets ();
+  void Update(SolList*);
+public:
+  Dynamic_SC (int,SolList&);
+  ~Dynamic_SC ();
 };
+
+bool compare_SQMSols(SQM_solution*,SQM_solution*);
 
 #endif
 
