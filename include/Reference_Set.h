@@ -75,17 +75,20 @@ public:
 
 class Dynamic_SubsetControl {
 private:
-  void algorithm_for_SubsetType1 (RefSet&);
-  void Update(SolList*,RefSet&);
-public:
-  Dynamic_SubsetControl(RefSet&);
-  ~Dynamic_SubsetControl();
   int NowTime;
   int StopCondition;
   int LastRunTime;
+  RefSet *rs;
+  SolList *pool;
   int *LastChange;
   int iNew,jOld;
   int *LocNew,*LocOld;
+  void algorithm_for_SubsetType1 ();
+  void Update(SolList*);
+public:
+  Dynamic_SubsetControl (int,SolList&);
+  ~Dynamic_SubsetControl ();
+  RefSet* get_RefSet ();
 };
 
 #endif

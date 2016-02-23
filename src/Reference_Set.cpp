@@ -317,17 +317,63 @@ void Static_SubsetControl::Update (SolList *Sols) {
  * Dynamic_SubsetControl
  ******************************************************************************/
 
-Dynamic_SubsetControl::Dynamic_SubsetControl (RefSet &EliteSols) {
+Dynamic_SubsetControl::Dynamic_SubsetControl (int size,SolList &P) {
+  logDebug(cout << "RefSet_Dynamic::Dynamic_SubsetControl: Start" << endl);
   /* Initialization */
   int iLoc;
-  logDebug(cout << "RefSet_Dynamic::Dynamic_SubsetControl: Start" << endl);
-  LastChange = new int [EliteSols.size ()];
-  for (iLoc = 0;iLoc < EliteSols.size();iLoc++)
-    LastChange[iLoc] = 0;
+  SolList::iterator Z,it;
+  SQM_solution *X,*Div;
+  pool = &P;
+
+  rs = new RefSet (size);
   NowTime = 0;
+  LastChange = new int [size];
+  for (iLoc = 0;iLoc < size;iLoc++)
+    LastChange[iLoc] = 0;
+
+  /* Insert quality solutions */
+  do {
+    X = pool->front();
+    pool->pop_front();
+    rs->TryAdd(*X,X->get_response_time());
+  } while (rs->elements() < size/2);
+ 
+  /*rs->drop_garbage();*/
+  
+  /* Insert diverse solutions */
+  /* Determine min cost of pm */
+  for (Z = pool->begin();Z != pool->end();Z++) {
+    X = *Z;
+    X->pm_cost = min_cost_pm(*rs,*X);
+  }
+  
+  do {
+    Div = pool->front();
+    it = pool->begin();
+    for (Z = pool->begin();Z != pool->end();Z++)
+      if (Div->pm_cost < (**Z).pm_cost) {
+	Div = *Z;
+	it = Z;
+      }
+    pool->erase(it);
+    rs->TryAdd(*Div,Div->get_response_time());
+
+    if (rs->is_full()) break;
+
+    /* Update Diversity value */
+    double min_cost;
+    for (Z = pool->begin();Z != pool->end();Z++) {
+      X = *Z;
+      min_cost = PR_perfect_matching_cost(*Div,*X);
+      if (min_cost < X->pm_cost)
+	X->pm_cost = min_cost;
+    }
+
+  } while (true);
+  
+  LocNew = new int [rs->elements()];
+  LocOld = new int [rs->elements()];
   StopCondition = 0;
-  LocNew = new int [EliteSols.elements()];
-  LocOld = new int [EliteSols.elements()];
   LastRunTime = 0;
   while (StopCondition == 0) {
 
@@ -336,24 +382,22 @@ Dynamic_SubsetControl::Dynamic_SubsetControl (RefSet &EliteSols) {
 
     iNew = 0;
     jOld = 0;
-    for (int i = 0;i < EliteSols.elements();i++) {
-      iLoc = EliteSols.location(i);
+    for (int i = 0;i < rs->elements();i++) {
+      iLoc = rs->location(i);
       if (LastChange[iLoc] >= LastRunTime)
 	LocNew[iNew++] = iLoc;
       else
 	LocOld[jOld++] = iLoc;
     }
 
-    if (iNew == 0) {
-      delete [] LocNew;
-      delete [] LocOld;
-      return;
-    }
+    if (iNew == 0)
+      break;
+
     logDebug(cout << "Continue Dynamic_SubsetControl with "
-	     << 100 * iNew / EliteSols.elements()
+	     << 100 * iNew / rs->elements()
 	     << "% of new solutions" << endl);
 
-    algorithm_for_SubsetType1 (EliteSols);
+    algorithm_for_SubsetType1 ();
 
     if (StopCondition > 0) {
       /* Actually no StopCondition while new solutions were found */
@@ -363,12 +407,15 @@ Dynamic_SubsetControl::Dynamic_SubsetControl (RefSet &EliteSols) {
 }
 
 Dynamic_SubsetControl::~Dynamic_SubsetControl () {
+  delete [] LocOld;
+  delete [] LocNew;
   delete [] LastChange;
+  delete rs;
 }
 
 double min_cost_pm (RefSet &Sols,SQM_solution &Sol) {
   double cost,min_cost;
-
+  
   min_cost = PR_perfect_matching_cost(*Sols[0],Sol);
   for (int i = 1;i < Sols.elements();i++) {
     cost = PR_perfect_matching_cost(*Sols[i],Sol);
@@ -378,7 +425,7 @@ double min_cost_pm (RefSet &Sols,SQM_solution &Sol) {
   return min_cost;
 }
 
-void Dynamic_SubsetControl::algorithm_for_SubsetType1 (RefSet &Solutions) {
+void Dynamic_SubsetControl::algorithm_for_SubsetType1 () {
   int iLoc,jLoc;
   SQM_solution *X,*Y;
   SolList *Combined_Solutions;
@@ -387,14 +434,14 @@ void Dynamic_SubsetControl::algorithm_for_SubsetType1 (RefSet &Solutions) {
     for (int i = 0;i < iNew;i++) {
       iLoc = LocNew[i];
       if (LastChange[iLoc] < NowTime) {
-	X = Solutions[iLoc];
+	X = (*rs)[iLoc];
 	for (int j = i+1;j < iNew;j++) {
 	  jLoc = LocNew[j];
 	  if (LastChange[jLoc] < NowTime) {
-	    Y = Solutions[jLoc];
+	    Y = (*rs)[jLoc];
 	    /* Create C(X) and execute improvement method */
 	    Combined_Solutions = Combine_Solutions(*X,*Y);
-	    Update(Combined_Solutions,Solutions);
+	    Update(Combined_Solutions);
 	    /* Optional Check: if LastChange[iLoc] == NowTime, 
 	       then can jump to the end of "i loop" to pick up the next i,
 	       and generate fewer solutions. */
@@ -402,21 +449,21 @@ void Dynamic_SubsetControl::algorithm_for_SubsetType1 (RefSet &Solutions) {
 	      break;
 	  }
 	}
-	Solutions.clean_garbage();
+	rs->clean_garbage();
       }
     }
   if (jOld > 0)
     for (int i = 0;i < iNew;i++) {
       iLoc = LocNew[i];
       if (LastChange[iLoc] < NowTime) {
-	X = Solutions[iLoc];
+	X = (*rs)[iLoc];
 	for (int j = 0;j < jOld;j++) {
 	  jLoc = LocOld[j];
 	  if (LastChange[jLoc] < NowTime) {
-	    Y = Solutions[jLoc];
+	    Y = (*rs)[jLoc];
 	    /* Create C(X) and execute improvement method */
 	    Combined_Solutions = Combine_Solutions(*X,*Y);
-	    Update(Combined_Solutions,Solutions);
+	    Update(Combined_Solutions);
 	    /* Optional Check: if LastChange[iLoc] == NowTime, 
 	       then can jump to the end of "i loop" to pick up the next i,
 	       and generate fewer solutions. */
@@ -424,18 +471,23 @@ void Dynamic_SubsetControl::algorithm_for_SubsetType1 (RefSet &Solutions) {
 	      break;
 	  }
 	}
-	Solutions.clean_garbage();
+	rs->clean_garbage();
       }
     }
 }
 
-void Dynamic_SubsetControl::Update (SolList *NewSols,RefSet &Sols) {
+void Dynamic_SubsetControl::Update (SolList *NewSols) {
   SolList::iterator Z;
   SQM_solution *X;
+  if (NewSols == NULL) return;
   while (!NewSols->empty()) {
     X = NewSols->front();
     NewSols->pop_front();
     Improvement_Method(*X);
-    if (!Sols.TryAdd(*X,X->get_response_time())) delete X;
+    if (!rs->TryAdd(*X,X->get_response_time())) delete X;
   }
+}
+
+RefSet* Dynamic_SubsetControl::get_RefSet () {
+  return rs;
 }
