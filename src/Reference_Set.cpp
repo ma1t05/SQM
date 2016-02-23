@@ -211,7 +211,13 @@ int RefSet::get_DupFound () const {
 /*******************************************************************************
  * Static_SubsetControl
  ******************************************************************************/
-Static_SubsetControl::Static_SubsetControl (int size,SolList &P) {
+RefSet* SubsetControl::get_RefSet () {
+  return rs;
+}
+/*******************************************************************************
+ * Static_SC
+ ******************************************************************************/
+Static_SC::Static_SC (int size,SolList &P) {
   SQM_solution *X;
   int iLoc;
 
@@ -257,16 +263,16 @@ Static_SubsetControl::Static_SubsetControl (int size,SolList &P) {
     CurrentIter++;
   } while (CurrentIter < MAX_ITER);
   if (CurrentIter == MAX_ITER)
-    logInfo(cout << "Static_SubsetControl: Finish by MAX_ITER" << endl);
+    logInfo(cout << "Static_SC: Finish by MAX_ITER" << endl);
   else
-    logInfo(cout << "Static_SubsetControl: Finish by no new solutions" << endl);
+    logInfo(cout << "Static_SC: Finish by no new solutions" << endl);
 
   delete [] LocNew;
   delete [] LocOld;
   delete [] LastChange;
 }
 
-void Static_SubsetControl::Generate_Subsets () {
+void Static_SC::Generate_Subsets () {
   int iLoc,jLoc;
   SQM_solution *X,*Y;
   SolList *Combined_Solutions;
@@ -298,7 +304,7 @@ void Static_SubsetControl::Generate_Subsets () {
   
 }
 
-void Static_SubsetControl::Update (SolList *Sols) {
+void Static_SC::Update (SolList *Sols) {
   SQM_solution *X;
   if (Sols == NULL) return;
   while (!Sols->empty()) {
@@ -314,11 +320,11 @@ void Static_SubsetControl::Update (SolList *Sols) {
 }
 
 /*******************************************************************************
- * Dynamic_SubsetControl
+ * Dynamic_SC
  ******************************************************************************/
 
-Dynamic_SubsetControl::Dynamic_SubsetControl (int size,SolList &P) {
-  logDebug(cout << "RefSet_Dynamic::Dynamic_SubsetControl: Start" << endl);
+Dynamic_SC::Dynamic_SC (int size,SolList &P) {
+  logDebug(cout << "RefSet_Dynamic::Dynamic_SC: Start" << endl);
   /* Initialization */
   int iLoc;
   SolList::iterator Z,it;
@@ -326,7 +332,7 @@ Dynamic_SubsetControl::Dynamic_SubsetControl (int size,SolList &P) {
   pool = &P;
 
   rs = new RefSet (size);
-  NowTime = 0;
+  CurrentIter = 0;
   LastChange = new int [size];
   for (iLoc = 0;iLoc < size;iLoc++)
     LastChange[iLoc] = 0;
@@ -378,7 +384,7 @@ Dynamic_SubsetControl::Dynamic_SubsetControl (int size,SolList &P) {
   while (StopCondition == 0) {
 
     /*++SubsetType;*/
-    NowTime++;
+    CurrentIter++;
 
     iNew = 0;
     jOld = 0;
@@ -393,7 +399,7 @@ Dynamic_SubsetControl::Dynamic_SubsetControl (int size,SolList &P) {
     if (iNew == 0)
       break;
 
-    logDebug(cout << "Continue Dynamic_SubsetControl with "
+    logDebug(cout << "Continue Dynamic_SC with "
 	     << 100 * iNew / rs->elements()
 	     << "% of new solutions" << endl);
 
@@ -402,11 +408,11 @@ Dynamic_SubsetControl::Dynamic_SubsetControl (int size,SolList &P) {
     if (StopCondition > 0) {
       /* Actually no StopCondition while new solutions were found */
     }
-    LastRunTime = NowTime;
+    LastRunTime = CurrentIter;
   }
 }
 
-Dynamic_SubsetControl::~Dynamic_SubsetControl () {
+Dynamic_SC::~Dynamic_SC () {
   delete [] LocOld;
   delete [] LocNew;
   delete [] LastChange;
@@ -425,7 +431,7 @@ double min_cost_pm (RefSet &Sols,SQM_solution &Sol) {
   return min_cost;
 }
 
-void Dynamic_SubsetControl::Generate_Subsets () {
+void Dynamic_SC::Generate_Subsets () {
   int iLoc,jLoc;
   SQM_solution *X,*Y;
   SolList *Combined_Solutions;
@@ -443,21 +449,21 @@ void Dynamic_SubsetControl::Generate_Subsets () {
   if (iNew > 1) 
     for (int i = 0;i < iNew;i++) {
       iLoc = LocNew[i];
-      if (LastChange[iLoc] < NowTime) {
+      if (LastChange[iLoc] < CurrentIter) {
 	X = (*rs)[iLoc];
 	logDebug(cout << "Combine " << iLoc << " :");
 	for (int j = i+1;j < iNew;j++) {
 	  jLoc = LocNew[j];
-	  if (LastChange[jLoc] < NowTime) {
+	  if (LastChange[jLoc] < CurrentIter) {
 	    Y = (*rs)[jLoc];
 	    logDebug(cout << " " << jLoc);
 	    /* Create C(X) and execute improvement method */
 	    Combined_Solutions = Combine_Solutions(*X,*Y);
 	    Update(Combined_Solutions);
-	    /* Optional Check: if LastChange[iLoc] == NowTime, 
+	    /* Optional Check: if LastChange[iLoc] == CurrentIter, 
 	       then can jump to the end of "i loop" to pick up the next i,
 	       and generate fewer solutions. */
-	    if (LastChange[iLoc] == NowTime)
+	    if (LastChange[iLoc] == CurrentIter)
 	      break;
 	  }
 	}
@@ -468,21 +474,21 @@ void Dynamic_SubsetControl::Generate_Subsets () {
   if (jOld > 0)
     for (int i = 0;i < iNew;i++) {
       iLoc = LocNew[i];
-      if (LastChange[iLoc] < NowTime) {
+      if (LastChange[iLoc] < CurrentIter) {
 	X = (*rs)[iLoc];
 	logDebug(cout << "Combine " << iLoc << " :");
 	for (int j = 0;j < jOld;j++) {
 	  jLoc = LocOld[j];
-	  if (LastChange[jLoc] < NowTime) {
+	  if (LastChange[jLoc] < CurrentIter) {
 	    Y = (*rs)[jLoc];
 	    logDebug(cout << " " << jLoc);
 	    /* Create C(X) and execute improvement method */
 	    Combined_Solutions = Combine_Solutions(*X,*Y);
 	    Update(Combined_Solutions);
-	    /* Optional Check: if LastChange[iLoc] == NowTime, 
+	    /* Optional Check: if LastChange[iLoc] == CurrentIter, 
 	       then can jump to the end of "i loop" to pick up the next i,
 	       and generate fewer solutions. */
-	    if (LastChange[iLoc] == NowTime)
+	    if (LastChange[iLoc] == CurrentIter)
 	      break;
 	  }
 	}
@@ -492,7 +498,7 @@ void Dynamic_SubsetControl::Generate_Subsets () {
     }
 }
 
-void Dynamic_SubsetControl::Update (SolList *NewSols) {
+void Dynamic_SC::Update (SolList *NewSols) {
   int iLoc;
   SolList::iterator Z;
   SQM_solution *X;
@@ -505,12 +511,8 @@ void Dynamic_SubsetControl::Update (SolList *NewSols) {
     if (iLoc == UNAGGREGATED)
       delete X;
     else
-      LastChange[iLoc] = NowTime;
+      LastChange[iLoc] = CurrentIter;
   }
-}
-
-RefSet* Dynamic_SubsetControl::get_RefSet () {
-  return rs;
 }
 
 bool compare_SQMSols(SQM_solution *first,SQM_solution *second) {

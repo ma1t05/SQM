@@ -56,37 +56,42 @@ double min_cost_pm (RefSet&,SQM_solution&);
 
 #define MAX_ITER 1000
 
-class Static_SubsetControl {
-private:
+class SubsetControl {
+protected:
   int CurrentIter;
   RefSet *rs;
   SolList *pool;
-  int *LastChange;
-  int iNew,jOld;
-  int *LocNew,*LocOld;
-  void Generate_Subsets ();
-  void Update(SolList*);
+  virtual void Generate_Subsets () = 0;
+  virtual void Update(SolList*) = 0;
 public:
-  Static_SubsetControl (int,SolList&);
-  ~Static_SubsetControl ();
+  RefSet* get_RefSet ();
 };
 
-class Dynamic_SubsetControl {
+class Static_SC : public SubsetControl {
 private:
-  int NowTime;
-  int StopCondition;
   int LastRunTime;
-  RefSet *rs;
-  SolList *pool;
   int *LastChange;
   int iNew,jOld;
   int *LocNew,*LocOld;
   void Generate_Subsets ();
   void Update(SolList*);
 public:
-  Dynamic_SubsetControl (int,SolList&);
-  ~Dynamic_SubsetControl ();
-  RefSet* get_RefSet ();
+  Static_SC (int,SolList&);
+  ~Static_SC ();
+};
+
+class Dynamic_SC : public SubsetControl {
+private:
+  int StopCondition;
+  int LastRunTime;
+  int *LastChange;
+  int iNew,jOld;
+  int *LocNew,*LocOld;
+  void Generate_Subsets ();
+  void Update(SolList*);
+public:
+  Dynamic_SC (int,SolList&);
+  ~Dynamic_SC ();
 };
 
 bool compare_SQMSols(SQM_solution*,SQM_solution*);
