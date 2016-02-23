@@ -553,11 +553,11 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
   for (int r = 0;r < N;r++) {
     X = new SQM_solution(Inst,p);
     X->set_speed(v,BETA);
-    /*SQM_heuristic(*X);*/
+    Improvement_Method(*X);
     X->get_response_time();
     pool.push_back(X);
   }
-  /*pool.sort(compare_SQMSols);*/
+  pool.sort(compare_SQMSols);
 
   double best_multistart_rt = pool.front()->get_response_time();
   cout << "Best multistart rt: " << best_multistart_rt << endl;

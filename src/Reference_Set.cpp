@@ -492,3 +492,7 @@ void Dynamic_SubsetControl::Update (SolList *NewSols) {
 RefSet* Dynamic_SubsetControl::get_RefSet () {
   return rs;
 }
+
+bool compare_SQMSols(SQM_solution *first,SQM_solution *second) {
+  return (first->get_response_time() < second->get_response_time());
+}

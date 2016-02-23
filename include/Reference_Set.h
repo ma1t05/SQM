@@ -89,6 +89,8 @@ public:
   RefSet* get_RefSet ();
 };
 
+bool compare_SQMSols(SQM_solution*,SQM_solution*);
+
 #endif
 
 /* eof */
