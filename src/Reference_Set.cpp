@@ -2,6 +2,7 @@
 #include "Reference_Set.h"
 #include "PathRelinking.h"
 #define UNAGGREGATED -1
+#define INVALID_POSITION -1
 
 RefSet::RefSet (int Max) {
   bMax = Max;
@@ -151,6 +152,83 @@ void RefSet::clean_garbage () {
     delete garbage.back();
     garbage.pop_back();
   }
+}
+
+void RefSet::recover_garbage (SolList &pool) {
+  logDebug(cout << "Recover garbage: " << garbage.size() << endl);
+  while (!garbage.empty()) {
+    pool.push_front(garbage.back());
+    garbage.pop_back();
+  }
+}
+
+void RefSet::sort_by_diversity () {
+  double *Div;
+
+  /* Update DivVal */
+  Div = new double [bNow];
+  for (int i = 0;i < bNow;i++)
+    Div[i] = -Solutions[i]->pm_cost;
+
+  /* Sort by DivVal */
+  sort_dist(bNow,Div,loc);
+  delete [] Div;
+
+  for (int i = 0;i < bNow;i++)
+    ObjVal[i] = -Solutions[i]->pm_cost;
+
+}
+
+bool RefSet::is_not_in (SQM_solution& Sol) {
+  log_depth++;
+  string tag = log_tag("RefSet::is_not_in: ");
+
+  NewDivVal = Sol.pm_cost;
+  if (NewDivVal < worst()) {
+    logDebug(cout << tag << "Finish" << endl);
+    log_depth--;
+    return true;
+  }
+  logDebug(cout << tag << "Calculate Hash" << endl);
+  NewHash = Sol.Hash();
+
+  for (int i = bNow-1;i >= 0; i--)
+    if (EqualSol(Sol,i)) {
+      logDebug(cout << tag << "Finish" << endl);
+      log_depth--;
+      return false;
+    }
+  log_depth--;
+  return true;
+  
+}
+
+SQM_solution* RefSet::remove (int idx,int *LastChange) { 
+  int iLoc,lastLoc;
+  SQM_solution *Sol;
+  if (idx < 0 || idx >= bNow) return NULL;
+  iLoc = loc[idx];
+  lastLoc = bNow-1;
+  Sol = Solutions[iLoc];
+  if (iLoc != lastLoc) {
+    /* Move information from lastLoc to iLoc */
+    Solutions[iLoc] = Solutions[lastLoc];
+    ObjVal[iLoc] = ObjVal[lastLoc];
+    DivVal[iLoc] = DivVal[lastLoc];
+    Hash[iLoc] = Hash[lastLoc];
+    if (LastChange != NULL)
+      LastChange[iLoc] = LastChange[lastLoc];
+    Solutions[lastLoc] = NULL;
+    int i = 0;
+    while (loc[i] != lastLoc) i++;
+    loc[i] = iLoc;
+    bNow--;
+  }
+
+  for (int i = idx;i < bNow;i++)
+    loc[i] = loc[i+1];
+
+  return Sol;
 }
 
 SQM_solution* RefSet::operator[] (int idx) const {
@@ -524,6 +602,279 @@ void Dynamic_SC::Update (SolList *NewSols) {
     else
       LastChange[iLoc] = CurrentIter;
   }
+}
+
+/*******************************************************************************
+ * SubsetControl
+ ******************************************************************************/
+
+TwoTier_SC::TwoTier_SC (int B1,int B2,SolList &P) {
+  log_depth++;
+  string tag = log_tag("TwoTier_SC::constructor: ");
+  logInfo(cout << tag << "Start" << endl);
+
+  /* Initialization */
+  int iLoc;
+  SolList::iterator Z,it;
+  SQM_solution *X,*Div;
+  b1 = B1;
+  b2 = B2;
+  pool = &P;
+
+  logInfo(cout << tag << "Create RefSet with quality solutions" << endl);
+  rs = new RefSet (b1);
+  CurrentIter = 0;
+  LastChange = new int [b1+b2];
+  for (iLoc = 0;iLoc < b1+b2;iLoc++)
+    LastChange[iLoc] = 0;
+
+  /* Insert quality solutions */
+  do {
+    X = pool->front();
+    pool->pop_front();
+    rs->TryAdd(*X,X->get_response_time());
+  } while (rs->elements() < b1);
+  if (LogInfo) {
+    cout << "The best " << b1 << " response times" << endl;
+    for (int i = 0;i < b1;i++)
+      cout << (*rs)[i]->get_response_time() << endl;
+  }
+  
+  logInfo(cout << tag << "Create RefSet with diverity solutions" << endl);
+  /* Insert diverse solutions */
+  rs2 = new RefSet (b2);
+  Update_diversity ();
+  if (LogInfo) {
+    cout << "The " << b2 << " diverse values" << endl;
+    for (int i = 0;i < b2;i++)
+      cout << (*rs2)[i]->pm_cost << endl;
+  }
+
+  LocNew = new int [b1+b2];
+  LocOld = new int [b1+b2];
+  LastRunTime = 0;
+  while (true) {
+
+    /*++SubsetType;*/
+    CurrentIter++;
+
+    iNew = 0;
+    jOld = 0;
+    for (int i = 0;i < b1+b2;i++) {
+      iLoc = location(i);
+      if (LastChange[iLoc] >= LastRunTime)
+	LocNew[iNew++] = iLoc;
+      else
+	LocOld[jOld++] = iLoc;
+    }
+
+    if (iNew == 0)
+      break;
+
+    logInfo(cout << tag << "Continue TwoTier_SC with "
+	     << 100 * iNew / rs->elements()
+	     << "% of new solutions" << endl);
+
+    Generate_Subsets ();
+
+    LastRunTime = CurrentIter;
+  }
+  logInfo(cout << tag << "Finish" << endl);
+  log_depth--;
+}
+
+TwoTier_SC::~TwoTier_SC ( ) {
+  delete [] LocOld;
+  delete [] LocNew;
+  delete rs2;
+  delete [] LastChange;
+  delete rs;
+}
+
+void TwoTier_SC::Generate_Subsets () {
+  int iLoc,jLoc;
+  SQM_solution *X,*Y;
+  SolList *Combined_Solutions;
+
+  if (LogInfo) {
+    cout << "LocNew :";
+    for (int i = 0;i < iNew;i++)
+      cout << " " << LocNew[i];
+    cout << endl;
+    cout << "LocOlc :";
+    for (int j = 0;j < jOld;j++)
+      cout << " " << LocOld[j];
+    cout << endl;
+  }
+  
+  if (iNew > 1)
+    for (int i = 0;i < iNew;i++) {
+      iLoc = LocNew[i];
+      if (LastChange[iLoc] < CurrentIter) {
+	X = Solution(iLoc);
+	for (int j = i+1;j < iNew;j++) {
+	  jLoc = LocNew[j];
+	  if (LastChange[jLoc] < CurrentIter) {
+	    Y = Solution(jLoc);
+	    logInfo(cout << "Combine " << iLoc << " : " << jLoc << endl);
+	    cout << "with response times" << endl;
+	    cout << X->get_response_time() << endl
+		 << Y->get_response_time() << endl;
+	    /* Create C(X) and execute improvement method */
+	    Combined_Solutions = Combine_Solutions(*X,*Y);
+	    Update(Combined_Solutions);
+	    /* Optional Check: if LastChange[iLoc] == CurrentIter, 
+	       then can jump to the end of "i loop" to pick up the next i,
+	       and generate fewer solutions. */
+	    if (LastChange[iLoc] == CurrentIter)
+	      break;
+	  }
+	}
+	rs->recover_garbage(*pool); 
+	Update_diversity ();
+      }
+    }
+  if (jOld > 0)
+    for (int i = 0;i < iNew;i++) {
+      iLoc = LocNew[i];
+      if (LastChange[iLoc] < CurrentIter) {
+	X = Solution(iLoc);
+	for (int j = 0;j < jOld;j++) {
+	  jLoc = LocOld[j];
+	  if (LastChange[jLoc] < CurrentIter) {
+	    Y = Solution(jLoc);
+	    logInfo(cout << "Combine " << iLoc << " : " << jLoc << endl);
+	    /* Create C(X) and execute improvement method */
+	    Combined_Solutions = Combine_Solutions(*X,*Y);
+	    Update(Combined_Solutions);
+	    /* Optional Check: if LastChange[iLoc] == CurrentIter, 
+	       then can jump to the end of "i loop" to pick up the next i,
+	       and generate fewer solutions. */
+	    if (LastChange[iLoc] == CurrentIter)
+	      break;
+	  }
+	}
+	rs->recover_garbage(*pool);
+	Update_diversity ();
+      }
+    }
+}
+
+void TwoTier_SC::Update (SolList *NewSols) {
+  int iLoc;
+  SolList::iterator Z;
+  SQM_solution *X;
+
+  if (NewSols == NULL) return;
+  log_depth++;
+  string tag = log_tag("TwoTier_SC::Update: ");
+  logInfo(cout << tag << "Start" << endl);
+
+  while (!NewSols->empty()) {
+    X = NewSols->front();
+    NewSols->pop_front();
+    Improvement_Method(*X);
+    iLoc = rs->TryAdd(*X,X->get_response_time());
+    if (iLoc == UNAGGREGATED)
+      pool->push_front(X);
+    else
+      LastChange[iLoc] = CurrentIter;
+  }
+  delete NewSols;
+  logInfo(cout << tag << "Finish" << endl);
+  log_depth--;
+}
+
+int TwoTier_SC::location (int i) {
+  if (i < 0 || i >= b1+b2) return INVALID_POSITION;
+  if (i < b1)
+    return rs->location(i);
+  else 
+    return b1 + rs2->location(i-b1);
+}
+
+SQM_solution* TwoTier_SC::Solution (int iLoc) {
+  if (iLoc < 0 || iLoc >= b1+b2) {
+    cout << "Location " << iLoc << " out of range" << endl;
+    return NULL;
+  }
+  if (iLoc < b1) {
+    cout << "Solution in RefSet1 in location " << iLoc << endl;
+    return (*rs)[iLoc];
+  }
+  else {
+    cout << "Solution in RefSet2 in location " << iLoc << endl;
+    return (*rs2)[iLoc-b1];
+  }
+}
+
+void TwoTier_SC::Update_diversity () {
+  log_depth++;
+  string tag = log_tag("TwoTier_SC::Update_diversity: ");
+  logInfo(cout << tag << "Start" << endl);
+
+  int iLoc;
+  int adds;
+  SQM_solution *DivSol,*Sol;
+  SolList::iterator DivIt,Z;
+
+  /* Inser diverse Solution to pool */
+  for (int i = 0;i < b2;i++) {
+    Sol = (*rs2)[i];
+    if (Sol != NULL)
+      pool->push_front(Sol);
+  }
+
+  /* Update min cost of pm */
+  for (Z = pool->begin();Z != pool->end();Z++)
+    (**Z).pm_cost = min_cost_pm(*rs,**Z);
+
+  adds = 0;
+  do {
+    /* sort rs2 */
+    rs2->sort_by_diversity();
+
+    DivSol = pool->front();
+    DivIt = pool->begin();
+    for (Z = pool->begin();Z != pool->end();Z++)
+      if (DivSol->pm_cost < (**Z).pm_cost) {
+	DivSol = *Z;
+	DivIt = Z;
+      }
+    pool->erase(DivIt);
+
+    adds++;
+    if (rs2->is_not_in(*DivSol)) {
+      iLoc = rs2->TryAdd(*DivSol,-DivSol->pm_cost);
+      LastChange[b1+iLoc] = CurrentIter;
+      logDebug(cout << "Add diverse sol " << DivSol->pm_cost << " location " 
+	       << b1+iLoc << endl);
+    }
+      
+    if (adds == b2) break;
+
+    /* Update Diversity value */
+    double min_cost;
+    for (Z = pool->begin();Z != pool->end();Z++) {
+      Sol = *Z;
+      min_cost = PR_perfect_matching_cost(*DivSol,*Sol);
+      if (min_cost < Sol->pm_cost)
+	Sol->pm_cost = min_cost;
+    }
+
+  } while (!pool->empty());
+  SolList *tmp_list = new SolList;
+  rs->recover_garbage (*tmp_list); /* Double free or corruption */
+  delete tmp_list;
+
+  /* Optional: Clean pool */
+  while (!pool->empty()) {
+    delete pool->front();
+    pool->pop_front();
+  }
+  
+  logInfo(cout << tag << "Finish" << endl);
+  log_depth--;
 }
 
 bool compare_SQMSols(SQM_solution *first,SQM_solution *second) {

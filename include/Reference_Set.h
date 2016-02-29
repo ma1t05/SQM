@@ -34,6 +34,10 @@ public:
   ~RefSet ();
   int TryAdd (SQM_solution&,double);
   void clean_garbage ();
+  void recover_garbage (SolList&);
+  void sort_by_diversity ();
+  bool is_not_in(SQM_solution&);
+  SQM_solution* remove(int,int*);
   SQM_solution* operator[](int) const;
   double best () const;
   double worst () const;
@@ -95,6 +99,24 @@ public:
 };
 
 bool compare_SQMSols(SQM_solution*,SQM_solution*);
+
+class TwoTier_SC : public SubsetControl {
+private:
+  int b1,b2;
+  RefSet *rs2;
+  int LastRunTime;
+  int *LastChange;
+  int iNew,jOld;
+  int *LocNew,*LocOld;
+  void Generate_Subsets ();
+  void Update(SolList*);
+  int location(int);
+  SQM_solution* Solution(int);
+  void Update_diversity ();
+public:
+  TwoTier_SC (int,int,SolList&);
+  ~TwoTier_SC ();
+};
 
 #endif
 
