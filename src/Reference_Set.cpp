@@ -182,7 +182,8 @@ void RefSet::sort_by_diversity () {
 bool RefSet::is_not_in (SQM_solution& Sol) {
   log_depth++;
   string tag = log_tag("RefSet::is_not_in: ");
-
+  int iLoc;
+  
   NewDivVal = Sol.pm_cost;
   if (NewDivVal < worst()) {
     logDebug(cout << tag << "Finish" << endl);
@@ -192,11 +193,24 @@ bool RefSet::is_not_in (SQM_solution& Sol) {
   logDebug(cout << tag << "Calculate Hash" << endl);
   NewHash = Sol.Hash();
 
-  for (int i = bNow-1;i >= 0; i--)
-    if (EqualSol(Sol,i)) {
-      logDebug(cout << tag << "Finish" << endl);
+  for (int i = 0;i < bNow;i++) {
+    iLoc = loc[i];
+    if (&Sol == Solutions[iLoc]) {
+      logDebug(cout << tag << "Finish - Solution in RefSet at location " << i
+	      << endl);
       log_depth--;
       return false;
+    }
+  }
+
+  SolList::iterator Z;
+  for (Z = garbage.begin();Z != garbage.end();Z++)
+    if (&Sol == *Z) {
+      logDebug(cout << tag << "Solution was in garbage (size:" << garbage.size()
+	      << ") " << Sol.pm_cost << " : " << (**Z).pm_cost << endl);
+      garbage.erase(Z);
+      log_depth--;
+      return true;
     }
   log_depth--;
   return true;
@@ -809,6 +823,7 @@ SQM_solution* TwoTier_SC::Solution (int iLoc) {
 }
 
 void TwoTier_SC::Update_diversity () {
+  if (pool->empty()) return;
   log_depth++;
   string tag = log_tag("TwoTier_SC::Update_diversity: ");
   logInfo(cout << tag << "Start" << endl);
@@ -819,10 +834,12 @@ void TwoTier_SC::Update_diversity () {
   SolList::iterator DivIt,Z;
 
   /* Inser diverse Solution to pool */
-  for (int i = 0;i < b2;i++) {
-    Sol = (*rs2)[i];
-    if (Sol != NULL)
+  for (int i = b2;i > 0;i--) {
+    iLoc = rs2->location(i-1);
+    if (iLoc != -1) {
+      Sol = (*rs2)[iLoc];
       pool->push_front(Sol);
+    }
   }
 
   /* Update min cost of pm */
@@ -864,7 +881,7 @@ void TwoTier_SC::Update_diversity () {
 
   } while (!pool->empty());
   SolList *tmp_list = new SolList;
-  rs->recover_garbage (*tmp_list); /* Double free or corruption */
+  rs2->recover_garbage (*tmp_list); /* Double free or corruption */
   delete tmp_list;
 
   /* Optional: Clean pool */
