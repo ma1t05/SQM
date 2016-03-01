@@ -563,7 +563,7 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
   cout << "Best multistart rt: " << best_multistart_rt << endl;
 
   SubsetControl *SC;
-  SC = new Dynamic_SC (num_elite,pool);
+  SC = new TwoTier_SC (num_elite,num_elite,pool);
   elite_sols = SC->get_RefSet ();
   double best_rt = elite_sols->best();
   double improvement = 100*(best_multistart_rt - best_rt) / best_multistart_rt;
