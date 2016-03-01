@@ -186,7 +186,8 @@ bool RefSet::is_not_in (SQM_solution& Sol) {
   
   NewDivVal = Sol.pm_cost;
   if (NewDivVal < worst()) {
-    logDebug(cout << tag << "Finish" << endl);
+    logDebug(cout << tag << "Finish - Diversity value not enough " << NewDivVal
+	    << endl);
     log_depth--;
     return true;
   }
@@ -625,7 +626,7 @@ void Dynamic_SC::Update (SolList *NewSols) {
 TwoTier_SC::TwoTier_SC (int B1,int B2,SolList &P) {
   log_depth++;
   string tag = log_tag("TwoTier_SC::constructor: ");
-  logInfo(cout << tag << "Start" << endl);
+  logDebug(cout << tag << "Start" << endl);
 
   /* Initialization */
   int iLoc;
@@ -635,7 +636,7 @@ TwoTier_SC::TwoTier_SC (int B1,int B2,SolList &P) {
   b2 = B2;
   pool = &P;
 
-  logInfo(cout << tag << "Create RefSet with quality solutions" << endl);
+  logDebug(cout << tag << "Create RefSet with quality solutions" << endl);
   rs = new RefSet (b1);
   CurrentIter = 0;
   LastChange = new int [b1+b2];
@@ -648,17 +649,17 @@ TwoTier_SC::TwoTier_SC (int B1,int B2,SolList &P) {
     pool->pop_front();
     rs->TryAdd(*X,X->get_response_time());
   } while (rs->elements() < b1);
-  if (LogInfo) {
+  if (LogDebug) {
     cout << "The best " << b1 << " response times" << endl;
     for (int i = 0;i < b1;i++)
       cout << (*rs)[i]->get_response_time() << endl;
   }
   
-  logInfo(cout << tag << "Create RefSet with diverity solutions" << endl);
+  logDebug(cout << tag << "Create RefSet with diverity solutions" << endl);
   /* Insert diverse solutions */
   rs2 = new RefSet (b2);
   Update_diversity ();
-  if (LogInfo) {
+  if (LogDebug) {
     cout << "The " << b2 << " diverse values" << endl;
     for (int i = 0;i < b2;i++)
       cout << (*rs2)[i]->pm_cost << endl;
@@ -685,7 +686,7 @@ TwoTier_SC::TwoTier_SC (int B1,int B2,SolList &P) {
     if (iNew == 0)
       break;
 
-    logInfo(cout << tag << "Continue TwoTier_SC with "
+    logDebug(cout << tag << "Continue TwoTier_SC with "
 	     << 100 * iNew / rs->elements()
 	     << "% of new solutions" << endl);
 
@@ -693,7 +694,7 @@ TwoTier_SC::TwoTier_SC (int B1,int B2,SolList &P) {
 
     LastRunTime = CurrentIter;
   }
-  logInfo(cout << tag << "Finish" << endl);
+  logDebug(cout << tag << "Finish" << endl);
   log_depth--;
 }
 
@@ -710,7 +711,7 @@ void TwoTier_SC::Generate_Subsets () {
   SQM_solution *X,*Y;
   SolList *Combined_Solutions;
 
-  if (LogInfo) {
+  if (LogDebug) {
     cout << "LocNew :";
     for (int i = 0;i < iNew;i++)
       cout << " " << LocNew[i];
@@ -730,10 +731,7 @@ void TwoTier_SC::Generate_Subsets () {
 	  jLoc = LocNew[j];
 	  if (LastChange[jLoc] < CurrentIter) {
 	    Y = Solution(jLoc);
-	    logInfo(cout << "Combine " << iLoc << " : " << jLoc << endl);
-	    cout << "with response times" << endl;
-	    cout << X->get_response_time() << endl
-		 << Y->get_response_time() << endl;
+	    logDebug(cout << "Combine " << iLoc << " : " << jLoc << endl);
 	    /* Create C(X) and execute improvement method */
 	    Combined_Solutions = Combine_Solutions(*X,*Y);
 	    Update(Combined_Solutions);
@@ -757,7 +755,7 @@ void TwoTier_SC::Generate_Subsets () {
 	  jLoc = LocOld[j];
 	  if (LastChange[jLoc] < CurrentIter) {
 	    Y = Solution(jLoc);
-	    logInfo(cout << "Combine " << iLoc << " : " << jLoc << endl);
+	    logDebug(cout << "Combine " << iLoc << " : " << jLoc << endl);
 	    /* Create C(X) and execute improvement method */
 	    Combined_Solutions = Combine_Solutions(*X,*Y);
 	    Update(Combined_Solutions);
@@ -782,7 +780,7 @@ void TwoTier_SC::Update (SolList *NewSols) {
   if (NewSols == NULL) return;
   log_depth++;
   string tag = log_tag("TwoTier_SC::Update: ");
-  logInfo(cout << tag << "Start" << endl);
+  logDebug(cout << tag << "Start" << endl);
 
   while (!NewSols->empty()) {
     X = NewSols->front();
@@ -795,7 +793,7 @@ void TwoTier_SC::Update (SolList *NewSols) {
       LastChange[iLoc] = CurrentIter;
   }
   delete NewSols;
-  logInfo(cout << tag << "Finish" << endl);
+  logDebug(cout << tag << "Finish" << endl);
   log_depth--;
 }
 
@@ -808,31 +806,25 @@ int TwoTier_SC::location (int i) {
 }
 
 SQM_solution* TwoTier_SC::Solution (int iLoc) {
-  if (iLoc < 0 || iLoc >= b1+b2) {
-    cout << "Location " << iLoc << " out of range" << endl;
-    return NULL;
-  }
-  if (iLoc < b1) {
-    cout << "Solution in RefSet1 in location " << iLoc << endl;
+  if (iLoc < 0 || iLoc >= b1+b2) return NULL;
+  if (iLoc < b1)
     return (*rs)[iLoc];
-  }
-  else {
-    cout << "Solution in RefSet2 in location " << iLoc << endl;
+  else
     return (*rs2)[iLoc-b1];
-  }
 }
 
 void TwoTier_SC::Update_diversity () {
   if (pool->empty()) return;
   log_depth++;
   string tag = log_tag("TwoTier_SC::Update_diversity: ");
-  logInfo(cout << tag << "Start" << endl);
+  logDebug(cout << tag << "Start" << endl);
 
   int iLoc;
   int adds;
   SQM_solution *DivSol,*Sol;
   SolList::iterator DivIt,Z;
 
+  logDebug(cout << "pool size " << pool->size() << " + " << rs2->elements());
   /* Inser diverse Solution to pool */
   for (int i = b2;i > 0;i--) {
     iLoc = rs2->location(i-1);
@@ -841,7 +833,8 @@ void TwoTier_SC::Update_diversity () {
       pool->push_front(Sol);
     }
   }
-
+  logDebug(cout << " = " << pool->size() << endl);
+  
   /* Update min cost of pm */
   for (Z = pool->begin();Z != pool->end();Z++)
     (**Z).pm_cost = min_cost_pm(*rs,**Z);
@@ -850,6 +843,21 @@ void TwoTier_SC::Update_diversity () {
   do {
     /* sort rs2 */
     rs2->sort_by_diversity();
+    if (LogDebug) {
+      int iLoc;
+      cout << "The diverse values";
+      for (int i = 0;i < b2;i++)
+	cout << " " << rs2->location(i);
+      cout << endl;
+      for (int i = 0;i < b2;i++) {
+	if (i % 5 == 0) cout << endl << "[" << i+1 << "]";
+	iLoc = rs2->location(i);
+	if (iLoc != -1)
+	  cout << "\t" << (*rs2)[iLoc]->pm_cost;
+	else break;
+      }
+      cout << endl;
+    }
 
     DivSol = pool->front();
     DivIt = pool->begin();
@@ -882,15 +890,17 @@ void TwoTier_SC::Update_diversity () {
   } while (!pool->empty());
   SolList *tmp_list = new SolList;
   rs2->recover_garbage (*tmp_list); /* Double free or corruption */
+  logDebug(cout << tag << "Delete tmp_list" << endl);
   delete tmp_list;
 
   /* Optional: Clean pool */
+  logDebug(cout << tag << "Clean pool" << endl);
   while (!pool->empty()) {
     delete pool->front();
     pool->pop_front();
   }
   
-  logInfo(cout << tag << "Finish" << endl);
+  logDebug(cout << tag << "Finish" << endl);
   log_depth--;
 }
 
