@@ -880,3 +880,5 @@ void TwoTier_SC::Update_diversity () {
 bool compare_SQMSols(SQM_solution *first,SQM_solution *second) {
   return (first->get_response_time() < second->get_response_time());
 }
+
+void No_Improvement (SQM_solution &Sol) {};

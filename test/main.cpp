@@ -541,7 +541,7 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
 
   /* Determine combination method */
   Combine_Solutions = Path_Relinking;
-  Improvement_Method = SQM_heuristic;
+  Improvement_Method = No_Improvement;
   /* Determine methods to use in Path_Relinking */
   /* PR_{perfect|random|workload}_matching */
   matching_function = PR_perfect_matching; 

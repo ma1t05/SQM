@@ -118,6 +118,8 @@ public:
   ~TwoTier_SC ();
 };
 
+void No_Improvement (SQM_solution&);
+
 #endif
 
 /* eof */
