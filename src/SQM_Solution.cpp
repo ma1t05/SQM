@@ -201,8 +201,12 @@ double SQM_solution::Hash () const{
 
 double SQM_solution::get_response_time() {
   if (response_time == -1) {
+    clock_t beginning;
+    beginning = clock ();
     update_preferred_servers ();
     response_time = MST_response_time(Inst,p,Servers,a);
+    calls_to_grt++;
+    processing_time += clock () - beginning;
   }
   return response_time;
 }

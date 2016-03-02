@@ -22,6 +22,9 @@ double v;
 double lambda;
 double Mu_NT;
 
+long SQM_solution::calls_to_grt = 0;
+clock_t SQM_solution::processing_time = 0;
+
 void print_usage ();
 void process_command_line(int,char**);
 void read_config_file(string configFile);
@@ -533,13 +536,20 @@ void Test_SQM_random(SQM_instance &Inst,int p,double v) {
 }
 
 void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
-  int N = 500,num_elite = 20;
+  int N = 500,num_elite = 10;
   double rt,worst_rt;
   clock_t beginning,now;
+  double seconds;
   SQM_solution *X;
+  SubsetControl *SC;
   RefSet *elite_sols;
+  double best_multistart_rt,best_rt,improvement;
+  matching_type match;
+  order_type order;
 
   /* Determine combination method */
+  match = perfect_matching;
+  order = nearest_first;
   Combine_Solutions = Path_Relinking;
   Improvement_Method = No_Improvement;
   /* Determine methods to use in Path_Relinking */
@@ -548,6 +558,7 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
   /* PR_processing_order_{random|nf|ff} */
   order_function = PR_processing_order_nf;
 
+  /* Generate Pool */
   beginning = clock();
   SolList pool;
   for (int r = 0;r < N;r++) {
@@ -557,18 +568,50 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
     X->get_response_time();
     pool.push_back(X);
   }
-  pool.sort(compare_SQMSols);
+  now = clock();
+  seconds = (double)(now - beginning)/CLOCKS_PER_SEC;
+  cout << "Generate " << N << " solutions in " << seconds << " secs." << endl;
 
-  double best_multistart_rt = pool.front()->get_response_time();
+  beginning = clock();
+  pool.sort(compare_SQMSols);
+  now = clock();
+  seconds = (double)(now - beginning)/CLOCKS_PER_SEC;
+  cout << "Sort solutions in " << seconds << " secs." << endl;
+
+  best_multistart_rt = pool.front()->get_response_time();
   cout << "Best multistart rt: " << best_multistart_rt << endl;
 
-  SubsetControl *SC;
+  beginning = clock();
   SC = new TwoTier_SC (num_elite,num_elite,pool);
+  now = clock();
+  seconds = (double)(now - beginning)/CLOCKS_PER_SEC;
+
   elite_sols = SC->get_RefSet ();
-  double best_rt = elite_sols->best();
-  double improvement = 100*(best_multistart_rt - best_rt) / best_multistart_rt;
-  cout << "The best response time is: " << best_rt << endl
+  best_rt = elite_sols->best();
+  improvement = 100*(best_multistart_rt - best_rt) / best_multistart_rt;
+  cout << "After " << seconds << " seconds" << endl
+       << "the best response time is: " << best_rt << endl
        << " with an % improvement of: " << improvement << endl;
+
+  /* Write Results */
+  results.open("results_PathRelinking.csv",std::ofstream::app);
+  results
+    /* Instance */
+    << (*elite_sols)[0]
+    /* Path Relinking params */
+    << "Path_Relinking,"
+    << match << ","
+    << order << ","
+    /* Data Results */
+    << best_multistart_rt << ","
+    << best_rt << ","
+    << improvement << ","
+    << seconds << ","
+    << SQM_solution::get_calls_to_grt() << ","
+    << SQM_solution::get_processing_time()
+    << endl;
+  results.close();
+
   delete SC;
 }
 

@@ -259,3 +259,41 @@ void SQM_delete_sols(SolList* Solutions) {
     delete *X;
   delete Solutions;
 }
+
+std::ostream& operator<<(std::ostream &os,matching_type &match) {
+  switch (match) 
+    {
+    case perfect_matching:
+      os << "perfect";
+      break;
+    case workload_matching:
+      os << "workload";
+      break;
+    case random_matching:
+      os << "random";
+      break;
+    case invalid_matching:
+      os << "N/A";
+      break;
+    }
+  return os;
+}
+
+std::ostream& operator<<(std::ostream &os,order_type &order) {
+  switch (order)
+    {
+    case nearest_first:
+      os << "nearest_first";
+      break;
+    case farthest_first:
+      os << "farthest_first";
+      break;
+    case random_order:
+      os << "random";
+      break;
+    case invalid_order:
+      os << "N/A";
+      break;
+    }
+  return os;
+}

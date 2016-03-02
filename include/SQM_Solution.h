@@ -15,6 +15,8 @@ class SQM_solution {
   double response_time;
   double lambda;
   double Mu_NT;
+  static long calls_to_grt;
+  static clock_t processing_time;
  public:
   SQM_solution (SQM_instance&);
   SQM_solution (SQM_instance&,int);
@@ -49,6 +51,10 @@ class SQM_solution {
   bool operator>(SQM_solution&);
   bool operator==(SQM_solution&);
   bool operator!=(SQM_solution&);
+  static long get_calls_to_grt () {return calls_to_grt;};
+  static double get_processing_time () {
+    return double(processing_time)/CLOCKS_PER_SEC;
+  };
 };
 
 ostream& operator<<(ostream&,SQM_solution*);
