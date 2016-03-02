@@ -31,6 +31,9 @@ int* PR_processing_order_nf(SQM_solution&,int*,SQM_solution&);
 int* PR_processing_order_ff(SQM_solution&,int*,SQM_solution&);
 extern void (*Improvement_Method)(SQM_solution&);
 
+std::ostream& operator<<(std::ostream&,matching_type&);
+std::ostream& operator<<(std::ostream&,order_type&);
+
 #endif
 
 /* eof */
