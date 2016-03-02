@@ -10,17 +10,19 @@ using namespace std;
 #include "PathRelinking.h"
 #include "Local_Search.h"
 #include "Simulation.h"
+#include "gnuplot.h"
 
 /* log.h extern variables */
 std::ofstream LogFile;
 std::ofstream results;
 std::ofstream dat;
+int log_depth;
 /* Simulation.h exter variable */
 std::ofstream Log_Simulation;
 
 /* PathRelinking extern variables */
-int* (*matching_function)(SQM_solution*,SQM_solution*); /* function for match */
-int* (*order_function)(SQM_solution*,int*,SQM_solution*); /* function for proccess */
+int* (*matching_function)(SQM_solution&,SQM_solution&); /* function for match */
+int* (*order_function)(SQM_solution&,int*,SQM_solution&); /* function for proccess */
 
 /* Global extern variables read from config */
 int MINS_PER_BLOCK;
@@ -44,8 +46,9 @@ double lambda;
 double Mu_NT;
 
 void read_config_file(string configFile);
-void Test_MST(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
-void Test_exponential(SQM_instance *I,int p,double lambda,double Mu_NT,double v);
+void Test_MST(SQM_instance &I,int p,double v);
+void Test_exponential(SQM_instance &I,int p,double v);
+void Test_Path_Relinking(SQM_instance &I,int p,double v);
 
 int main(int argc,char *argv[]) {
   string filename;
@@ -68,8 +71,9 @@ int main(int argc,char *argv[]) {
   /* Open Log File */
   Log_Simulation.open("Simulation.log",std::ofstream::out);
   I = SQM_load_instance(filename,M_clients,N_sites);
-  //Test_exponential(I,p,lambda,Mu_NT,v);
-  Simulator(*I,p,v);
+  //Test_exponential(*I,p,v);
+  //Simulator(*I,p,v);
+  Test_Path_Relinking(*I,p,v);
   delete I;
   /* Log */ Log_Simulation.close();
 
@@ -100,12 +104,12 @@ void read_config_file(string configFile) {
   
 }
 
-void Test_MST(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
+void Test_MST(SQM_instance &I,int p,double v) {
   int loc;
   SQM_solution *X;
   double rt;
   cout << "Start: Test_MST" << endl;
-  X = new SQM_solution(*I,p);
+  X = new SQM_solution(I,p);
   X->set_speed(v,BETA);
   X->set_params(lambda,Mu_NT);
   for (int i = 0;i < p;i++) {
@@ -121,17 +125,17 @@ void Test_MST(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
   delete X;
 }
 
-void Test_exponential(SQM_instance *I,int p,double lambda,double Mu_NT,double v) {
+void Test_exponential(SQM_instance &I,int p,double v) {
   int m,*a;
   double demand;
   double lambda_j;
   double *times;
 
-  m = I->demand_points();
-  demand = I->total_demand();
+  m = I.demand_points();
+  demand = I.total_demand();
   times = new double [m];
   for (int j = 0;j < m;j++) {
-    lambda_j = lambda * I->get_demand(j) / demand;
+    lambda_j = lambda * I.get_demand(j) / demand;
     times[j] = exponential(lambda_j);
   }
   a = new int [m];
@@ -139,7 +143,7 @@ void Test_exponential(SQM_instance *I,int p,double lambda,double Mu_NT,double v)
 
   cout << "Site\tRate\t\tTime" << endl;
   for (int j = 0;j < m;j++) {
-    lambda_j = lambda * I->get_demand(j) / demand;
+    lambda_j = lambda * I.get_demand(j) / demand;
     cout << setfill('0') << setw(3) << a[j] << "\t" 
 	 << setfill(' ')
 	 << setw(10) << lambda_j << "\t" 
@@ -149,4 +153,30 @@ void Test_exponential(SQM_instance *I,int p,double lambda,double Mu_NT,double v)
   delete [] a;
   delete [] times;
 
+}
+
+void Test_Path_Relinking(SQM_instance &I,int p,double v) {
+  SQM_solution *X,*Y;
+  int *match,*order;
+  X = new SQM_solution(I,p);
+  Y = new SQM_solution(I,p);
+  match = PR_perfect_matching(*X,*Y);
+  order = PR_processing_order_nf(*X,match,*Y);
+  gnuplot_Path_Relinking(*X,match,*Y,"step_00");
+  for (int step = 0;step < p - 1;step++) {
+    int x = order[step];
+    int y = match[x];
+    int loc_x = X->get_server_location(x);
+    int loc_y = Y->get_server_location(y);
+    if (loc_x != loc_y) {
+      X->set_server_location(x,loc_y);
+      char step_file[8];
+      sprintf(step_file,"step_%02d",step);
+      gnuplot_Path_Relinking(*X,match,*Y,string(step_file));
+    }
+  }
+  delete [] order;
+  delete [] match;
+  delete Y;
+  delete X;
 }

@@ -201,8 +201,12 @@ double SQM_solution::Hash () const{
 
 double SQM_solution::get_response_time() {
   if (response_time == -1) {
+    clock_t beginning;
+    beginning = clock ();
     update_preferred_servers ();
     response_time = MST_response_time(Inst,p,Servers,a);
+    calls_to_grt++;
+    processing_time += clock () - beginning;
   }
   return response_time;
 }
@@ -257,6 +261,9 @@ bool SQM_solution::operator==(SQM_solution& X) {
   return they_are_equal;
 }
 
+bool SQM_solution::operator!=(SQM_solution& X) {
+  return !(*this == X);
+}
 ostream& operator<<(ostream& os, SQM_solution *X) {
   SQM_instance *I = X->get_instance();
   int m = I->demand_points();

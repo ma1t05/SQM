@@ -178,7 +178,7 @@ void Simulator(SQM_instance &Inst,int p,double v) {
 
   X = new SQM_solution(Inst,p);
   X->set_speed(v,BETA);
-  SQM_heuristic(X);
+  SQM_heuristic(*X);
   lambda = X->get_arrival_rate ();
 
   state.Sol = X;
