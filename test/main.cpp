@@ -22,6 +22,9 @@ double v;
 double lambda;
 double Mu_NT;
 
+long SQM_solution::calls_to_grt = 0;
+double SQM_solution::processing_time = 0.0;
+
 void print_usage ();
 void process_command_line(int,char**);
 void read_config_file(string configFile);
