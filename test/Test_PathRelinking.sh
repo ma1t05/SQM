@@ -18,9 +18,9 @@ for M in {50,100,150}; do
     for N in {30,50,75}; do
 	for p in {7,10,15,20}; do
 	    for i in {01..05}; do
-		prefix="Test-$M-$N-$p-$i"
+		prefix="Test_$M_$N_$p_$i"
 		options="-f$prefix -M$M -N$N -p$p -k$k -l$l -m$m -s$s"
-		$SQM "$options --superbrief Path_Relinking"
+		$SQM $options --superbrief Path_Relinking
 	    done
 	done
     done
