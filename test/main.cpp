@@ -616,55 +616,84 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
 }
 
 void Test_SQM_Local_Search(SQM_instance &Inst,int p,double v) {
-  int N = 500;
-  SQM_solution *Best,*X,*Y;
-  double rt,h_rt,h_ls_rt,ls_rt,ls_h_rt;
+  int iLoc;
+  int top_sols = 10;
+  int N = 500, step = 100;
+  SQM_solution *Best,*Sol,*X,*Y;
+  double rt,bh_rt,bh_ls_rt,ls_rt,ls_bh_rt;
+  RefSet Top(top_sols);
 
   logInfo(cout << "Test Local_Search: Start" << endl);
 
-  Best = new SQM_solution(Inst,p);
-  Best->set_speed(v,BETA);
-
-  for (int r = 0;r < N;r++) {
-    X = new SQM_solution(Inst,p);
-    X->set_speed(v,BETA);
-    if (Best > X) {
-      delete Best;
-      Best = X;
+  for (int r = step;r <= N;r+=step) {
+    for (int i = 0;i < step;i++) {
+      Sol = new SQM_solution(Inst,p);
+      Sol->set_speed(v,BETA);
+      iLoc = Top.TryAdd(*Sol,Sol->get_response_time());
+      if (iLoc < 0) delete Sol;
     }
-    else delete X;
+    logInfo(cout << "Clean garbage" << endl);
+    Top.clean_garbage();
   }
-  X = Best;
-  Y = X->clone();
-  rt = Best->get_response_time();
+  logInfo(cout << "Ends multistart" << endl);
 
-  SQM_heuristic(*Y);
-  h_rt = Y->get_response_time();
-  Local_Search(*Y);
-  h_ls_rt = Y->get_response_time();
+  rt = bh_rt = bh_ls_rt = ls_rt = ls_bh_rt = 0;
+  for (int i = 0;i < top_sols;i++) {
+    iLoc = Top.location(i);
+    Sol = Top[iLoc];
+    X = Sol->clone();
+    Y = Sol->clone();
 
-  Local_Search(*X);
-  ls_rt = X->get_response_time();
-  SQM_heuristic(*X);	
-  ls_h_rt = X->get_response_time();
+    rt += Sol->get_response_time();
+
+    SQM_heuristic(*Y);
+    bh_rt += Y->get_response_time();
+    Local_Search(*Y);
+    bh_ls_rt += Y->get_response_time();
+
+    Local_Search(*X);
+    ls_rt += X->get_response_time();
+    SQM_heuristic(*X);	
+    ls_bh_rt += X->get_response_time();
+
+    delete X;
+    delete Y;
+  }
     
   results.open("results_LocalSearch.csv",std::ofstream::app);
-  results << X
-	  << rt << "," << h_rt << "," << h_ls_rt << ","
-	  << 100.0*(rt-h_rt)/rt << "," << 100.0*(h_rt-h_ls_rt)/rt  << ","
-	  << ls_rt << "," << ls_h_rt << ","
-	  << 100.0*(rt-ls_rt)/rt << ","  << 100.0*(ls_rt-ls_h_rt)/rt << endl;
+  results 
+    /* Instance */
+    << X
+    /* Best multistart */
+    << rt/top_sols << ","
+    /* Berman Heuristic + Local Search */
+    << bh_rt/top_sols << ","
+    << bh_ls_rt/top_sols << ","
+    /* Local Search + Berman Heuristic */
+    << ls_rt/top_sols << ","
+    << ls_bh_rt << ","
+    /* Improvement */
+    << 100.0*(rt-bh_ls_rt)/rt << ","     /* BH+LS */
+    << 100.0*(rt-bh_rt)/rt << ","        /* BH */
+    << 100.0*(bh_rt-bh_ls_rt)/rt  << "," /* +LS */
+    << 100.0*(rt-ls_bh_rt)/rt            /* LS+BH */
+    << 100.0*(rt-ls_rt)/rt << ","        /* LS */
+    << 100.0*(ls_rt-ls_bh_rt)/rt         /* +BH */
+    << endl;
   results.close();
-  delete X;
-  delete Y;
 
   logInfo
     (cout 
      << "       Method: " << "Response Time\t" << "% Improvement" << endl
-     << "response time: " << rt << endl
-     << "    heuristic: " << h_rt << "\t" << 100.0*(rt-h_rt)/rt << endl
-     << "+local search: " << ls_rt << "\t+" << 100.0*(h_rt-ls_rt)/rt << endl
-     << " local search: " << ls_rt << "\t" << 100.0*(rt-ls_rt)/rt << endl
-     << "   +heuristic: " << h_rt << "\t+" << 100.0*(ls_rt-h_rt)/rt << endl);
+     << "response time: " << rt/top_sols << endl
+     << "    heuristic: " << bh_rt/top_sols << "\t" << 100.0*(rt-bh_rt)/rt
+     << endl
+     << "+local search: " << ls_rt/top_sols << "\t+" << 100.0*(bh_rt-ls_rt)/rt
+     << endl
+     << " local search: " << ls_rt/top_sols << "\t" << 100.0*(rt-ls_rt)/rt
+     << endl
+     << "   +heuristic: " << bh_rt/top_sols << "\t+" << 100.0*(ls_rt-bh_rt)/rt
+     << endl
+     );
   logInfo(cout << "Test Local_Search: Finish" << endl);
 }
