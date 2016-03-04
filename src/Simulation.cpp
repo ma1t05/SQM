@@ -2,7 +2,6 @@
 #include <iomanip>
 #include <cmath>
 #include "Simulation.h"
-#include "log.h"
 
 void print_time(double current_time);
 void insert_event(list_events&,event&);
@@ -178,7 +177,7 @@ void Simulator(SQM_instance &Inst,int p,double v) {
 
   X = new SQM_solution(Inst,p);
   X->set_speed(v,BETA);
-  SQM_heuristic(*X);
+  Improvement_Method(*X);
   lambda = X->get_arrival_rate ();
 
   state.Sol = X;
