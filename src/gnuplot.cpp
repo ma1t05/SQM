@@ -154,20 +154,23 @@ void plot_solution_allocation(SQM_solution *X,double **f,string output,
 }
 
 void gnuplot_sets(FILE *gnuPipe) {
-  fprintf(gnuPipe,"set term jpeg\n");
-  /*fprintf(gnuPipe,"set key outside\n");*/
-  fprintf(gnuPipe,"set grid ytics lt 0 lw 1 lc rgb '#bbbbbb'\n");
-  fprintf(gnuPipe,"set grid xtics lt 0 lw 1 lc rgb '#bbbbbb'\n");
-  fprintf(gnuPipe,"set grid\n");
+  fprintf(gnuPipe,"set term svg\n");
+  fprintf(gnuPipe,"set key outside\n");
+  // fprintf(gnuPipe,"set grid ytics lt 0 lw 1 lc rgb '#bbbbbb'\n");
+  // fprintf(gnuPipe,"set grid xtics lt 0 lw 1 lc rgb '#bbbbbb'\n");
+  // fprintf(gnuPipe,"set grid\n");
+  // fprintf(gnuPipe,"set xrange [%d:%d]\n",floor(MIN_RANGE_X-25),floor(MAX_RANGE_X+25));
+  // fprintf(gnuPipe,"set yrange [%d:%d]\n",floor(MIN_RANGE_Y-25),floor(MAX_RANGE_Y+25));
+  fprintf(gnuPipe,"set style fill solid 1.0 border -1\n");
 }
 
 void gnuplot_unsets(FILE *gnuPipe) {
   fprintf(gnuPipe,"unset key\n");
   fprintf(gnuPipe,"unset border\n");
   fprintf(gnuPipe,"unset yzeroaxis\n");
-  /*fprintf(gnuPipe,"unset xtics\n");
+  fprintf(gnuPipe,"unset xtics\n");
   fprintf(gnuPipe,"unset ytics\n");
-  fprintf(gnuPipe,"unset ztics\n");*/
+  fprintf(gnuPipe,"unset ztics\n");
 }
 
 void gnuplot_set_arrow_styles(FILE *gnuPipe) {
@@ -262,7 +265,7 @@ void gnuplot_solution(SQM_solution *X,int sub) {
 void gnuplot_Path_Relinking
 (SQM_solution &A,int *match,SQM_solution &B,string filename) {
   FILE *gnuPipe;
-  fstream centersfile,edgesfile;
+  fstream demandfile,centersfile,edgesfile;
   char demand_output[32],facility_output[32],edges_output[32],
     centersA_output[32],centersB_output[32];
   int p = A.get_servers();
@@ -270,10 +273,26 @@ void gnuplot_Path_Relinking
   int m = I->demand_points();
   int n = I->potential_sites();
   int key;
-  
+  int edges;
+  int **a;
+  bool *demand_set;
+  string colors[9] = {"red","green","blue","magenta","light-blue","yellow",
+		       "brown","orange","gray"};
+
   key = rand();
-  sprintf(demand_output,"Tmp_demand_%d.dat",key);
-  gnuplot_write_points_file(demand_output,I->demand(0),m);
+  a = A.preferred_servers ();
+  demand_set = new bool [p];
+  for (int i = 0;i < p;i++) {
+    demand_set[i] = false;
+    sprintf(demand_output,"Tmp_demand_%d_%d.dat",i+1,key);
+    demandfile.open(demand_output,fstream::out);
+    for (int k = 0;k < m;k++)
+      if (a[k][0] == i) {
+	demandfile << I->demand(k)->x << " " << I->demand(k)->y << endl;
+	demand_set[i] = true;
+      }
+    demandfile.close();
+  }
 
   sprintf(facility_output,"Tmp_facility_%d.dat",key);
   gnuplot_write_points_file(facility_output,I->site(0),n);
@@ -307,41 +326,54 @@ void gnuplot_Path_Relinking
   
   sprintf(edges_output,"Tmp_edges_%d.dat",key);
   edgesfile.open(edges_output,fstream::out);
+  edges = 0;
   for (int i = 0;i < p;i++) {
     int loc_a = A.get_server_location(i);
     int loc_b = B.get_server_location(match[i]);
-    if (loc_a != loc_b)
+    if (loc_a != loc_b) {
       edgesfile
 	<<  I->site(loc_a)->x << " " << I->site(loc_a)->y << " "
 	<<  I->site(loc_b)->x << " " << I->site(loc_b)->y
 	<< endl;
+      edges++;
+    }
   }
   edgesfile.close();
 
   gnuPipe = popen("gnuplot","w");
   gnuplot_sets(gnuPipe);
-  fprintf(gnuPipe,"set output './plots/PR_%s.jpeg'\n",filename.c_str());
+  fprintf(gnuPipe,"set output './plots/PR_%s.svg'\n",filename.c_str());
   gnuplot_unsets(gnuPipe);
 
   fprintf(gnuPipe,"plot ");
+  for (int i = 0;i < p;i++)
+    if (demand_set[i]) {
+      sprintf(demand_output,"Tmp_demand_%d_%d.dat",i+1,key);
+      fprintf(gnuPipe,"'%s' using 1:2:(10) ",demand_output);
+      fprintf(gnuPipe,"with circles lc rgb '%s', ",colors[i%9].c_str());
+    }
+  delete [] demand_set;
   fprintf(gnuPipe,"'%s' using 1:2 ",facility_output);
-  fprintf(gnuPipe,"w p lt 2 pt 10 title 'Facility'");
+  fprintf(gnuPipe,"w p lt 2 pt 6 title 'Facility', ");
   /*
   fprintf(gnuPipe,", '%s' using 1:2:3 ",facility_output);
   fprintf(gnuPipe,"w labels point offset character 0,character 1");
   */
-  fprintf(gnuPipe,", '%s' using 1:2 ",demand_output);
-  fprintf(gnuPipe,"w p lt 2 pt 7 lc rgb 'blue' title 'Demand'");
-  fprintf(gnuPipe,", '%s' using 1:2:($3-$1):($4-$2) ",edges_output);
-  fprintf(gnuPipe,"with vectors");
-  fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ",centersA_output);
-  fprintf(gnuPipe,"ps variable lc rgb 'dark-grey' title 'Servers A'");
-  fprintf(gnuPipe,", '%s' using 1:2:($3*1.5) w p lt 2 pt 11 ",centersB_output);
+  if (edges > 0) {
+    fprintf(gnuPipe,"'%s' using 1:2:($3-$1):($4-$2) ",edges_output);
+    fprintf(gnuPipe,"with vectors, ");
+  }
+  fprintf(gnuPipe,"'%s' using 1:2:($3*1.5) w p lt 2 pt 5 ",centersA_output);
+  fprintf(gnuPipe,"ps variable lc rgb 'dark-grey' title 'Servers A', ");
+  fprintf(gnuPipe,"'%s' using 1:2:($3*1.5) w p lt 2 pt 12 ",centersB_output);
   fprintf(gnuPipe,"ps variable lc rgb 'red' title 'Servers B'");
   fprintf(gnuPipe,"\n");
 
   pclose(gnuPipe);
-  remove(demand_output);
+  for (int i = 0;i < p;i++) {
+    sprintf(demand_output,"Tmp_demand_%d_%d.dat",i+1,key);
+    remove(demand_output);
+  }
   remove(facility_output);
   remove(centersA_output);
   remove(centersB_output);
