@@ -632,7 +632,7 @@ void Test_SQM_Local_Search(SQM_instance &Inst,int p,double v) {
       iLoc = Top.TryAdd(*Sol,Sol->get_response_time());
       if (iLoc < 0) delete Sol;
     }
-    logInfo(cout << "Clean garbage" << endl);
+    logDebug(cout << "Clean garbage" << endl);
     Top.clean_garbage();
   }
   logInfo(cout << "Ends multistart" << endl);
@@ -646,13 +646,17 @@ void Test_SQM_Local_Search(SQM_instance &Inst,int p,double v) {
 
     rt += Sol->get_response_time();
 
+    logDebug(cout << "Step " << i+1 << " (a)Apply\n\t Berman Heuristic" << endl);
     SQM_heuristic(*Y);
     bh_rt += Y->get_response_time();
+    logDebug(cout << "\t Local Search" << endl);
     Local_Search(*Y);
     bh_ls_rt += Y->get_response_time();
 
+    logDebug(cout << "Step " << i+1 << " (b)Apply\n\t Local Search" << endl);
     Local_Search(*X);
     ls_rt += X->get_response_time();
+    logDebug(cout << "\t Berman Heuristic" << endl);
     SQM_heuristic(*X);	
     ls_bh_rt += X->get_response_time();
 
@@ -688,11 +692,11 @@ void Test_SQM_Local_Search(SQM_instance &Inst,int p,double v) {
      << "response time: " << rt/top_sols << endl
      << "    heuristic: " << bh_rt/top_sols << "\t" << 100.0*(rt-bh_rt)/rt
      << endl
-     << "+local search: " << ls_rt/top_sols << "\t+" << 100.0*(bh_rt-ls_rt)/rt
+     << "+local search: " << bh_ls_rt/top_sols << "\t+" << 100.0*(bh_rt-bh_ls_rt)/rt
      << endl
      << " local search: " << ls_rt/top_sols << "\t" << 100.0*(rt-ls_rt)/rt
      << endl
-     << "   +heuristic: " << bh_rt/top_sols << "\t+" << 100.0*(ls_rt-bh_rt)/rt
+     << "   +heuristic: " << ls_bh_rt/top_sols << "\t+" << 100.0*(ls_rt-ls_bh_rt)/rt
      << endl
      );
   logInfo(cout << "Test Local_Search: Finish" << endl);
