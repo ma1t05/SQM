@@ -10,6 +10,7 @@ using namespace std;
 #include "SQM_model.h"
 #include "SQM_GRASP.h"
 #include "PathRelinking.h"
+#include "Reference_Set.h"
 #include "Local_Search.h"
 
 /* Global Variables */
@@ -20,6 +21,9 @@ double v;
 /* Global variables read as aguments */
 double lambda;
 double Mu_NT;
+
+long SQM_solution::calls_to_grt = 0;
+clock_t SQM_solution::processing_time = 0;
 
 void print_usage ();
 void process_command_line(int,char**);
@@ -50,13 +54,12 @@ int log_depth;
 /* Simulation.h extern variables */
 std::ofstream Log_Simulation;
 
-/* PathRelinking extern variables */
-int* (*matching_function)(SQM_solution*,SQM_solution*); /* function for match */
-int* (*order_function)(SQM_solution*,int*,SQM_solution*); /* function for proccess */
-void (*Improvement_Method)(SQM_solution*);
 /* RefSet extern variables */
-double (*Evaluation_Method)(SQM_solution&);
-
+void (*Improvement_Method)(SQM_solution&);
+SolList* (*Combine_Solutions)(SQM_solution&,SQM_solution&);
+/* PathRelinking extern variables */
+int* (*matching_function)(SQM_solution&,SQM_solution&); /* function for match */
+int* (*order_function)(SQM_solution&,int*,SQM_solution&); /* function for proccess */
 
 /* Global variables read from config */
 int MINS_PER_BLOCK;
@@ -317,17 +320,19 @@ void Test_SQM_model(SQM_instance &Inst,int p,double v) {
 }
 
 void Test_SQM_multistart(SQM_instance &Inst,int p,double v) {
-  int N = 5000;
+  int N = 5000,step = 100;
   SQM_solution *Sol;
   RefSet Top(10);
 
-  for (int i = 1;i <= N;i++) {
-    if (i%100 == 0) 
-      cout << "The best solution at iteration " << i << " is: " << Top.best()
-	   << endl;
-    Sol = new SQM_solution (Inst,p);
-    Sol->set_speed(v,BETA);
-    if (!Top.Update(*Sol)) delete Sol;
+  for (int i = step;i <= N;i+=step) {
+    for (int j = 0;j < step;j++) {
+      Sol = new SQM_solution (Inst,p);
+      Sol->set_speed(v,BETA);
+      if (!Top.TryAdd(*Sol,Sol->get_response_time())) delete Sol;
+    }
+    Top.clean_garbage();
+    cout << "The best solution at iteration " << i << " is: " << Top.best()
+	 << endl;
   }
   cout << "  RefSetCall:" << Top.get_Calls() << endl
        << "   RefSetAdd:" << Top.get_Adds() << endl
@@ -349,7 +354,7 @@ void Test_SQM_heuristic(SQM_instance &Inst,int p,double v) {
   for (int i = 0;i < p;i++) 
     cout << Sol->get_server_location(i) << "\t";
   cout << endl;
-  SQM_heuristic(Sol);
+  SQM_heuristic(*Sol);
   cout << Sol->get_response_time() << endl;
   for (int i = 0;i < p;i++) 
     cout << Sol->get_server_location(i) << "\t";
@@ -423,7 +428,7 @@ void Test_SQM_random(SQM_instance &Inst,int p,double v) {
       T_r1 = G->get_response_time();
       avg += T_r1;
       /* Log */ Log_Start_SQMH(m,n,p,Mu_NT,lambda); /* */
-      SQM_heuristic(G);
+      SQM_heuristic(*G);
       T_r2 = G->get_response_time();
       avg_rt += T_r2;
       if (best_rt > T_r2) best_rt = T_r2;
@@ -480,7 +485,7 @@ void Test_SQM_random(SQM_instance &Inst,int p,double v) {
       cout << "Response time : " << T_r1 << endl;
     }
     /* Log */ Log_Start_SQMH(m,n,p,Mu_NT,lambda); /* */
-    SQM_heuristic(X);
+    SQM_heuristic(*X);
     T_r2 = X->get_response_time();
 
     avg_rt  += T_r2;
@@ -531,114 +536,168 @@ void Test_SQM_random(SQM_instance &Inst,int p,double v) {
 }
 
 void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
-  int N = 400,num_elite = 40;
+  int N = 500,num_elite = 10;
   double rt,worst_rt;
   clock_t beginning,now;
-  SQM_solution *X,*Best;
-  RefSet *misc_sols;
-  RefSet elite_sols(num_elite);
+  double seconds;
+  SQM_solution *X;
+  SubsetControl *SC;
+  RefSet *elite_sols;
+  double best_multistart_rt,best_rt,improvement;
+  matching_type match;
+  order_type order;
 
-  /* Determine method to use in RefSet */
-  Evaluation_Method = get_response_time;
-
+  /* Determine combination method */
+  match = perfect_matching;
+  order = nearest_first;
+  Combine_Solutions = Path_Relinking;
+  Improvement_Method = No_Improvement;
   /* Determine methods to use in Path_Relinking */
   /* PR_{perfect|random|workload}_matching */
   matching_function = PR_perfect_matching; 
   /* PR_processing_order_{random|nf|ff} */
   order_function = PR_processing_order_nf;
-  Improvement_Method = SQM_heuristic;
 
+  /* Generate Pool */
   beginning = clock();
+  SolList pool;
   for (int r = 0;r < N;r++) {
     X = new SQM_solution(Inst,p);
     X->set_speed(v,BETA);
-    /*SQM_heuristic(X);*/
-    if (!elite_sols.Update(*X)) delete X;
+    Improvement_Method(*X);
+    X->get_response_time();
+    pool.push_back(X);
   }
-  elite_sols.clean_garbage();
+  now = clock();
+  seconds = (double)(now - beginning)/CLOCKS_PER_SEC;
+  cout << "Generate " << N << " solutions in " << seconds << " secs." << endl;
 
-  if (LogInfo) {
-    now = clock();
-    cout << "After " << (double)(now - beginning)/CLOCKS_PER_SEC << " seconds"
-	 << endl << "The best " << num_elite << " response times:" << endl;
-    for (int i = 0; i < elite_sols.get_elements();i++) 
-      cout << elite_sols.evaluation(i) << endl;
-  }
+  beginning = clock();
+  pool.sort(compare_SQMSols);
+  now = clock();
+  seconds = (double)(now - beginning)/CLOCKS_PER_SEC;
+  cout << "Sort solutions in " << seconds << " secs." << endl;
 
-  Best = elite_sols.best_sol();
-  double best_multistart_rt = elite_sols.best();
-  int it = 0;
-  do {
-    /* Determine method to use in RefSet */
-    Evaluation_Method = get_perfect_matching_cost;
+  best_multistart_rt = pool.front()->get_response_time();
+  cout << "Best multistart rt: " << best_multistart_rt << endl;
 
-    misc_sols = new RefSet(num_elite);
-    for (int r = 0;r < 5*num_elite;r++) {
-      X = new SQM_solution(Inst,p);
-      X->set_speed(v,BETA);
-      X->pm_cost = - SQM_min_cost_pm(elite_sols,X);
-      if (!misc_sols->Update(*X)) delete X;
-    }
-  
-    Evaluation_Method = get_response_time;
-    for (int i = 0;i < misc_sols->get_elements();i++) {
-      X = misc_sols->get_sol(i);
-      X = X->clone();
-      Improvement_Method(X);
-      if (!elite_sols.Update(*X)) delete X;
-    }
-    delete misc_sols;
-    elite_sols.clean_garbage();
-  } while (it++ < 10);
-  elite_sols.SubsetControl();
-  double best_rt = elite_sols.best();
-  double improvement = 100*(best_multistart_rt - best_rt) / best_multistart_rt;
-  cout << "The best response time is: " << best_rt << endl
+  beginning = clock();
+  SC = new TwoTier_SC (num_elite,num_elite,pool);
+  now = clock();
+  seconds = (double)(now - beginning)/CLOCKS_PER_SEC;
+
+  elite_sols = SC->get_RefSet ();
+  best_rt = elite_sols->best();
+  improvement = 100*(best_multistart_rt - best_rt) / best_multistart_rt;
+  cout << "After " << seconds << " seconds" << endl
+       << "the best response time is: " << best_rt << endl
        << " with an % improvement of: " << improvement << endl;
+
+  /* Write Results */
+  results.open("results_PathRelinking.csv",std::ofstream::app);
+  results
+    /* Instance */
+    << (*elite_sols)[0]
+    /* Path Relinking params */
+    << "Path_Relinking,"
+    << match << ","
+    << order << ","
+    /* Data Results */
+    << best_multistart_rt << ","
+    << best_rt << ","
+    << improvement << ","
+    << seconds << ","
+    << SQM_solution::get_calls_to_grt() << ","
+    << SQM_solution::get_processing_time()
+    << endl;
+  results.close();
+
+  delete SC;
 }
 
 void Test_SQM_Local_Search(SQM_instance &Inst,int p,double v) {
-  int N = 500;
-  SQM_solution *X,*Y;
-  double rt,h_rt,h_ls_rt,ls_rt,ls_h_rt;
+  int iLoc;
+  int top_sols = 10;
+  int N = 500, step = 100;
+  SQM_solution *Best,*Sol,*X,*Y;
+  double rt,bh_rt,bh_ls_rt,ls_rt,ls_bh_rt;
+  RefSet Top(top_sols);
 
   logInfo(cout << "Test Local_Search: Start" << endl);
-  rt = h_rt = h_ls_rt = ls_rt = ls_h_rt = 0.0;
-  for (int r = 0;r < N;r++) {
-    X = new SQM_solution(Inst,p);
-    X->set_speed(v,BETA);
-    rt += X->get_response_time();
-    Y = X->clone();
 
-    SQM_heuristic(Y);
-    h_rt += Y->get_response_time();
+  for (int r = step;r <= N;r+=step) {
+    for (int i = 0;i < step;i++) {
+      Sol = new SQM_solution(Inst,p);
+      Sol->set_speed(v,BETA);
+      iLoc = Top.TryAdd(*Sol,Sol->get_response_time());
+      if (iLoc < 0) delete Sol;
+    }
+    logDebug(cout << "Clean garbage" << endl);
+    Top.clean_garbage();
+  }
+  logInfo(cout << "Ends multistart" << endl);
+
+  rt = bh_rt = bh_ls_rt = ls_rt = ls_bh_rt = 0;
+  for (int i = 0;i < top_sols;i++) {
+    iLoc = Top.location(i);
+    Sol = Top[iLoc];
+    X = Sol->clone();
+    Y = Sol->clone();
+
+    rt += Sol->get_response_time();
+
+    logDebug(cout << "Step " << i+1 << " (a)Apply\n\t Berman Heuristic" << endl);
+    SQM_heuristic(*Y);
+    bh_rt += Y->get_response_time();
+    logDebug(cout << "\t Local Search" << endl);
     Local_Search(*Y);
-    h_ls_rt += Y->get_response_time();
+    bh_ls_rt += Y->get_response_time();
 
+    logDebug(cout << "Step " << i+1 << " (b)Apply\n\t Local Search" << endl);
     Local_Search(*X);
     ls_rt += X->get_response_time();
-    SQM_heuristic(X);	
-    ls_h_rt = X->get_response_time();
-    
+    logDebug(cout << "\t Berman Heuristic" << endl);
+    SQM_heuristic(*X);	
+    ls_bh_rt += X->get_response_time();
+
     delete X;
     delete Y;
   }
-  logDebug
+    
+  results.open("results_LocalSearch.csv",std::ofstream::app);
+  results 
+    /* Instance */
+    << X
+    /* Best multistart */
+    << rt/top_sols << ","
+    /* Berman Heuristic + Local Search */
+    << bh_rt/top_sols << ","
+    << bh_ls_rt/top_sols << ","
+    /* Local Search + Berman Heuristic */
+    << ls_rt/top_sols << ","
+    << ls_bh_rt << ","
+    /* Improvement */
+    << 100.0*(rt-bh_ls_rt)/rt << ","     /* BH+LS */
+    << 100.0*(rt-bh_rt)/rt << ","        /* BH */
+    << 100.0*(bh_rt-bh_ls_rt)/rt  << "," /* +LS */
+    << 100.0*(rt-ls_bh_rt)/rt            /* LS+BH */
+    << 100.0*(rt-ls_rt)/rt << ","        /* LS */
+    << 100.0*(ls_rt-ls_bh_rt)/rt         /* +BH */
+    << endl;
+  results.close();
+
+  logInfo
     (cout 
      << "       Method: " << "Response Time\t" << "% Improvement" << endl
-     << "response time: " << rt/N << endl
-     << "    heuristic: " << h_rt/N << "\t" << 100.0*(rt-h_rt)/rt << endl
-     << "+local search: " << ls_rt/N << "\t+" << 100.0*(h_rt-ls_rt)/rt << endl
-     << " local search: " << ls_rt/N << "\t" << 100.0*(rt-ls_rt)/rt << endl
-     << "   +heuristic: " << h_rt/N << "\t+" << 100.0*(ls_rt-h_rt)/rt << endl);
+     << "response time: " << rt/top_sols << endl
+     << "    heuristic: " << bh_rt/top_sols << "\t" << 100.0*(rt-bh_rt)/rt
+     << endl
+     << "+local search: " << bh_ls_rt/top_sols << "\t+" << 100.0*(bh_rt-bh_ls_rt)/rt
+     << endl
+     << " local search: " << ls_rt/top_sols << "\t" << 100.0*(rt-ls_rt)/rt
+     << endl
+     << "   +heuristic: " << ls_bh_rt/top_sols << "\t+" << 100.0*(ls_rt-ls_bh_rt)/rt
+     << endl
+     );
   logInfo(cout << "Test Local_Search: Finish" << endl);
-  results.open("results_LocalSearch.csv",std::ofstream::app);
-  X = new SQM_solution(Inst,p);
-  results << X;
-  delete X;
-  results << rt/N << "," << h_rt/N << "," << 100.0*(rt-h_rt)/rt << ","
-	  << h_ls_rt/N << "," << 100.0*(h_rt-h_ls_rt)/rt  << ","
-	  << ls_rt/N << "," << 100.0*(rt-ls_rt)/rt << ","
-	  << ls_h_rt/N << "," << 100.0*(ls_rt-ls_h_rt)/rt << endl;
-  results.close();
 }

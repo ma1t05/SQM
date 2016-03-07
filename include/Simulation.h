@@ -5,7 +5,7 @@
 #include <list>
 #include <iostream>
 #include <fstream>
-#include "SQM_heuristic.h"
+#include "SQM_Solution.h"
 
 #define Start_Time 7
 #define Simulation_Time 10
@@ -76,6 +76,8 @@ struct status {
   double arrival_time;
   double service_time;
 };
+
+extern void (*Improvement_Method)(SQM_solution&);
 
 #endif
 
