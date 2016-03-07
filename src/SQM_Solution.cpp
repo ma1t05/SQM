@@ -133,8 +133,10 @@ void SQM_solution::add_server () {
   int k = p;
   aux = new server [++p];
   if (Servers != NULL) {
-    for (int i = 0;i < k;i++)
+    for (int i = 0;i < k;i++) {
       aux[i].set_location(Servers[i].get_location());
+      aux[i].set_speed(Servers[i].get_speed(),Servers[i].get_beta());
+    }
     delete [] Servers;
   }
   Servers = aux;
@@ -143,14 +145,15 @@ void SQM_solution::add_server () {
 
 void SQM_solution::remove_server (int k) {
   server *aux;
-  int j = 0;
   aux = new server [--p];
-  for (int i = 0;i <= p;i++)
-    if (i != k) {
-      aux[j].set_speed(Servers[i].get_speed(),Servers[i].get_beta());
-      aux[j].set_location(Servers[i].get_location());
-      j++;
-    }
+  for (int i = 0;i < k;i++) {
+    aux[i].set_speed(Servers[i].get_speed(),Servers[i].get_beta());
+    aux[i].set_location(Servers[i].get_location());
+  }
+  for (int i = k;i < p;i++) {
+    aux[i].set_speed(Servers[i+1].get_speed(),Servers[i+1].get_beta());
+    aux[i].set_location(Servers[i+1].get_location());
+  }
   delete [] Servers;
   Servers = aux;
   delete_preferred_servers();

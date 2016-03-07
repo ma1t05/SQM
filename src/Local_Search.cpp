@@ -50,6 +50,7 @@ void LS_movement_lm(SQM_solution &X) {
       best_rt = X.get_response_time();
     }
   }
+
   X.test_server_location(p-1,loc_j); /* The past location of the server */
   X.set_server_location(p-1,best_loc);
   delete lst;
@@ -130,19 +131,28 @@ Sites* LS_get_adjacent_sites(SQM_solution &X,int i) {
   int loc_i,loc_j;
   int nearest_loc = UNASIGNED_LOCATION;
   int **a = X.preferred_servers();
+  int sites,order;
 
   lst = new Sites;
   adjacent = new bool [n];
   for (int k = 0;k < n;k++) adjacent[k] = false;
 
   loc_i = X.get_server_location(i);
-  for (int j = 0;j < m;j++)
-    if (a[j][0] == loc_i)
-      for (int k = 0;k < n;k++) {
-	double radious = I->distance(loc_i,j);
-	if (I->distance(k,j) <= radious)
-	  adjacent[k] = true;
-      }
+  sites = 0;
+  order = 0;
+  do {
+    for (int j = 0;j < m;j++)
+      if (a[j][order] == loc_i)
+	for (int k = 0;k < n;k++) {
+	  double radious = I->distance(loc_i,j);
+	  if (I->distance(k,j) <= radious)
+	    if (!adjacent[k]) {
+	      adjacent[k] = true;
+	      sites++;
+	    }
+	}
+    order++;
+  } while (sites == 0);
 
   for (int k = 0;k < n;k++)
     if (adjacent[k])
