@@ -705,7 +705,7 @@ void Test_SQM_Local_Search(SQM_instance &Inst,int p,double v) {
     << 100.0*(bh_rt-bh_ls_rt)/rt  << "," /* +LS */
     << 100.0*(rt-ls_bh_rt)/rt            /* LS+BH */
     << 100.0*(rt-ls_rt)/rt << ","        /* LS */
-    << 100.0*(ls_rt-ls_bh_rt)/rt         /* +BH */
+    << 100.0*(ls_rt-ls_bh_rt)/rt << ","  /* +BH */
     /* Processing Times */
     /* Multi Start */
     << ms_seconds << ","
@@ -714,7 +714,7 @@ void Test_SQM_Local_Search(SQM_instance &Inst,int p,double v) {
     << bh_clocks/(top_sols * CLOCKS_PER_SEC) << ","    /* Berman Heuristic */
     << bhls_clocks/(top_sols * CLOCKS_PER_SEC) << ","  /* + Local Search */
     << ls_clocks/(top_sols * CLOCKS_PER_SEC) << ","    /* Local Search */
-    << lsbh_clocks/(top_sols * CLOCKS_PER_SEC) << "," /* + Berman Heuristic */
+    << lsbh_clocks/(top_sols * CLOCKS_PER_SEC)         /* + Berman Heuristic */
     << endl;
   results.close();
 
