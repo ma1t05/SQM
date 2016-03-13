@@ -50,6 +50,7 @@ void LS_movement_lm(SQM_solution &X) {
       best_rt = X.get_response_time();
     }
   }
+
   X.test_server_location(p-1,loc_j); /* The past location of the server */
   X.set_server_location(p-1,best_loc);
   delete lst;
@@ -122,25 +123,42 @@ int LS_get_server_with_more_workload(SQM_solution &X) {
 
 Sites* LS_get_adjacent_sites(SQM_solution &X,int i) {
   SQM_instance *I = X.get_instance();
+  int m = I->demand_points();
   int n = I->potential_sites();
   int p = X.get_servers();
+  bool *adjacent;
   Sites *lst;
-  lst = new Sites;
   int loc_i,loc_j;
   int nearest_loc = UNASIGNED_LOCATION;
-  loc_i = X.get_server_location(i);
-  for (int j = 0;j < p;j++)
-    if (j != i) {
-      loc_j = X.get_server_location(j);
-      if (nearest_loc == UNASIGNED_LOCATION || 
-	  I->sites_distance(loc_i,loc_j) < I->sites_distance(loc_i,nearest_loc))
-	nearest_loc = loc_j;
-    }
+  int **a = X.preferred_servers();
+  int sites,order;
 
-  double radious = I->sites_distance(loc_i,nearest_loc);
+  lst = new Sites;
+  adjacent = new bool [n];
+  for (int k = 0;k < n;k++) adjacent[k] = false;
+
+  loc_i = X.get_server_location(i);
+  sites = 0;
+  order = 0;
+  do {
+    for (int j = 0;j < m;j++)
+      if (a[j][order] == loc_i)
+	for (int k = 0;k < n;k++) {
+	  double radious = I->distance(loc_i,j);
+	  if (I->distance(k,j) <= radious)
+	    if (!adjacent[k]) {
+	      adjacent[k] = true;
+	      sites++;
+	    }
+	}
+    order++;
+  } while (sites == 0);
+
   for (int k = 0;k < n;k++)
-    if (I->sites_distance(loc_i,k) < radious + JARVIS_EPSILON)
+    if (adjacent[k])
       lst->push_back(k);
+
+  delete [] adjacent;
   return lst;
 }
 
