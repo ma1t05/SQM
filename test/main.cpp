@@ -698,12 +698,12 @@ void Test_SQM_Local_Search(SQM_instance &Inst,int p,double v) {
     << bh_ls_rt/top_sols << ","
     /* Local Search + Berman Heuristic */
     << ls_rt/top_sols << ","
-    << ls_bh_rt << ","
+    << ls_bh_rt/top_sols << ","
     /* Improvement */
     << 100.0*(rt-bh_ls_rt)/rt << ","     /* BH+LS */
     << 100.0*(rt-bh_rt)/rt << ","        /* BH */
     << 100.0*(bh_rt-bh_ls_rt)/rt  << "," /* +LS */
-    << 100.0*(rt-ls_bh_rt)/rt            /* LS+BH */
+    << 100.0*(rt-ls_bh_rt)/rt << ","     /* LS+BH */
     << 100.0*(rt-ls_rt)/rt << ","        /* LS */
     << 100.0*(ls_rt-ls_bh_rt)/rt << ","  /* +BH */
     /* Processing Times */
