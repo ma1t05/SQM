@@ -710,11 +710,11 @@ void Test_SQM_Local_Search(SQM_instance &Inst,int p,double v) {
     /* Multi Start */
     << ms_seconds << ","
     /* Berman Heuristic & Local Search */
-    << ls_seconds/(top_sols * CLOCKS_PER_SEC) << ","
-    << bh_clocks/(top_sols * CLOCKS_PER_SEC) << ","    /* Berman Heuristic */
-    << bhls_clocks/(top_sols * CLOCKS_PER_SEC) << ","  /* + Local Search */
-    << ls_clocks/(top_sols * CLOCKS_PER_SEC) << ","    /* Local Search */
-    << lsbh_clocks/(top_sols * CLOCKS_PER_SEC)         /* + Berman Heuristic */
+    << ls_seconds << ","
+    << (double)bh_clocks/CLOCKS_PER_SEC << ","    /* Berman Heuristic */
+    << (double)bhls_clocks/CLOCKS_PER_SEC << ","  /* + Local Search */
+    << (double)ls_clocks/CLOCKS_PER_SEC << ","    /* Local Search */
+    << (double)lsbh_clocks/CLOCKS_PER_SEC         /* + Berman Heuristic */
     << endl;
   results.close();
 
