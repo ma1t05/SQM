@@ -13,10 +13,19 @@ s=500.0
 for M in 50 100 150; do
     for N in 30 50 75; do
 	for p in 7 10 15 20; do
-	    for i in {01..05}; do
+	    echo "### Start test cases with ###"
+	    echo "${M} demand points"
+	    echo "${N} potential sites"
+	    echo "${p} servers"
+	    for i in {01..10}; do
+		echo "## Start Test case ${i} ##"
 		prefix=Test_${M}_${N}_${p}_${i}
 		options="-f$prefix -M$M -N$N -p$p -k$k -l$l -m$m -s$s"
-		$SQM $options --superbrief Local_Search
+		$SQM $options --brief Local_Search
+		if [ $? -eq 139 ]; then
+		    echo "It crashed!"
+		    exit 1
+		fi
 	    done
 	done
     done

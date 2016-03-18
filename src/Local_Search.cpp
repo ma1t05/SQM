@@ -6,7 +6,7 @@
 typedef list<int> Sites;
 typedef list<int> Servers;
 /* move less workload server near to more workload */
-void LS_movement_lm(SQM_solution&);
+int LS_movement_lm(SQM_solution&);
 /* move a adyacent server to the server with moreworkload closer to him */
 void LS_movement_mh(SQM_solution&); 
 int LS_get_server_with_less_workload(SQM_solution&);
@@ -17,16 +17,16 @@ Servers* LS_get_adjacent_servers(SQM_solution&,int);
 void LS_print_workloads(SQM_solution&);
 
 void Local_Search (SQM_solution &X) {
-  int p = X.get_servers();
+  int j;
   double rt;
   do {
     rt = X.get_response_time ();
-    LS_movement_lm(X);
+    j = LS_movement_lm(X);
   } while (X.get_response_time () < rt);
-  X.set_server_location(p-1,X.get_server_past_location(p-1));
+  X.set_server_location(j,X.get_server_past_location(j));
 }
 
-void LS_movement_lm(SQM_solution &X) {
+int LS_movement_lm(SQM_solution &X) {
   int best_loc = UNASIGNED_LOCATION;
   double best_rt;
   int p = X.get_servers();
@@ -35,25 +35,26 @@ void LS_movement_lm(SQM_solution &X) {
   int loc_j  = X.get_server_location(j);
   double v = X.get_server_speed(j);
   double beta = X.get_server_beta(j);
-  /* Remove them */ 
-  X.remove_server(j);
   /* obtain the news workloads */
   int k = LS_get_server_with_more_workload(X);
   /* Put a server near the server with more workload */
   Sites *lst = LS_get_adjacent_sites(X,k);
-  X.add_server();
-  X.set_speed(v,beta);
   for (Sites::iterator it = lst->begin(),end = lst->end(); it != end;it++) {
-    X.test_server_location(p-1,*it);
+    X.test_server_location(j,*it);
     if (best_loc == UNASIGNED_LOCATION || X.get_response_time() < best_rt) {
       best_loc = *it;
       best_rt = X.get_response_time();
     }
   }
 
-  X.test_server_location(p-1,loc_j); /* The past location of the server */
-  X.set_server_location(p-1,best_loc);
+  if (best_loc == UNASIGNED_LOCATION) {
+    cerr << "Warining: No new location" << endl;
+    best_loc = loc_j;
+  }
+  X.test_server_location(j,loc_j); /* The past location of the server */
+  X.set_server_location(j,best_loc);
   delete lst;
+  return j;
 }
 
 void LS_movement_mh(SQM_solution &X) {
@@ -133,6 +134,7 @@ Sites* LS_get_adjacent_sites(SQM_solution &X,int i) {
   int **a = X.preferred_servers();
   int sites,order;
 
+  logDebug(cout << "LS_get_adjacent_sites: Start" << endl);
   lst = new Sites;
   adjacent = new bool [n];
   for (int k = 0;k < n;k++) adjacent[k] = false;
@@ -142,23 +144,24 @@ Sites* LS_get_adjacent_sites(SQM_solution &X,int i) {
   order = 0;
   do {
     for (int j = 0;j < m;j++)
-      if (a[j][order] == loc_i)
-	for (int k = 0;k < n;k++) {
-	  double radious = I->distance(loc_i,j);
-	  if (I->distance(k,j) <= radious)
-	    if (!adjacent[k]) {
-	      adjacent[k] = true;
+      if (a[j][order] == i) {
+	double radious = I->distance(loc_i,j);
+	for (int loc = 0;loc < n;loc++)
+	  if (I->distance(loc,j) <= radious)
+	    if (!adjacent[loc]) {
+	      adjacent[loc] = true;
 	      sites++;
 	    }
-	}
+      }
     order++;
-  } while (sites == 0);
+  } while (sites == 0 && order < p);
 
-  for (int k = 0;k < n;k++)
-    if (adjacent[k])
-      lst->push_back(k);
-
+  for (int loc = 0;loc < n;loc++)
+    if (adjacent[loc])
+      lst->push_back(loc);
+  
   delete [] adjacent;
+  logDebug(cout << "LS_get_adjacent_sites: Finish" << endl);
   return lst;
 }
 
