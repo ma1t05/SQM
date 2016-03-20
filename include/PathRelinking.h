@@ -32,6 +32,8 @@ extern void (*Improvement_Method)(SQM_solution&);
 
 std::ostream& operator<<(std::ostream&,matching_type&);
 std::ostream& operator<<(std::ostream&,order_type&);
+void set_match_method(matching_type);
+void set_order_method(order_type);
 
 #endif
 
