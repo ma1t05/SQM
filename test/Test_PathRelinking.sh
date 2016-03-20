@@ -3,7 +3,6 @@
 cd ./../bin
 SQM=./SQM
 
-prefix=Test_01
 M=50
 N=50
 p=10
@@ -14,13 +13,14 @@ s=500.0
 
 
 # Model
-for M in {50,100,150}; do
-    for N in {30,50,75}; do
-	for p in {7,10,15,20}; do
+for M in 50 100 150; do
+    for N in 30 50 75; do
+	for p in 7 10 15 20; do
 	    for i in {01..05}; do
-		prefix="Test_$M_$N_$p_$i"
+		prefix=Test_${M}_${N}_${p}_${i}
 		options="-f$prefix -M$M -N$N -p$p -k$k -l$l -m$m -s$s"
-		$SQM $options --superbrief Path_Relinking
+		echo "$SQM $options --brief Tune_PR"
+		$SQM $options --brief Tune_PR
 	    done
 	done
     done

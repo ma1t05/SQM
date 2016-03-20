@@ -297,3 +297,37 @@ std::ostream& operator<<(std::ostream &os,order_type &order) {
     }
   return os;
 }
+
+void set_match_method(matching_type match) {
+  switch (match) {
+  case perfect_matching:
+    matching_function = PR_perfect_matching;
+    break;
+  case workload_matching:
+    matching_function = PR_workload_matching;
+    break;
+  case random_matching:
+    matching_function = PR_random_matching;
+    break;
+  case invalid_matching:
+    matching_function = NULL;
+    break;
+  }
+}
+
+void set_order_method(order_type order) {
+  switch (order) {
+  case nearest_first:
+    order_function = PR_processing_order_nf;
+    break;
+  case farthest_first:
+    order_function = PR_processing_order_ff;
+    break;
+  case random_order:
+    order_function = PR_processing_order_random;
+    break;
+  case invalid_order:
+    order_function = NULL;
+    break;
+  }
+}
