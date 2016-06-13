@@ -1,54 +1,5 @@
 
-#include <ctime>
-#include <iostream>
-
-using namespace std;
-#include "config.h"
-#include "Goldberg.h"
-#include "SQM_model.h"
-#include "SQM_GRASP.h"
-#include "PathRelinking.h"
-#include "Local_Search.h"
-#include "Simulation.h"
-#include "gnuplot.h"
-
-/* log.h extern variables */
-std::ofstream LogFile;
-std::ofstream results;
-std::ofstream dat;
-int log_depth;
-/* Simulation.h exter variable */
-std::ofstream Log_Simulation;
-
-/* PathRelinking extern variables */
-int* (*matching_function)(SQM_solution&,SQM_solution&); /* function for match */
-int* (*order_function)(SQM_solution&,int*,SQM_solution&); /* function for proccess */
-
-/* Global extern variables read from config */
-int MINS_PER_BLOCK;
-int BLOCKS_PER_HORIZON;
-/* SQM_Solution */
-double BETA;
-/* SQM_Instance */
-double MIN_RANGE_X;
-double MIN_RANGE_Y;
-double MAX_RANGE_X;
-double MAX_RANGE_Y;
-/* mp_jarvis */
-double JARVIS_EPSILON;
-/* SQM_GRASP */
-int GRASP_kNN_param;
-/* cplex */
-double EPSILON;
-double TIME_MAX;
-/* Global exter variables to read from arguments */
-double lambda;
-double Mu_NT;
-
-void read_config_file(string configFile);
-void Test_MST(SQM_instance &I,int p,double v);
-void Test_exponential(SQM_instance &I,int p,double v);
-void Test_Path_Relinking(SQM_instance &I,int p,double v);
+#include "common.h"
 
 int main(int argc,char *argv[]) {
   string filename;
@@ -185,4 +136,38 @@ void Test_Path_Relinking(SQM_instance &I,int p,double v) {
   delete [] match;
   delete Y;
   delete X;
+}
+
+void Test_Path_Relinking(SQM_instance &I,int p,double v) {
+  SQM_solution *X,*Y;
+  int *match,*order;
+  X = new SQM_solution(I,p);
+  X->set_speed(v,BETA);
+  Y = X->clone();
+  SQM_heuristic(Y);
+  int best_loc = UNASIGNED_LOCATION;
+  double best_rt;
+  int p = X.get_servers();
+  /* Obtain the server with less workload */
+  int j = LS_get_server_with_less_workload(X);
+  int loc_j  = X.get_server_location(j);
+  /* obtain the news workloads */
+  int k = LS_get_server_with_more_workload(X);
+  /* Put a server near the server with more workload */
+  Sites *lst = LS_get_adjacent_sites(X,k);
+  for (Sites::iterator it = lst->begin(),end = lst->end(); it != end;it++) {
+    X.test_server_location(j,*it);
+    if (best_loc == UNASIGNED_LOCATION || X.get_response_time() < best_rt) {
+      best_loc = *it;
+      best_rt = X.get_response_time();
+    }
+  }
+
+  if (best_loc == UNASIGNED_LOCATION) {
+    cerr << "Warining: No new location" << endl;
+    best_loc = loc_j;
+  }
+  X.test_server_location(j,loc_j); /* The past location of the server */
+  X.set_server_location(j,best_loc);
+  delete lst;
 }
