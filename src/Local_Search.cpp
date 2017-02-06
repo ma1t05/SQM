@@ -3,16 +3,12 @@
 #include <list>
 #include "Local_Search.h"
 
-typedef list<int> Sites;
 typedef list<int> Servers;
 /* move less workload server near to more workload */
 int LS_movement_lm(SQM_solution&);
 /* move a adyacent server to the server with moreworkload closer to him */
 void LS_movement_mh(SQM_solution&); 
-int LS_get_server_with_less_workload(SQM_solution&);
 int LS_get_server_with_less_workload(SQM_solution&,Sites*);
-int LS_get_server_with_more_workload(SQM_solution&);
-Sites* LS_get_adjacent_sites(SQM_solution&,int);
 Servers* LS_get_adjacent_servers(SQM_solution&,int);
 void LS_print_workloads(SQM_solution&);
 
