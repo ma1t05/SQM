@@ -1,6 +1,10 @@
 
 #include "common.h"
 
+command *Test_Function;
+
+void Plot_Local_Search(SQM_instance &I,int p,double v);
+
 int main(int argc,char *argv[]) {
   string filename;
   int M_clients,N_sites;
@@ -22,39 +26,12 @@ int main(int argc,char *argv[]) {
   srand(time(NULL));
 
   /* Open Log File */
-  Log_Simulation.open("Simulation.log",std::ofstream::out);
   I = SQM_load_instance(filename,M_clients,N_sites);
   //Test_exponential(*I,p,v);
   //Simulator(*I,p,v);
-  Test_Path_Relinking(*I,p,v);
+  Plot_Local_Search(*I,p,v);
   delete I;
-  /* Log */ Log_Simulation.close();
 
-}
-
-void read_config_file(string configFile) {
-  char *envp = NULL;
-  Config SQM_conf(configFile,&envp);
-  /* Sochastic Queue p-Medina Problem Params */
-  MINS_PER_BLOCK = SQM_conf.pInt("MINS_PER_BLOCK");
-  BLOCKS_PER_HORIZON = SQM_conf.pInt("BLOCKS_PER_HORIZON");
-  BETA = SQM_conf.pInt("BETA");
-
-  /*  Parameter for Jarvis Approximation procedure */
-  JARVIS_EPSILON = SQM_conf.pDouble("JARVIS_EPSILON");
-
-  /* Ranges to create random instances */
-  MIN_RANGE_X = SQM_conf.pDouble("MIN_RANGE_X");
-  MAX_RANGE_X = SQM_conf.pDouble("MAX_RANGE_X");
-  MIN_RANGE_Y = SQM_conf.pDouble("MIN_RANGE_Y");
-  MAX_RANGE_Y = SQM_conf.pDouble("MAX_RANGE_Y");
-
-  GRASP_kNN_param = SQM_conf.pInt("GRASP_kNN_param");
-
-  /* Cplex params */
-  EPSILON = SQM_conf.pDouble("EPSILON");
-  TIME_MAX = SQM_conf.pDouble("TIME_MAX");
-  
 }
 
 void Test_MST(SQM_instance &I,int p,double v) {
@@ -114,9 +91,9 @@ void Test_Path_Relinking(SQM_instance &I,int p,double v) {
   X = new SQM_solution(I,p);
   X->set_speed(v,BETA);
   Y = X->clone();
-  SQM_heuristic(Y);
-  match = PR_perfect_matching(X,Y);
-  order = PR_processing_order_nf(X,match,Y);
+  SQM_heuristic(*Y);
+  match = PR_perfect_matching(*X,*Y);
+  order = PR_processing_order_nf(*X,match,*Y);
   X->update_preferred_servers ();
   gnuplot_Path_Relinking(*X,match,*Y,"step_00");
   for (int step = 0;step < p;step++) {
@@ -138,36 +115,92 @@ void Test_Path_Relinking(SQM_instance &I,int p,double v) {
   delete X;
 }
 
-void Test_Path_Relinking(SQM_instance &I,int p,double v) {
+void Plot_Local_Search(SQM_instance &I,int p,double v) {
   SQM_solution *X,*Y;
   int *match,*order;
   X = new SQM_solution(I,p);
   X->set_speed(v,BETA);
+  SQM_heuristic(*X);
+  int m = I.demand_points();
+  int n = I.potential_sites();
   Y = X->clone();
-  SQM_heuristic(Y);
   int best_loc = UNASIGNED_LOCATION;
   double best_rt;
-  int p = X.get_servers();
   /* Obtain the server with less workload */
-  int j = LS_get_server_with_less_workload(X);
-  int loc_j  = X.get_server_location(j);
+  int j = LS_get_server_with_less_workload(*X);
+  int loc_j  = X->get_server_location(j);
   /* obtain the news workloads */
-  int k = LS_get_server_with_more_workload(X);
+  int k = LS_get_server_with_more_workload(*X);
   /* Put a server near the server with more workload */
-  Sites *lst = LS_get_adjacent_sites(X,k);
-  for (Sites::iterator it = lst->begin(),end = lst->end(); it != end;it++) {
-    X.test_server_location(j,*it);
-    if (best_loc == UNASIGNED_LOCATION || X.get_response_time() < best_rt) {
-      best_loc = *it;
-      best_rt = X.get_response_time();
-    }
-  }
+  Sites *lst = LS_get_adjacent_sites(*X,k);
 
   if (best_loc == UNASIGNED_LOCATION) {
     cerr << "Warining: No new location" << endl;
     best_loc = loc_j;
   }
-  X.test_server_location(j,loc_j); /* The past location of the server */
-  X.set_server_location(j,best_loc);
+  X->test_server_location(j,loc_j); /* The past location of the server */
+  X->set_server_location(j,best_loc);
+
+  FILE *gnuPipe;
+  fstream pointsfile;
+  char demand_output[32],facility_output[32],
+    centers_output[32],backup_output[32];
+  sprintf(demand_output,"Tmp_demand.dat");
+  gnuplot_write_points_file(demand_output,I.demand(0),m);
+  sprintf(facility_output,"Tmp_facility.dat");
+  gnuplot_write_points_file(facility_output,I.site(0),n);
+
+  sprintf(centers_output,"Tmp_centers.dat");
+  pointsfile.open(centers_output,fstream::out);
+  for (int l = 0;l < n;l++) {
+    int r = 0;
+    for (int i = 0;i < p;i++) 
+      if (X->get_server_location(i) == l)
+	r++;
+    if (r > 0)
+      pointsfile << I.site(l)->x << " "
+		  << I.site(l)->y << " "
+		  << r << endl;
+  }
+  pointsfile.close();
+
+  sprintf(backup_output,"Tmp_backup.dat");
+  pointsfile.open(backup_output,fstream::out);
+  for (Sites::iterator it = lst->begin(),end = lst->end(); it != end;it++) {
+    int r = *it;
+    pointsfile << I.site(r)->x << " "
+	       << I.site(r)->y << " "
+	       << r << endl;
+  }
+  pointsfile.close();
+
+  gnuPipe = popen("gnuplot","w");
+  gnuplot_sets(gnuPipe);
+  fprintf(gnuPipe,"set output './plots/Local_Search.jpeg'\n");
+  gnuplot_unsets(gnuPipe);
+
+  fprintf(gnuPipe,"plot ");
+  fprintf(gnuPipe,"'%s'",facility_output);
+  /*fprintf(gnuPipe," using 1:2 w p lt 2 pt 10 title 'Facility'");*/
+  fprintf(gnuPipe," using 1:2:(15) with circles lc rgb 'gray'");
+  fprintf(gnuPipe," title 'Facility'");
+  fprintf(gnuPipe,", '%s'",demand_output);
+  /*fprintf(gnuPipe," using 1:2 w p lt 2 pt 7 lc rgb 'blue' title 'Demand'");*/
+  fprintf(gnuPipe," using 1:2:(10) with circles lc rgb 'yellow'");
+  fprintf(gnuPipe," title 'Demand'");
+  fprintf(gnuPipe,", '%s'",centers_output);
+  fprintf(gnuPipe," using 1:2:(8) with circles lc rgb 'dark-grey'");
+  fprintf(gnuPipe," title 'Opened'");
+  fprintf(gnuPipe,", '%s'",backup_output);
+  fprintf(gnuPipe," using 1:2:(5) with circles lc rgb 'dark-green'");
+  fprintf(gnuPipe," title 'Option'");
+  fprintf(gnuPipe,"\n");
+  fprintf(gnuPipe,"set object circle at %d,%d",I.site(loc_j)->x,I.site(loc_j)->y);
+  fprintf(gnuPipe," size scr 0.1 fc rgb 'navy'\n");
+  pclose(gnuPipe);
   delete lst;
+  remove(facility_output);
+  remove(demand_output);
+  remove(centers_output);
+  remove(backup_output);
 }
