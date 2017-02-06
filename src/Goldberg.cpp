@@ -1,9 +1,11 @@
-/*
- * Modelo que determina ubicaciones de ajustadores
+/*!
+ * \brief Modet that determines the location of adjusters
  * 
+ * Minimizing the maximum workload per agent
  */
 
 #include "Goldberg.h"
+#include "log.h"
 
 void gnuplot_goldberg
 (SQM_instance&,
@@ -14,10 +16,11 @@ void gnuplot_goldberg
  );
 
 void Goldberg
-(SQM_instance &Inst, // Set of points
- int p, // facilities
- float mu, // rate parameter
- float f) //
+(SQM_instance &Inst, //!< Set of points
+ int p, //!< facilities
+ float mu, //!< rate parameter
+ float f //!<
+ )
 {
   IloEnv env;
   try {
@@ -29,21 +32,34 @@ void Goldberg
     IloNum rho;
     IloNum M = 10000.0;
           
-    cout << "Comienza definicion del Modelo" << endl;
+    // rho from Daskin
+    rho = 0.0;
+    for (i = 0;i < m;i++)
+      rho += f * Inst.get_demand(i);
+    rho /= (mu * p);
+    if (rho > 1) {
+      logError(cout << "rho must be between (0,1)! " << endl);
+    }
+    logDebug(cout << "rho = " << rho << endl);
+    // rho from ReVelle & Hogan
+    // pendiente
+
+    logInfo(cout << "Comienza definicion del Modelo Goldberg" << endl);
     IloModel modelo(env);
     
-    cout << "++ Variables ++" << endl;
+    logDebug(cout << "++ Variables ++" << endl);
     IloNumVar S(env,0,IloInfinity,IloNumVar::Float,"S");
     IloBoolVarArray x(env);
     BoolVarArrayMatrix y(env,m);
     
     char VarName[16];
+    logDebug(cout << "Variables x_j if an adjuster is located at potential site j" << endl);
     for(i = 0;i < n;i++){
       sprintf(VarName,"x%d",i+1);
       x.add(IloBoolVar(env,VarName));
     }
 
-    cout << "Nombre las variables para facil identificacion" << endl;
+    logDebug(cout << "Variables y_ijk if the adjuster at j is the k-th in cover i" << endl);
     for (i = 0;i < m;i++) {
       BoolVarMatrix y_i(env,n);
       for (j = 0;j < n;j++) {
@@ -57,8 +73,8 @@ void Goldberg
       y[i] = y_i;
     }
 
-    cout << "++ Restricciones ++" << endl;
-    cout << "Solo una instalacion ocupa la posion k del cliente i" << endl;
+    logDebug(cout << "++ Constraints ++" << endl);
+    logDebug(cout << "Solo una instalacion ocupa la posion k del cliente i" << endl);
     for (i = 0;i < m;i++) {
       for (k = 0;k < p;k++) {
 	IloExpr Cover(env);
@@ -68,17 +84,17 @@ void Goldberg
       }
     }
 
-    cout << "La instalacion j solo puede ocupar una posicion del cliente i" << endl;
+    logDebug(cout << "La instalacion j solo puede ocupar una posicion del cliente i" << endl);
     for (i = 0;i < m;i++) {
       for (j = 0;j < n;j++) {
 	modelo.add(IloSum(y[i][j]) <= 1);
       }
     }
 
-    cout << "Instalaciones a abrir" << endl;
+    logDebug(cout << "Instalaciones a abrir" << endl);
     modelo.add(IloSum(x) == p);
 
-    cout << "Relacionar variables de localizacion y asignacion" << endl;
+    logDebug(cout << "Relacionar variables de localizacion y asignacion" << endl);
     for(i = 0;i < m;i++){
       for (j = 0;j < n;j++) {
 	for (k = 0;k < p;k++) 
@@ -86,13 +102,13 @@ void Goldberg
       }
     }
 
-    cout << "Restricion de orden de asignaicion" << endl;
-    NumMatrix O(env,m);
+    logDebug(cout << "Restricion de orden de asignaicion" << endl);
+    NumMatrix Dist(env,m);
     for (i = 0;i < m;i++)
-      O[i] = IloNumArray(env,n);
+      Dist[i] = IloNumArray(env,n);
     for (i = 0;i < m;i++) {
       for (j = 0;j < n;j++) {
-	O[i][j] = Inst.distance(i,j);
+	Dist[i][j] = Inst.distance(i,j);
       }
     }
       
@@ -101,7 +117,7 @@ void Goldberg
 	for (j = 0;j < n;j++) {
 	  IloExpr balance(env);
 	  for (r = 0;r < n;r++) {
-	    if (O[i][r] <= O[i][j])
+	    if (Dist[i][r] <= Dist[i][j])
 	      balance += y[i][r][k-1];
 	  }
 	  modelo.add(y[i][j][k] <= balance);
@@ -112,14 +128,6 @@ void Goldberg
 
     // Cargas de trabajo
     IloNum coef;
-    // rho from Daskin
-    rho = 0.0;
-    for (i = 0;i < m;i++)
-      rho += f * Inst.get_demand(i);
-    rho /= (mu * p);
-    cout << "rho = " << rho << endl;
-    // rho from ReVelle & Hogan
-    // pendiente
     
     for (j = 0;j < n;j++) {
       IloExpr workload(env);
@@ -127,13 +135,14 @@ void Goldberg
 	coef = (1 - rho) * pow(rho,k);
 	for (i = 0;i < m;i++) {
 	  f_i = f * Inst.get_demand(i);
-	  workload += f_i * coef * O[i][j]* y[i][j][k];
+	  workload += f_i * coef * Dist[i][j]* y[i][j][k];
 	}
       }
       modelo.add(S >= workload);
     }
     
-    cout << "++ Funcion Objetivo ++" << endl;
+    logDebug(cout << "++ Funcion Objetivo ++" << endl);
+    logDebug(cout << "Minimize the maximum workload" << endl);
     modelo.add(IloMinimize(env,S));
     clocks = clock() - clocks;
     results << "," << clocks / CLOCKS_PER_SEC;

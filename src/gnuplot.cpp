@@ -3,10 +3,7 @@
 
 using namespace std;
 
-void gnuplot_sets(FILE*);
-void gnuplot_unsets(FILE*);
 void gnuplot_set_arrow_styles(FILE*);
-void gnuplot_write_points_file(char*,point*,int);
 
 void plot_instance_solution(SQM_instance &Inst,int *Sol,string output) {
   int n = Inst.demand_points(),m = Inst.potential_sites();

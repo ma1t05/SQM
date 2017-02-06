@@ -4,12 +4,14 @@
  */
 
 #include "SQM_model.h"
+#include "log.h"
 
 void SQM_model
 (SQM_instance &Inst, // Set of points
  int p,              // facilities
  float speed         // speed
 ) {
+  logInfo(cout << "Start: SQM_model" << endl);
   float mu = Inst.get_service_rate (); // rate parameter
   float f = Inst.get_arrival_rate (); // portion of demand
   IloEnv env;
@@ -23,21 +25,23 @@ void SQM_model
     k = 3;
     m = n;
     point *puntos = Inst.demand(0);
-    cout << "Comienza definicion del Modelo" << endl;
+    logDebug(cout << "Comienza definicion del Modelo B" << endl);
     IloModel modelo(env);
     
-    cout << "++ Variables ++" << endl;
+    logDebug(cout << "++ Variables ++" << endl);
     IloIntVarArray x(env);
     BoolVarArrayMatrix y(env,n);
     BoolVarMatrix u(env,n);
     BoolVarMatrix v(env,n);
     
-    cout << "Nombre las variables para facil identificacion" << endl;
+    logDebug(cout << "Nombre las variables para facil identificacion" << endl);
     char VarName[16];
     for(i = 0;i < n;i++){
       sprintf(VarName,"x%d",i+1);
       x.add(IloIntVar(env,VarName));
+      logDebug(cout << VarName << "\t");
     }
+    logDebug(cout << endl);
 
     for (i = 0;i < n;i++) {
       BoolVarMatrix y_i(env,n);
@@ -46,35 +50,45 @@ void SQM_model
 	for (l = 0;l < k;l++) {
 	  sprintf(VarName,"y_%d_%d_%d",i+1,j+1,l+1);
 	  y_i_j.add(IloBoolVar(env,VarName));
+	  logDebug(cout << VarName << "\t");
 	}
 	y_i[j] = y_i_j;
+	logDebug(cout << endl);
       }
       y[i] = y_i;
+      logDebug(cout << endl);
     }
+    logDebug(cout << endl);
 
     for (i = 0;i < n;i++) {
       IloBoolVarArray u_i(env);
       for (j = 0;j < n;j++) {
 	sprintf(VarName,"u_%d_%d",i+1,j+1);
 	u_i.add(IloBoolVar(env,VarName));
+	logDebug(cout << VarName << "\t");
       }
       u[i] = u_i;
+      logDebug(cout << endl);
     }
+    logDebug(cout << endl);
 
     for (i = 0;i < n;i++) {
       IloBoolVarArray v_i(env);
       for (j = 0;j < n;j++) {
 	sprintf(VarName,"v_%d_%d",i+1,j+1);
 	v_i.add(IloBoolVar(env,VarName));
+	logDebug(cout << VarName << "\t");
       }
       v[i] = v_i;
+      logDebug(cout << endl);
     }
+    logDebug(cout << endl);
 
-    cout << "++ Restricciones ++" << endl;
-    cout << "Instalaciones a abrir" << endl;
+    logDebug(cout << "++ Restricciones ++" << endl);
+    logDebug(cout << "Instalaciones a abrir" << endl);
     modelo.add(IloSum(x) == p);
 
-    cout << "Relacionar variables de localizacion y asignacion" << endl;
+    logDebug(cout << "Relacionar variables de localizacion y asignacion" << endl);
     for(i = 0;i < n;i++){
       for (j = 0;j < n;j++) {
 	for (l = 0;l < k;l++) 
@@ -82,7 +96,7 @@ void SQM_model
       }
     }
 
-    cout << "Solo una instalacion ocupa la posion k del cliente i" << endl;
+    logDebug(cout << "Solo una instalacion ocupa la posion k del cliente i" << endl);
     for (i = 0;i < n;i++) {
       for (l = 0;l < k;l++) {
 	IloExpr Cover(env);
@@ -92,14 +106,14 @@ void SQM_model
       }
     }
 
-    cout << "Los ajustadores en j solo puede ocupar x_j posiciones del cliente i" << endl;
+    logDebug(cout << "Los ajustadores en j solo puede ocupar x_j posiciones del cliente i" << endl);
     for (i = 0;i < n;i++) {
       for (j = 0;j < n;j++) {
 	modelo.add(IloSum(y[i][j]) <= x[j]);
       }
     }
 
-    cout << "Restricion de orden de asignaicion" << endl;
+    logDebug(cout << "Restricion de orden de asignaicion" << endl);
     NumMatrix O(env,n);
     for (i = 0;i < n;i++)
       O[i] = IloNumArray(env,n);
@@ -126,7 +140,7 @@ void SQM_model
       }
     } /* */
 
-    cout << "Restricciones disjuntas" << endl;
+    logDebug(cout << "Restricciones disjuntas" << endl);
     /* Restriccion para realacionar 
        u_{ij} = 
                 1: Si la suma de instalaciones mas cercanas a i hasta incluir j es menor o igual a k
@@ -211,21 +225,21 @@ void SQM_model
       }
     }
     
-    cout << "Funcion Objetivo" << endl;
+    logDebug(cout << "Funcion Objetivo" << endl);
     modelo.add(IloMaximize(env,workload));
     workload.end();
 
-    cout << "Solve model" << endl;
+    logInfo(cout << "Solve model" << endl);
     IloCplex cplex(modelo);
     stringstream ModelName;
     ModelName << "SQM-model_" << n << "_" << m << "_" << p << ".lp";
     cplex.exportModel(ModelName.str().c_str());
     cplex.setParam(IloCplex::TiLim,TIME_MAX);
-    if(cplex.solve()){
+    if (cplex.solve()) {
       LogFile << "Solution status: " << cplex.getStatus() << endl;
       LogFile << "Maximum profit = " << cplex.getObjValue() << endl;
-      for(j = 0;j < n;j++){
-	if(cplex.getValue(x[j]) > 0) {
+      for (j = 0;j < n;j++) {
+	if (cplex.getValue(x[j]) > 0) {
 	  LogFile << j+1 << ": "
 		  << cplex.getValue(x[j]) << endl;
 	} 
@@ -259,15 +273,18 @@ void SQM_model
 }
 
 int* SQM_model
-(SQM_instance &Inst, // Set of points
- int p, // facilities
- int k, // Number of facilities that care
- float speed) // speed
+(
+ SQM_instance &Inst, // Set of points
+ int p, //!< facilities
+ int k, //!< Number of facilities that care
+ float speed //!< speed
+ )
 {
+  logInfo(cout << "Start: SQM_model" << endl);
   int *Sol;
   float mu = Inst.get_service_rate(); // rate parameter
   float f = Inst.get_service_rate(); // portion of demand
-  IloEnv env;
+  IloEnv env; //!< Instanciates Ilo Enviroment
   try {
     clock_t clocks,start = clock();
     int i,j,l,r;
@@ -278,17 +295,17 @@ int* SQM_model
     IloNum beta = 1.5;
     m = Inst.demand_points();
     n = Inst.potential_sites();
-    cout << "Comienza definicion del Modelo" << endl;
+    logDebug(cout << "Comienza definicion del Modelo B" << endl);
     IloModel modelo(env);
     
-    cout << "++ Variables ++" << endl;
+    logDebug(cout << "++ Variables ++" << endl);
     IloNumVar S(env,0,IloInfinity,IloNumVar::Float,"S");
     IloIntVarArray x(env);
     BoolVarArrayMatrix y(env,m);
     BoolVarMatrix u(env,m);
     BoolVarMatrix v(env,m);
     
-    cout << "Nombre las variables para facil identificacion" << endl;
+    logDebug(cout << "Nombra variables para facil identificacion" << endl);
     char VarName[16];
     for(i = 0;i < n;i++){
       sprintf(VarName,"x%d",i+1);
@@ -326,11 +343,11 @@ int* SQM_model
       v[i] = v_i;
     }
 
-    cout << "++ Restricciones ++" << endl;
-    cout << "Instalaciones a abrir" << endl;
+    logDebug(cout << "++ Restricciones ++" << endl);
+    logDebug(cout << "Instalaciones a abrir" << endl);
     modelo.add(IloSum(x) == p);
 
-    cout << "Relacionar variables de localizacion y asignacion" << endl;
+    logDebug(cout << "Relacionar variables de localizacion y asignacion" << endl);
     for(i = 0;i < m;i++){
       for (j = 0;j < n;j++) {
 	for (l = 0;l < k;l++) 
@@ -338,7 +355,7 @@ int* SQM_model
       }
     }
 
-    cout << "Solo una instalacion ocupa la posion k del cliente i" << endl;
+    logDebug(cout << "Solo una instalacion ocupa la posion k del cliente i" << endl);
     for (i = 0;i < m;i++) {
       for (l = 0;l < k;l++) {
 	IloExpr Cover(env);
@@ -348,14 +365,14 @@ int* SQM_model
       }
     }
 
-    cout << "Los ajustadores en j solo puede ocupar x_j posiciones del cliente i" << endl;
+    logDebug(cout << "Los ajustadores en j solo puede ocupar x_j posiciones del cliente i" << endl);
     for (i = 0;i < m;i++) {
       for (j = 0;j < n;j++) {
 	modelo.add(IloSum(y[i][j]) <= x[j]);
       }
     }
 
-    cout << "Restricion de orden de asignaicion" << endl;
+    logDebug(cout << "Restricion de orden de asignaicion" << endl);
     NumMatrix O(env,m);
     for (i = 0;i < m;i++)
       O[i] = IloNumArray(env,n);
@@ -378,7 +395,7 @@ int* SQM_model
       }
     } /* */
 
-    cout << "Restricciones disjuntas" << endl;
+    logDebug(cout << "Restricciones disjuntas" << endl);
     /* Restriccion para realacionar 
        u_{ij} = 
                 1: Si la suma de instalaciones mas cercanas a i hasta incluir j es menor o igual a k
@@ -464,7 +481,7 @@ int* SQM_model
       modelo.add(S >= workload);
     }
     
-    cout << "++ Funcion Objetivo ++" << endl;
+    logDebug(cout << "++ Funcion Objetivo ++" << endl);
     modelo.add(IloMinimize(env,S));
     clocks = clock() - start;
     results << "," << clocks / CLOCKS_PER_SEC;
@@ -534,7 +551,14 @@ int* SQM_model
   return Sol;
 }
 
-void gnuplot_goldberg_(SQM_instance &Inst,int p,IloCplex *cplex, IloBoolVarArray *x, BoolVarArrayMatrix *y) {
+void gnuplot_goldberg_
+(SQM_instance &Inst,
+ int p,
+ IloCplex *cplex,
+ IloBoolVarArray *x,
+ BoolVarArrayMatrix *y
+ )
+{
   int i,j,k;
   int n = Inst.potential_sites();
   point *puntos = Inst.demand(0);
