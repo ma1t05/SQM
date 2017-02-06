@@ -4,12 +4,14 @@
  */
 
 #include "SQM_model.h"
+#include "log.h"
 
 void SQM_model
 (SQM_instance &Inst, // Set of points
  int p,              // facilities
  float speed         // speed
 ) {
+  logInfo(cout << "Start SQM_model" << endl);
   float mu = Inst.get_service_rate (); // rate parameter
   float f = Inst.get_arrival_rate (); // portion of demand
   IloEnv env;

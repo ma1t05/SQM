@@ -1,5 +1,6 @@
  
 #include "SQM_Instance.h"
+#include "log.h"
 
 SQM_instance::SQM_instance (int m/* demand points */,int n/* sites */,double ar,double sr) {
   /* Create random demand points */
@@ -217,11 +218,16 @@ SQM_instance* SQM_load_instance(string filename,int M_clients,int N_sites) {
   }
   if (file_exists(filename+"_demand.ins") &&
       file_exists(filename+"_facility.ins")) {
+    logInfo(cout << "Instance files already exist" << endl);
     I = new SQM_instance(filename+"_demand.ins",filename+"_facility.ins",lambda,Mu_NT);
+    logInfo(cout << "Instance load from files" << endl);
   }
   else {
+    logInfo(cout << "Instance files does not exist" << endl);
     I = new SQM_instance(M_clients,N_sites,lambda,Mu_NT);
+    logInfo(cout << "New Instance created" << endl); 
     I->write(filename+"_demand.ins",filename+"_facility.ins");
+    logInfo(cout << "New Instance saved" << endl); 
   }
   return I;
 }

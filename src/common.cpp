@@ -233,8 +233,9 @@ void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f) {
 void Test_SQM_model(SQM_instance &Inst,int p,double v) {
   int *Sol;
   char sub[16];
-
+  logDebug(cout << "Start Test_SQM_model" << endl);
   results.open("results_SQM_model.csv",std::ofstream::app);
+  logDebug(cout << "Open: results_SQM_model.csv" << endl);
   results << Inst.demand_points()
 	  << "," << Inst.potential_sites()
 	  << "," << p 
@@ -245,9 +246,12 @@ void Test_SQM_model(SQM_instance &Inst,int p,double v) {
 	  << "," << Instance_Name << "_demand.ins"
 	  << "," << Instance_Name << "_facility.ins";
   
+  logDebug(cout << "Instanciate: SQM_model" << endl);
   Sol = SQM_model(Inst,p,l,v);
   sprintf(sub,"_%02d_%02d",p,l);
+  logDebug(cout << "Plot: SQM_model Instance" << endl);
   plot_instance_solution(Inst,Sol,Instance_Name+sub);
+  logDebug(cout << "Delete: SQM_model Instance" << endl);
   delete[] Sol;
 
   if (l == p) {
@@ -265,7 +269,8 @@ void Test_SQM_model(SQM_instance &Inst,int p,double v) {
   results.close();
 }
 
-void Test_SQM_multistart(SQM_instance &Inst,int p,double v) {
+void Test_SQM_multistart(SQM_instance &Inst,int p,double v) { 
+  logDebug(cout << "Start Test_SQM_mode" << endl);
   int N = 5000,step = 100;
   SQM_solution *Sol;
   RefSet Top(10);
@@ -291,6 +296,7 @@ void Test_SQM_multistart(SQM_instance &Inst,int p,double v) {
 }
 
 void Test_SQM_heuristic(SQM_instance &Inst,int p,double v) {
+  logDebug(cout << "Start: Test_SQM_heuristic_" << endl);
   SQM_solution *Sol;
   logInfo(cout << "Calling SQM_Heuristic" << endl);
   Sol = new SQM_solution (Inst,p);
@@ -314,6 +320,7 @@ void Test_SQM_heuristic(SQM_instance &Inst,int p,double v) {
 
 /* Experiment to determine the necesary GRASP iterations */
 void Test_SQM_GRASP(SQM_instance &Inst,int p,double v) {
+  logDebug(cout << "Start Test_SQM_GRASP" << endl);
   int m = Inst.demand_points();
   int n = Inst.potential_sites();
   double T_r1,T_r2,t_r;
@@ -344,6 +351,7 @@ void Test_SQM_GRASP(SQM_instance &Inst,int p,double v) {
 }
 
 void Test_SQM_random(SQM_instance &Inst,int p,double v) {
+  logDebug(cout << "Start Test_SQM_random" << endl);
   int m = Inst.demand_points();
   int n = Inst.potential_sites();
   clock_t beginning,now;
@@ -482,6 +490,7 @@ void Test_SQM_random(SQM_instance &Inst,int p,double v) {
 }
 
 void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
+  logDebug(cout << "Start Test_SQM_Path_Relinking" << endl);
   int N = 500,num_elite = 10;
   double rt,worst_rt;
   clock_t beginning,now;
@@ -562,6 +571,7 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
 }
 
 void Test_SQM_Local_Search(SQM_instance &Inst,int p,double v) {
+  logDebug(cout << "Start Test_SQM_Local_Search" << endl);
   int iLoc;
   int top_sols = 10;
   int N = 500, step = 100;
@@ -682,6 +692,7 @@ void Test_SQM_Local_Search(SQM_instance &Inst,int p,double v) {
 }
 
 void Tune_Path_Relinking(SQM_instance &Inst,int p,double v) {
+  logDebug(cout << "Start Tune_Path_Relinking" << endl);
   int N = 500,num_elite = 10;
   double rt,worst_rt;
   clock_t beginning,now;
