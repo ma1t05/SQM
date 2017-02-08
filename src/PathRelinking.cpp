@@ -47,6 +47,8 @@ SolList* Path_Relinking (SQM_solution &X,SQM_solution &Y) {
 	 );
       Z = Z->clone();
       Z->set_server_location(x,loc_y);
+      /* Improve Solution */
+      Improvement_Method(*Z);
       Solutions->push_back(Z);
     }
   }
