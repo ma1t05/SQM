@@ -31,7 +31,8 @@ typedef list<SQM_solution*> Solutions;
 typedef void (command)(SQM_instance&, /* The instance*/
 		       int,           /* The number of servers */
 		       double);       /* The speed */
-command Test_SQM_model;
+command Test_A_model;
+command Test_B_model;
 command Test_SQM_multistart;
 command Test_SQM_heuristic;
 command Test_SQM_GRASP;

@@ -69,7 +69,8 @@ void print_usage () {
 
   /* Print available commands */
   cout << "The available commands are:" << endl
-       << "  model             " << endl
+       << "  Amodel            " << endl
+       << "  Bmodel            " << endl
        << "  heuristic         " << endl
        << "  GRASP             " << endl
        << "  random            " << endl
@@ -170,8 +171,10 @@ void process_command_line(int argc,char **argv) {
     {
       while (optind < argc) {
 	string method = string(argv[optind]);
-	if (method == "model")
-	  Test_Function = Test_SQM_model;
+	if (method == "Amodel")
+	  Test_Function = Test_A_model;
+	else if (method == "Bmodel")
+	  Test_Function = Test_B_model;
 	else if (method == "multi_start")
 	  Test_Function = Test_SQM_multistart;
 	else if (method == "heuristic")
@@ -230,12 +233,32 @@ void Log_Start_SQMH(int M_clients,int N_sites,int p,double mu,double f) {
 	  << endl;
 }
 
-void Test_SQM_model(SQM_instance &Inst,int p,double v) {
+void Test_A_model(SQM_instance &Inst,int p,double v)
+{
+  logDebug(cout << "Start Test_A_model" << endl);
+  results.open("results_A_model.csv",std::ofstream::app);
+  logDebug(cout << "Open: results_A_model.csv" << endl);
+  results << Inst.demand_points()
+	  << "," << Inst.potential_sites()
+	  << "," << p 
+    //<< "," << l
+	  << "," << Inst.get_service_rate()
+	  << "," << Inst.get_arrival_rate()
+	  << "," << v
+	  << "," << Instance_Name << "_demand.ins" 
+	  << "," << Instance_Name << "_facility.ins";
+  Goldberg(Inst,p,Mu_NT,lambda);
+  
+  results.close();
+}
+
+void Test_B_model(SQM_instance &Inst,int p,double v)
+{
   int *Sol;
   char sub[16];
-  logDebug(cout << "Start Test_SQM_model" << endl);
-  results.open("results_SQM_model.csv",std::ofstream::app);
-  logDebug(cout << "Open: results_SQM_model.csv" << endl);
+  logDebug(cout << "Start Test_B_model" << endl);
+  results.open("results_B_model.csv",std::ofstream::app);
+  logDebug(cout << "Open: results_B_model.csv" << endl);
   results << Inst.demand_points()
 	  << "," << Inst.potential_sites()
 	  << "," << p 
@@ -246,26 +269,14 @@ void Test_SQM_model(SQM_instance &Inst,int p,double v) {
 	  << "," << Instance_Name << "_demand.ins"
 	  << "," << Instance_Name << "_facility.ins";
   
-  logDebug(cout << "Instanciate: SQM_model" << endl);
+  logDebug(cout << "Call: SQM_model" << endl);
   Sol = SQM_model(Inst,p,l,v);
   sprintf(sub,"_%02d_%02d",p,l);
-  logDebug(cout << "Plot: SQM_model Instance" << endl);
+  logDebug(cout << "Plot: SQM_model" << endl);
   plot_instance_solution(Inst,Sol,Instance_Name+sub);
-  logDebug(cout << "Delete: SQM_model Instance" << endl);
+  logDebug(cout << "Delete: SQM_model" << endl);
   delete[] Sol;
 
-  if (l == p) {
-    results << Inst.demand_points()
-	    << "," << Inst.potential_sites()
-	    << "," << p 
-	    << "," << l
-	    << "," << Inst.get_service_rate()
-	    << "," << Inst.get_arrival_rate()
-	    << "," << v
-	    << "," << Instance_Name << "_demand.ins" 
-	    << "," << Instance_Name << "_facility.ins";
-    Goldberg(Inst,p,Mu_NT,lambda);
-  }
   results.close();
 }
 
@@ -502,16 +513,16 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
   matching_type match;
   order_type order;
 
-  /* Determine combination method */
+  Improvement_Method = SQM_heuristic;
+  /* Determine combination method parameters */
   match = perfect_matching;
   order = nearest_first;
   Combine_Solutions = Path_Relinking;
-  Improvement_Method = No_Improvement;
   /* Determine methods to use in Path_Relinking */
   /* PR_{perfect|random|workload}_matching */
-  matching_function = PR_perfect_matching; 
+  set_match_method(match);
   /* PR_processing_order_{random|nf|ff} */
-  order_function = PR_processing_order_nf;
+  set_order_method(order);
 
   /* Generate Pool */
   beginning = clock();
@@ -537,6 +548,7 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
   cout << "Best multistart rt: " << best_multistart_rt << endl;
 
   beginning = clock();
+  Improvement_Method = LS_and_Berman_Improvement;
   SC = new TwoTier_SC (num_elite,num_elite,pool);
   now = clock();
   seconds = (double)(now - beginning)/CLOCKS_PER_SEC;
@@ -570,6 +582,7 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
   delete SC;
 }
 
+/*! Compare Local Search vs Berman heuristic */
 void Test_SQM_Local_Search(SQM_instance &Inst,int p,double v) {
   logDebug(cout << "Start Test_SQM_Local_Search" << endl);
   int iLoc;
