@@ -119,7 +119,7 @@ public:
 };
 
 void No_Improvement (SQM_solution&);
-
+void LS_and_Berman_Improvement (SQM_solution &Sol);
 #endif
 
 /* eof */

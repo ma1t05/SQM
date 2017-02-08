@@ -1,6 +1,7 @@
 
 #include "Reference_Set.h"
 #include "PathRelinking.h"
+#include "Local_Search.h"
 #define UNAGGREGATED -1
 #define INVALID_POSITION -1
 
@@ -909,3 +910,8 @@ bool compare_SQMSols(SQM_solution *first,SQM_solution *second) {
 }
 
 void No_Improvement (SQM_solution &Sol) {};
+void LS_and_Berman_Improvement (SQM_solution &Sol)
+{
+  SQM_heuristic(Sol);
+  Local_Search(Sol);
+}
