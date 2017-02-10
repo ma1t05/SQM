@@ -409,7 +409,7 @@ void Static_SC::Update (SolList *Sols) {
   while (!Sols->empty()) {
     X = Sols->front();
     Sols->pop_front();
-    Improvement_Method(*X);
+    RS_Improvement_Method(*X);
     if (X->get_response_time() < rs->worst())
       pool->push_back(X);
     else
@@ -611,7 +611,7 @@ void Dynamic_SC::Update (SolList *NewSols) {
   while (!NewSols->empty()) {
     X = NewSols->front();
     NewSols->pop_front();
-    Improvement_Method(*X);
+    RS_Improvement_Method(*X);
     iLoc = rs->TryAdd(*X,X->get_response_time());
     if (iLoc == UNAGGREGATED)
       delete X;
@@ -786,7 +786,7 @@ void TwoTier_SC::Update (SolList *NewSols) {
   while (!NewSols->empty()) {
     X = NewSols->front();
     NewSols->pop_front();
-    Improvement_Method(*X);
+    RS_Improvement_Method(*X);
     iLoc = rs->TryAdd(*X,X->get_response_time());
     if (iLoc == UNAGGREGATED)
       pool->push_front(X);

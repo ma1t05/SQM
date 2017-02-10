@@ -54,7 +54,7 @@ public:
   int get_DupFound () const;
 };
 
-extern void (*Improvement_Method)(SQM_solution&);
+extern void (*RS_Improvement_Method)(SQM_solution&);
 extern SolList* (*Combine_Solutions)(SQM_solution&,SQM_solution&);
 double min_cost_pm (RefSet&,SQM_solution&);
 

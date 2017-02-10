@@ -40,6 +40,13 @@ command Test_SQM_random;
 command Test_SQM_Path_Relinking;
 command Test_SQM_Local_Search;
 command Tune_Path_Relinking;
+command Test_Scatter_Search_01;
+command Test_Scatter_Search_02;
+command Test_Scatter_Search_03;
+command Test_Scatter_Search_04;
+command Test_Scatter_Search_05;
+command Test_Scatter_Search_06;
+command Test_Scatter_Search_07;
 /*  */
 extern command *Test_Function;
 

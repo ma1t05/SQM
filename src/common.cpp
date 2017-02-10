@@ -23,10 +23,12 @@ std::ofstream Log_Simulation;
 
 /* RefSet extern variables */
 void (*Improvement_Method)(SQM_solution&);
+void (*RS_Improvement_Method)(SQM_solution&);
 SolList* (*Combine_Solutions)(SQM_solution&,SQM_solution&);
 /* PathRelinking extern variables */
 int* (*matching_function)(SQM_solution&,SQM_solution&); /* function for match */
 int* (*order_function)(SQM_solution&,int*,SQM_solution&); /* function for proccess */
+void Test_Scatter_Search(SQM_instance&,int,double,string);
 
 /* Global variables read from config */
 int MINS_PER_BLOCK;
@@ -39,7 +41,7 @@ double MAX_RANGE_X;
 double MAX_RANGE_Y;
 int GRASP_kNN_param;
 double EPSILON;
-
+int REPETITIONS;
 double TIME_MAX;
 
 void print_usage () {
@@ -69,13 +71,16 @@ void print_usage () {
 
   /* Print available commands */
   cout << "The available commands are:" << endl
-       << "  Amodel            " << endl
+       << "  Amodel            "
+       << endl
        << "  Bmodel            " << endl
        << "  heuristic         " << endl
        << "  GRASP             " << endl
        << "  random            " << endl
        << "  Path_Relinking    " << endl
        << "  Local_Search      " << endl
+       << "  Scatter_Search_0i "
+       << "- from i to 1 to 7"   << endl
        << endl;
 
 }
@@ -187,6 +192,21 @@ void process_command_line(int argc,char **argv) {
 	  Test_Function = Test_SQM_Path_Relinking;
 	else if (method == "Local_Search")
 	  Test_Function = Test_SQM_Local_Search;
+	/* Scatter Search */
+	else if (method == "Scatter_Search_01")
+	  Test_Function = Test_Scatter_Search_01;
+	else if (method == "Scatter_Search_02")
+	  Test_Function = Test_Scatter_Search_02;
+	else if (method == "Scatter_Search_03")
+	  Test_Function = Test_Scatter_Search_03;
+	else if (method == "Scatter_Search_04")
+	  Test_Function = Test_Scatter_Search_04;
+	else if (method == "Scatter_Search_05")
+	  Test_Function = Test_Scatter_Search_05;
+	else if (method == "Scatter_Search_06")
+	  Test_Function = Test_Scatter_Search_06;
+	else if (method == "Scatter_Search_07")
+	  Test_Function = Test_Scatter_Search_07;
 	else if (method == "Tune_PR")
 	  Test_Function = Tune_Path_Relinking;
 	else
@@ -215,6 +235,7 @@ void read_config_file(string configFile) {
   MAX_RANGE_Y = SQM_conf.pDouble("MAX_RANGE_Y");
 
   GRASP_kNN_param = SQM_conf.pInt("GRASP_kNN_param");
+  REPETITIONS = SQM_conf.pInt("REPETITIONS");
 
   /* Cplex params */
   EPSILON = SQM_conf.pDouble("EPSILON");
@@ -548,7 +569,7 @@ void Test_SQM_Path_Relinking(SQM_instance &Inst,int p,double v) {
   cout << "Best multistart rt: " << best_multistart_rt << endl;
 
   beginning = clock();
-  Improvement_Method = LS_and_Berman_Improvement;
+  RS_Improvement_Method = LS_and_Berman_Improvement;
   SC = new TwoTier_SC (num_elite,num_elite,pool);
   now = clock();
   seconds = (double)(now - beginning)/CLOCKS_PER_SEC;
@@ -791,4 +812,125 @@ void Tune_Path_Relinking(SQM_instance &Inst,int p,double v) {
     delete SC;
   } while ((++order != invalid_order) ||
 	   (!(order = nearest_first) && (++match != invalid_matching)));
+}
+
+/* Scatter Search Alone*/
+//! SQM_heuristic
+//! Local_Search
+//! Both
+//! No_Improvement
+void Test_Scatter_Search_01(SQM_instance &Inst,int p,double v)
+{
+  Improvement_Method = No_Improvement;
+  RS_Improvement_Method = No_Improvement;
+  Test_Scatter_Search(Inst,p,v,"results_ScatterSearch01.csv");
+}
+
+void Test_Scatter_Search_02(SQM_instance &Inst,int p,double v)
+{
+  Improvement_Method = Local_Search;
+  RS_Improvement_Method = No_Improvement;
+  Test_Scatter_Search(Inst,p,v,"results_ScatterSearch02.csv");
+}
+
+void Test_Scatter_Search_03(SQM_instance &Inst,int p,double v)
+{
+  Improvement_Method = SQM_heuristic;
+  RS_Improvement_Method = No_Improvement;
+  Test_Scatter_Search(Inst,p,v,"results_ScatterSearch03.csv");
+}
+
+void Test_Scatter_Search_04(SQM_instance &Inst,int p,double v)
+{
+  Improvement_Method = No_Improvement;
+  RS_Improvement_Method = Local_Search;
+  Test_Scatter_Search(Inst,p,v,"results_ScatterSearch04.csv");
+}
+
+void Test_Scatter_Search_05(SQM_instance &Inst,int p,double v)
+{
+  Improvement_Method = No_Improvement;
+  RS_Improvement_Method = SQM_heuristic;
+  Test_Scatter_Search(Inst,p,v,"results_ScatterSearch05.csv");
+}
+
+void Test_Scatter_Search_06(SQM_instance &Inst,int p,double v)
+{
+  Improvement_Method = No_Improvement;
+  RS_Improvement_Method =  LS_and_Berman_Improvement;
+  Test_Scatter_Search(Inst,p,v,"results_ScatterSearch06.csv");
+}
+
+void Test_Scatter_Search_07(SQM_instance &Inst,int p,double v)
+{
+  Improvement_Method = LS_and_Berman_Improvement;
+  RS_Improvement_Method = No_Improvement;
+  Test_Scatter_Search(Inst,p,v,"results_ScatterSearch07.csv");
+}
+
+void Test_Scatter_Search(SQM_instance &Inst,int p,double v,string ResultsFile)
+{
+  logDebug(cout << "Start Test_Scatter_Search" << endl);
+  const char* resultsfile = ResultsFile.c_str();
+  int N = 500,num_elite = 10;
+  double rt,worst_rt;
+  SQM_solution *X;
+  SubsetControl *SC;
+  RefSet *elite_sols;
+  double best_multistart_rt,best_rt,improvement;
+  double mean_multistart_rt = 0.0,mean_rt = 0.0,mean_improvement = 0.0;
+  
+  set_match_method(random_matching);
+  set_order_method(nearest_first);
+  Combine_Solutions = Path_Relinking;
+
+  /* Write Results */ 
+  X = new SQM_solution(Inst,p);
+  results.open(resultsfile,std::ofstream::app);
+  results
+    /* Instance */
+    << X
+    << "Scatter_Search,"
+    << REPETITIONS << ","; 
+  results.close();
+  delete X;
+  for (int i = 0;i < REPETITIONS;i++) {
+    /* Diversification Generation */
+    SolList pool;
+    for (int r = 0;r < N;r++) {
+      X = new SQM_solution(Inst,p);
+      X->set_speed(v,BETA);
+      Improvement_Method(*X);
+      X->get_response_time();
+      pool.push_back(X);
+    }
+    pool.sort(compare_SQMSols);
+    best_multistart_rt = pool.front()->get_response_time();
+    mean_multistart_rt += best_multistart_rt;
+
+    /* Update Reference Set*/
+    SC = new TwoTier_SC (num_elite,num_elite,pool);
+
+    elite_sols = SC->get_RefSet ();
+    best_rt = elite_sols->best();
+    mean_rt += best_rt;
+    improvement = 100*(best_multistart_rt - best_rt) / best_multistart_rt;
+    mean_improvement += improvement;
+    delete SC;
+  }
+  mean_multistart_rt /= REPETITIONS;
+  mean_rt /= REPETITIONS;
+  mean_improvement /= REPETITIONS;
+
+  results.open(resultsfile,std::ofstream::app);
+  results
+    /* Data Results */
+    << mean_multistart_rt << ","
+    << mean_rt << ","
+    << mean_improvement << ","
+    << SQM_solution::get_calls_to_grt() << ","
+    << SQM_solution::get_processing_time()
+    << endl;
+  results.close();
+
 }
