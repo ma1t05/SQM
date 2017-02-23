@@ -37,8 +37,12 @@ void Goldberg
     for (i = 0;i < m;i++)
       rho += f * Inst.get_demand(i);
     rho /= (mu * p);
+    rho /= Inst.total_demand();
     if (rho > 1) {
-      logError(cout << "rho must be between (0,1)! " << endl);
+      logError(cout << "rho must be between (0,1)! " << endl
+	       << "f = " << f << endl
+	       << "mu = " << mu << endl
+	       << "p = " << p << endl);
     }
     logDebug(cout << "rho = " << rho << endl);
     // rho from ReVelle & Hogan
@@ -87,7 +91,7 @@ void Goldberg
     logDebug(cout << "La instalacion j solo puede ocupar una posicion del cliente i" << endl);
     for (i = 0;i < m;i++) {
       for (j = 0;j < n;j++) {
-	modelo.add(IloSum(y[i][j]) <= 1);
+	modelo.add(IloSum(y[i][j]) <= x[j]);
       }
     }
 
@@ -127,23 +131,21 @@ void Goldberg
     }
 
     // Cargas de trabajo
-    IloNum coef;
-    
-    for (j = 0;j < n;j++) {
-      IloExpr workload(env);
-      for (k = 0;k < p;k++) {
-	coef = (1 - rho) * pow(rho,k);
-	for (i = 0;i < m;i++) {
-	  f_i = f * Inst.get_demand(i);
+    IloNum coef; 
+    IloExpr workload(env);
+    for (k = 0;k < p;k++) {
+      coef = (1 - rho) * pow(rho,k);
+      for (i = 0;i < m;i++) {
+	f_i = f * Inst.get_demand(i);
+	for (j = 0;j < n;j++) {
 	  workload += f_i * coef * Dist[i][j]* y[i][j][k];
 	}
       }
-      modelo.add(S >= workload);
     }
     
     logDebug(cout << "++ Funcion Objetivo ++" << endl);
     logDebug(cout << "Minimize the maximum workload" << endl);
-    modelo.add(IloMinimize(env,S));
+    modelo.add(IloMinimize(env,workload));
     clocks = clock() - clocks;
     results << "," << clocks / CLOCKS_PER_SEC;
 
@@ -223,7 +225,7 @@ void gnuplot_goldberg
   ofstream centros(centersfilename);
 
   for(j = 0;j < n;j++){
-    /*if (cplex.getValue(location[j]))*/
+    if (cplex.getValue(location[j]))
     centros << potential_site[j].x << " " 
 	    << potential_site[j].y << " "
 	    << cplex.getValue(location[j]) << endl;
